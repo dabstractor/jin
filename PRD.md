@@ -1,119 +1,224 @@
 # Jin — Phantom Git Layer System
 
-**Product Requirements Document (PRD)**
-**Version:** 2.0
-**Status:** Draft (Post-Correction & Expansion)
-**Last Updated:** 2025-10-19
-
----
-
 ## 1. Overview
 
-**Jin** is a meta-versioning layer built atop Git to manage *developer-specific and tool-specific configuration* in collaborative projects, without contaminating the main repository. Jin provides an isolated "phantom layer" for tracking ignored/untracked files that represent tooling states (AI configs, editor metadata, MCP servers, etc.).
+**Jin** is a meta-versioning system layered on top of Git that manages *developer-specific and tool-specific configuration* without contaminating a project's primary Git repository.
 
-The system allows developers to define **modes** (per-tool setups) and **scopes** (per-language or context overlays) and manage them across projects automatically.
+Jin introduces a **phantom Git layer** that tracks ignored and untracked files (editor configs, AI tooling state, MCP servers, etc.) and composes them deterministically into the working directory based on explicit rules.
+
+Jin is:
+
+* **Opt-in**
+* **Non-disruptive**
+* **Deterministic**
+* **Reversible**
+* **Git-native in behavior, but Git-isolated in storage**
 
 ---
 
 ## 2. Goals
 
-* **Zero workflow disruption:** Developers continue using Git normally. Jin operations are opt-in and limited to ignored/untracked files.
-* **Shared yet isolated tooling:** Each dev can have tool configurations applied without polluting the repo.
-* **Automatic merge logic:** Jin must accurately merge JSON, YAML, TOML, and similar structured files across layers.
-* **Single repository architecture:** All configuration data—global, per-mode, per-scope, and per-project—is housed in a single Git repo.
-* **Scalability:** Multiple projects and teams can use the same Jin repo, allowing both shared and project-specific customizations.
-* **Automatic .gitignore management:** Any file tracked by Jin is automatically added to `.gitignore` to prevent accidental Git tracking.
+1. **Zero workflow disruption**
+
+   * Developers continue using Git normally
+   * Jin only touches ignored or untracked files
+
+2. **Shared yet isolated tooling**
+
+   * Tooling config can be shared across teams
+   * Never pollutes the main repository
+
+3. **Deterministic layered merges**
+
+   * JSON, YAML, TOML, INI merged predictably
+   * Text files merged via 3-way diff
+
+4. **Single Jin repository**
+
+   * All global, mode, scope, and project configuration lives in one repo
+
+5. **Scalability**
+
+   * Supports many projects, modes, scopes, and teams
+
+6. **Automatic `.gitignore` safety**
+
+   * Jin-managed files cannot accidentally be committed to Git
 
 ---
 
 ## 3. Key Concepts
 
-| Concept         | Description                                                                                       |
-| --------------- | ------------------------------------------------------------------------------------------------- |
-| **Mode**        | Represents a specific AI/tooling environment (e.g. `claude`, `cursor`, `zed`).                    |
-| **Scope**       | A refinement or contextual specialization of a mode (e.g. `language:javascript`, `infra:docker`). |
-| **Project**     | The active Git repository detected from CWD. No explicit flag required.                           |
-| **Layer**       | A level in the structured merge/commit hierarchy (see §4).                                        |
-| **Phantom Git** | Jin's shadow Git tracking ignored/untracked files and mapping them to the correct layers.         |
-| **Active Context** | The currently selected mode and/or scope that determines default targeting for `jin add` operations. |
+| Concept                    | Description                                                        |
+| -------------------------- | ------------------------------------------------------------------ |
+| **Mode**                   | A broad tooling environment (e.g. `claude`, `cursor`, `zed`)       |
+| **Scope**                  | Contextual refinement (e.g. `language:javascript`, `infra:docker`) |
+| **Project**                | Auto-inferred from Git remote origin                               |
+| **Layer**                  | One level in Jin's override hierarchy                              |
+| **Phantom Git**            | Jin's internal Git tracking ignored files                          |
+| **Active Context**         | Current mode + scope affecting defaults                            |
+| **Workspace Active Layer** | Derived merge output applied to the working tree                   |
 
 ---
 
 ## 4. Layer Architecture
 
-### 4.1 Nine-Layer Hierarchy
+### 4.1 The Nine-Layer Hierarchy
 
-Each layer refines or overrides the layer beneath it. Merge and commit precedence flows upward.
+Precedence flows **bottom → top** (higher overrides lower):
 
-| # | Layer                  | Description                                                        | Example Location                                      |
-| - | ---------------------- | ------------------------------------------------------------------ | ----------------------------------------------------- |
-| 1 | Global Base            | Shared defaults for all projects and tools                         | `jin/global/`                                         |
-| 2 | Mode Base              | Base configuration for a mode                                      | `jin/mode/claude/`                                    |
-| 3 | Mode → Scope           | Mode-specific scoped configs                                       | `jin/mode/claude/scope/lang:js/`                      |
-| 4 | Mode → Scope → Project | Project-specific modifications to a scoped mode                    | `jin/mode/claude/scope/lang:js/project/ui-dashboard/` |
-| 5 | Mode → Project         | Project-specific modifications to a mode                           | `jin/mode/claude/project/ui-dashboard/`               |
-| 6 | Scope Base             | Cross-mode defaults for a given scope type                         | `jin/scope/lang:js/`                                  |
-| 7 | Project Base           | Project-specific global configuration                              | `jin/project/ui-dashboard/`                           |
-| 8 | User Local             | Machine-specific overlays (unshared)                               | `~/.jin/local/`                                       |
-| 9 | Workspace Active       | The currently checked-out and merged config view (in project tree) | `.jin/workspace/`                                     |
-
----
-
-## 5. Core API Contract
-
-### 5.1 Staging and Committing
-
-**This is the fundamental API the entire tool is built on:**
-
-- `jin add <files>` stages files (like `git add`)
-- `jin commit -m "message"` commits staged files (like `git commit`)
-- Files remain staged until committed
-- Multiple `jin add` operations can occur before a single `jin commit`
-
-### 5.2 Active Context
-
-Jin maintains an **active context** that determines default targeting for operations:
-
-- `jin mode use <mode>` activates a mode - all subsequent operations know this context
-- `jin scope use <scope>` activates a scope - all subsequent operations know this context
-- **After activation, no need to specify `--mode` or `--scope` flags unless overriding behavior**
-- Context persists until explicitly changed or cleared
-- Context is stored per-project in `.jin/context`
-
-### 5.3 Automatic .gitignore Management
-
-**Core Feature:** Any file added to Jin is automatically added to `.gitignore` to prevent Git from tracking it.
-
-- Jin checks `.gitignore` before adding files
-- If file is not already ignored, Jin appends it to `.gitignore`
-- This prevents jin-tracked files from accidentally being committed to Git
-- Jin-tracked files that are added to Git should be detected and handled (see §14 Backlog)
+| # | Layer                  | Description                       | Storage Path                                       |
+| - | ---------------------- | --------------------------------- | -------------------------------------------------- |
+| 1 | Global Base            | Shared defaults                   | `jin/global/`                                      |
+| 2 | Mode Base              | Mode defaults                     | `jin/mode/<mode>/`                                 |
+| 3 | Mode → Scope           | Scoped mode configs               | `jin/mode/<mode>/scope/<scope>/`                   |
+| 4 | Mode → Scope → Project | Project overrides for scoped mode | `jin/mode/<mode>/scope/<scope>/project/<project>/` |
+| 5 | Mode → Project         | Project overrides for mode        | `jin/mode/<mode>/project/<project>/`               |
+| 6 | Scope Base             | Untethered scope configs          | `jin/scope/<scope>/`                               |
+| 7 | Project Base           | Project-only configs              | `jin/project/<project>/`                           |
+| 8 | User Local             | Machine-only overlays             | `~/.jin/local/`                                    |
+| 9 | Workspace Active       | Derived merge result              | `.jin/workspace/`                                  |
 
 ---
 
-## 6. Layer Routing and Add Behavior
+## 5. Git Architecture & Invariants
 
-### 6.1 Flag Routing Rules (THE HAPPY PATH)
+### 5.1 Logical Branch Model
 
-**This is the critical specification that must never be lost:**
+**Invariant:**
+Jin does **not** expose or rely on user-facing Git branches.
 
-| Command                                                  | Target Layer | Description                                              |
-| -------------------------------------------------------- | ------------ | -------------------------------------------------------- |
-| `jin add <file>`                                         | Layer 7      | Adds to project base layer (no mode/scope context)      |
-| `jin add <file> --mode`                                  | Layer 2      | Adds to currently active mode base layer                 |
-| `jin add <file> --mode --project`                        | Layer 5      | Adds to project-specific mode layer                      |
-| `jin add <file> --scope=<scope>`                         | Layer 6      | Adds to untethered scope base (no mode)                  |
-| `jin add <file> --mode --scope=<scope>`                  | Layer 3      | Adds to mode's scope layer                               |
-| `jin add <file> --mode --scope=<scope> --project`        | Layer 4      | Adds to project-specific mode-scope layer                |
+* Layers are represented as **logical refs** under `refs/jin/...`
+* These refs are never checked out directly
+* Users never interact with them via raw Git commands
 
-**Critical Rules:**
+**Implementation options (allowed):**
 
-1. **No active mode + `--mode` flag = ERROR** - Must have an active mode set via `jin mode use`
-2. **Passing multiple scopes is NOT PERMITTED** - Only one scope can be specified at a time
-3. **`--project` is always implied by CWD** - The project is auto-detected from Git origin
-4. **Flags modify behavior, active context provides defaults** - Use flags to override default behavior
+* Single branch with structured directories
+* Namespaced refs with garbage collection
 
-### 6.2 Active Context Behavior Examples
+**Disallowed:**
+
+* One real Git branch per layer
+* User-visible checkout of layer refs
+
+---
+
+## 6. Core API Contract
+
+### 6.1 Staging & Committing
+
+```bash
+jin add <files>
+jin commit -m "message"
+```
+
+* Identical mental model to Git
+* Files remain staged until committed
+* Multiple `jin add` calls may precede a commit
+
+### 6.2 Commit Atomicity
+
+**Invariant:**
+`jin commit` is atomic across all affected layers.
+
+**Transactional Model:**
+
+1. Changes staged into a temporary transaction ref
+2. All target refs updated only after successful object write
+3. On failure, all refs roll back
+4. Interrupted transactions are detected and auto-recovered
+
+Partial commits are **impossible**.
+
+---
+
+## 7. Active Context
+
+### 7.1 Context Rules
+
+* One active mode at a time
+* One active scope at a time
+* Both may be active simultaneously
+* Stored per-project in `.jin/context`
+* Flags override context
+
+```yaml
+version: 1
+mode: claude
+scope: language:javascript
+```
+
+### 7.2 Context Commands
+
+```bash
+# Activate mode (sets active context)
+jin mode use claude
+
+# Activate scope (sets active context)
+jin scope use language:javascript
+
+# Deactivate mode
+jin mode unset
+
+# Deactivate scope
+jin scope unset
+```
+
+After activation, no need to specify `--mode` or `--scope` flags unless overriding behavior.
+
+---
+
+## 8. `.gitignore` Management
+
+### 8.1 Managed Block Invariant
+
+**Invariant:**
+Jin only modifies a clearly delimited block:
+
+```gitignore
+# --- JIN MANAGED START ---
+.claude/
+.vscode/settings.json
+# --- JIN MANAGED END ---
+```
+
+Rules:
+
+* Jin never edits outside this block
+* Duplicates auto-deduplicated
+* Conflicts auto-resolved inside block
+* Removed Jin files remove ignore entries
+
+### 8.2 Automatic Safety
+
+* Any file added to Jin is automatically added to `.gitignore`
+* Jin checks `.gitignore` before adding files
+* This prevents jin-tracked files from accidentally being committed to Git
+* Jin-tracked files added to Git are detected and handled (see §23 Backlog)
+
+---
+
+## 9. Layer Routing & `jin add` Semantics
+
+### 9.1 Routing Table
+
+| Command                                           | Target Layer               |
+| ------------------------------------------------- | -------------------------- |
+| `jin add <file>`                                  | Project Base (7)           |
+| `jin add <file> --mode`                           | Mode Base (2)              |
+| `jin add <file> --mode --project`                 | Mode → Project (5)         |
+| `jin add <file> --scope=<scope>`                  | Scope Base (6)             |
+| `jin add <file> --mode --scope=<scope>`           | Mode → Scope (3)           |
+| `jin add <file> --mode --scope=<scope> --project` | Mode → Scope → Project (4) |
+
+### 9.2 Errors
+
+* `--mode` with no active mode → ERROR
+* Multiple scopes → ERROR
+* Git-tracked file → ERROR (use `jin import`)
+
+### 9.3 Active Context Behavior Examples
 
 ```bash
 # Set active context
@@ -134,17 +239,84 @@ jin add .claude/config.json --scope=language:python
 # → Targets: scope/language:python/ (untethered scope, no mode)
 ```
 
-### 6.3 Error Conditions
+---
 
-- `jin add <file> --mode` when no mode is active → **ERROR: No active mode set. Use `jin mode use <mode>` first.**
-- `jin add <file> --scope=a --scope=b` → **ERROR: Multiple scopes not permitted.**
-- `jin add <file>` for a file already tracked by Git → **ERROR: File is tracked by Git. Use `jin import` to migrate.**
+## 10. Scope Precedence Rules
+
+When both exist:
+
+```
+Mode-bound scope
+  > Untethered scope
+    > Mode base
+```
+
+Untethered scopes apply **only if no mode-bound scope of same name exists**.
 
 ---
 
-## 7. Mode and Scope Behavior
+## 11. Merge Strategy
 
-### 7.1 Mode
+### 11.1 Structured Merge Rules
+
+| Type               | Behavior                     |
+| ------------------ | ---------------------------- |
+| JSON / YAML / TOML | Deep key merge               |
+| Arrays (keyed)     | Merge by `id` or `name`      |
+| Arrays (unkeyed)   | Higher layer replaces        |
+| `null`             | Deletes key                  |
+| Ordering           | Preserved from highest layer |
+| Comments           | Not preserved                |
+| INI                | Section merge                |
+| Text               | 3-way diff                   |
+
+**Deterministic and reversible.**
+
+### 11.2 Merge Priority
+
+Precedence: **(1 lowest)** Global Base → Mode Base → Scope → Project layers → User Local → **(9 highest)** Workspace Active.
+
+### 11.3 Conflict Resolution
+
+When conflicts occur during merge:
+1. Jin pauses the merge operation
+2. Creates `.jinmerge` files showing conflicts
+3. Displays Git-style conflict markers with layer information
+4. User resolves conflicts manually
+5. User runs `jin add <resolved-files>` and `jin commit` to complete merge
+
+**Format for conflict display:**
+```
+Conflict in file: .claude/config.json
+Layer 1: mode/claude/scope/language:javascript/
+Layer 2: mode/claude/project/ui-dashboard/
+
+<<<<<<< mode/claude/scope/language:javascript/
+{ "mcpServers": ["server-a"] }
+=======
+{ "mcpServers": ["server-b"] }
+>>>>>>> mode/claude/project/ui-dashboard/
+```
+
+---
+
+## 12. Workspace Active Layer
+
+**Invariant:**
+Workspace Active is **never a source of truth**.
+
+* Direct edits allowed
+* No persistence without `jin add`
+* `jin status` separates:
+
+  * Workspace dirty
+  * Layer dirty
+
+---
+
+## 13. Mode & Scope Lifecycle
+
+### 13.1 Mode
 
 A mode defines a broad developer setup—typically per AI or editor.
 
@@ -177,7 +349,7 @@ jin modes
 jin mode delete claude
 ```
 
-### 7.2 Scope
+### 13.2 Scope
 
 A scope applies language- or domain-specific deltas on top of a mode or standalone.
 
@@ -210,7 +382,7 @@ jin scopes
 jin scope delete language:javascript
 ```
 
-### 7.3 Multiple Active Contexts
+### 13.3 Multiple Active Contexts
 
 - **One active mode at a time** (enforced)
 - **One active scope at a time** (enforced)
@@ -219,40 +391,97 @@ jin scope delete language:javascript
 
 ---
 
-## 8. Project-Specific Customization
-
-Each project's unique changes (e.g., AngularJS vs React) are stored automatically in project-specific layers inferred from the Git origin name (e.g. `ui-dashboard`).
-
-**Example:**
+## 14. Synchronization Rules
 
 ```bash
-# inside ui-dashboard repo
-# Project auto-detected from git remote origin
-
-jin add .vscode/settings.json
-# → project/ui-dashboard/
-
-jin mode use claude
-jin add .claude/config.json --mode --project
-# → mode/claude/project/ui-dashboard/
-
-jin scope use language:javascript
-jin add .claude/mcp.json --mode --scope=language:javascript --project
-# → mode/claude/scope/language:javascript/project/ui-dashboard/
+jin fetch
+jin pull
+jin push
+jin sync
 ```
+
+**Push Rules:**
+
+* Fetch required
+* Clean merge state required
+* Conflicts must be resolved first
+
+**Update Notifications:**
+
+* If `jin fetch` detects updates to active modes/scopes/projects, inform user
+* Format: `Updates available for: mode/claude, scope/language:javascript`
+* User can then `jin pull` to merge updates
 
 ---
 
-## 9. Core Commands
+## 15. Failure Recovery Guarantees
 
-### 9.1 Initialization
+Jin guarantees:
+
+* Safe abort on interruption
+* Auto-repair of `.jinmap`
+* Idempotent retries
+* Explicit unrecoverable errors
+
+---
+
+## 16. `.jinmap`
+
+```yaml
+version: 1
+mappings:
+  "mode/claude": [".claude/", "CLAUDE.md"]
+meta:
+  generated-by: jin
+```
+
+* Auto-generated
+* Never user-edited
+* Recoverable from Git history
+
+---
+
+## 17. Audit Logs
+
+* Informational, append-only
+* Derived from Git commits
+* May be regenerated
+* Commit hashes included
+
+Each commit logs:
+
+```json
+{
+  "timestamp": "2025-10-19T15:04:02Z",
+  "user": "dustin",
+  "project": "ui-dashboard",
+  "mode": "claude",
+  "scope": "language:javascript",
+  "layer": 4,
+  "files": [".claude/config.json"],
+  "base_commit": "abc123",
+  "merge_commit": "def456",
+  "context": {
+    "active_mode": "claude",
+    "active_scope": "language:javascript"
+  }
+}
+```
+
+All audit records live in `jin/.audit/` for offline inspection.
+
+---
+
+## 18. Core Commands
+
+### 18.1 Initialization
 
 ```bash
 jin init                              # Initialize Jin in current project
 jin link <repo-url>                   # Link to shared Jin config repo
 ```
 
-### 9.2 Staging & Committing
+### 18.2 Staging & Committing
 
 ```bash
 jin add <files> [--mode] [--scope=<scope>] [--project]
@@ -261,7 +490,7 @@ jin commit -m "message"               # Commit staged files
 jin reset [--soft|--mixed|--hard]    # Reset staged/committed changes
 ```
 
-### 9.3 Mode Management
+### 18.3 Mode Management
 
 ```bash
 jin mode create <mode>                # Create new mode
@@ -271,7 +500,7 @@ jin mode delete <mode>                # Delete mode
 jin modes                             # List all available modes
 ```
 
-### 9.4 Scope Management
+### 18.4 Scope Management
 
 ```bash
 jin scope create <scope> [--mode=<mode>]
@@ -282,7 +511,7 @@ jin scope delete <scope>              # Delete scope
 jin scopes                            # List all available scopes
 ```
 
-### 9.5 Synchronization
+### 18.5 Synchronization
 
 ```bash
 jin fetch                             # Fetch updates from remote Jin repo
@@ -291,18 +520,7 @@ jin push                              # Push local changes (requires fetch + cle
 jin sync                              # Fetch + merge + apply to workspace
 ```
 
-**Push Requirements:**
-- Must fetch before push
-- Must have clean merge state (no conflicts)
-- If conflicts exist, user must resolve before push is allowed
-- This ensures team coordination and prevents divergent branches
-
-**Update Notifications:**
-- If `jin fetch` detects updates to active modes/scopes/projects, inform user
-- Format: `Updates available for: mode/claude, scope/language:javascript`
-- User can then `jin pull` to merge updates
-
-### 9.6 Status & Inspection
+### 18.6 Status & Inspection
 
 ```bash
 jin status                            # Show workspace state, active contexts, dirty files
@@ -312,7 +530,7 @@ jin list                              # List available modes/scopes/projects fro
 jin layers                            # Show current layer composition and merge order
 ```
 
-### 9.7 Reset Operations
+### 18.7 Reset Operations
 
 ```bash
 jin reset                                        # Reset project base (Layer 7)
@@ -327,78 +545,26 @@ Supports standard Git reset API:
 - `--mixed` (default): Unstage changes but keep in workspace
 - `--hard`: Discard all changes
 
----
+### 18.8 File Operations
 
-## 10. Merge Strategy
-
-### 10.1 Structured Merge Engine
-
-Structured merge rules for supported file types:
-
-| Type      | Strategy                                                 |
-| --------- | -------------------------------------------------------- |
-| JSON      | Key-aware deep merge, comma-safe serialization           |
-| YAML/TOML | Key-aware hierarchical merge                             |
-| INI       | Section merge                                            |
-| Text      | 3-way diff using Git's merge-base from underlying layers |
-
-### 10.2 Merge Priority
-
-Precedence: **(1 lowest)** Global Base → Mode Base → Scope → Project layers → User Local → **(9 highest)** Workspace Active.
-
-Conflicts generate `.jinmerge` files with automatic validation hooks.
-
-### 10.3 Conflict Resolution (Future)
-
-When conflicts occur during merge:
-1. Jin pauses the merge operation
-2. Creates `.jinmerge` files showing conflicts
-3. Displays Git-style conflict markers with layer information
-4. User resolves conflicts manually
-5. User runs `jin add <resolved-files>` and `jin commit` to complete merge
-
-**Format for conflict display:**
-```
-Conflict in file: .claude/config.json
-Layer 1: mode/claude/scope/language:javascript/
-Layer 2: mode/claude/project/ui-dashboard/
-
-<<<<<<< mode/claude/scope/language:javascript/
-{ "mcpServers": ["server-a"] }
-=======
-{ "mcpServers": ["server-b"] }
->>>>>>> mode/claude/project/ui-dashboard/
+```bash
+jin rm <file>                         # Remove file from layer
+jin mv <old-path> <new-path>          # Rename/move file within layer
 ```
 
 ---
 
-## 11. Implementation Details
+## 19. Implementation Details
 
-### 11.1 Git and Environment
+### 19.1 Git and Environment
 
 * Jin uses its own internal Git repo at `$JIN_DIR` (default: `~/.jin/`).
-* Each layer path corresponds to a branch in the Jin repo (`mode/claude/scope/lang:js/project/ui-dashboard`).
+* Layers are represented as logical refs under `refs/jin/...`
 * Uses standard `GIT_DIR` redirection for operations without altering normal Git.
-* `jin commit` performs an atomic commit to multiple branches as needed, then updates the `.jinmap`.
+* `jin commit` performs an atomic commit to multiple refs as needed, then updates the `.jinmap`.
 * Git rerere (reuse recorded resolution) is enabled in Jin's Git space for efficient conflict resolution.
 
-### 11.2 `.jinmap` File
-
-Automatically generated; never edited manually.
-Example:
-
-```yaml
-version: 1
-mappings:
-  "mode/claude": [".claude/", "CLAUDE.md"]
-  "mode/claude/scope/lang:js": [".claude/commands", ".claude/config.json"]
-  "project/ui-dashboard": [".vscode/"]
-  "mode/claude/project/ui-dashboard": [".claude/local.json"]
-meta:
-  last-updated-by: "jin@v2.0"
-```
-
-### 11.3 `.jin/context` File
+### 19.2 `.jin/context` File
 
 Stores active context per-project:
 
@@ -409,7 +575,7 @@ scope: language:javascript
 last-updated: "2025-10-19T15:04:02Z"
 ```
 
-### 11.4 No Support For
+### 19.3 Unsupported Features
 
 - **Symlinks:** Not supported. Jin will error if symlinks are detected.
 - **Binary files:** Jin is for text-based configuration only. Large binaries are out of scope.
@@ -418,7 +584,7 @@ last-updated: "2025-10-19T15:04:02Z"
 
 ---
 
-## 12. Example Workflow (Happy Path)
+## 20. Example Workflow
 
 ```bash
 # --- Normal Git world ---
@@ -438,7 +604,7 @@ jin commit -m "Add project-level files"
 # Create the claude mode (first-time only)
 # ----------------------------
 jin mode create claude
-# - Sets up the mode branch
+# - Sets up the mode ref
 # - No merge to workspace yet
 
 # ----------------------------
@@ -485,7 +651,7 @@ jin commit -m "Add project-specific MCP config"
 # ----------------------------
 jin fetch                              # Fetch latest changes
 jin push                               # Push (requires clean merge state)
-# → pushes mode and scope branches plus project-specific overrides
+# → pushes mode and scope refs plus project-specific overrides
 
 # ----------------------------
 # Subsequent developer workflow (another machine)
@@ -523,9 +689,9 @@ jin push
 
 ---
 
-## 13. File Lifecycle Management
+## 21. File Lifecycle Management
 
-### 13.1 File Removal
+### 21.1 File Removal
 
 When a file is removed from a layer:
 
@@ -544,7 +710,7 @@ jin commit -m "Remove config file"
 - If file only existed in removed layer, it's removed from workspace
 - Removal is tracked in Jin's Git history
 
-### 13.2 File Renames
+### 21.2 File Renames
 
 Jin tracks renames using Git's rename detection:
 
@@ -558,7 +724,7 @@ jin commit -m "Rename config file"
 - History is preserved
 - Merge engine understands renames across layers
 
-### 13.3 File Movement Between Layers
+### 21.3 File Movement Between Layers
 
 Moving a file from one layer to another:
 
@@ -577,12 +743,12 @@ jin commit -m "Move to mode-project layer"
 - Requires two commits (removal + addition)
 - Consider using `jin mv` for simple path changes within same layer
 
-### 13.4 File Path Collisions
+### 21.4 File Path Collisions
 
 When the same file path exists in multiple layers:
 
 **Merge Behavior:**
-- Higher-priority layers override lower-priority layers (see §10.2)
+- Higher-priority layers override lower-priority layers (see §11.2)
 - Structured files (JSON/YAML/TOML) are deep-merged
 - Text files use 3-way merge
 - Binary files: higher layer wins (no merge)
@@ -592,75 +758,26 @@ When the same file path exists in multiple layers:
 - `jin layers` shows the complete layer stack for current workspace
 - `jin diff <layer1> <layer2>` shows differences
 
-### 13.5 Important Notes
-
-This section requires iteration and discovery to fully implement. File lifecycle management is **not required in the core feature set** but is documented here for future development.
-
 ---
 
-## 14. Validation & Testing
+## 22. Validation & Testing
 
 * Layer routing correctness (unit tests for all flag combinations)
 * Active context persistence and restoration
-* Automatic .gitignore management
+* Automatic .gitignore management with managed block
 * Structured merge consistency across JSON, YAML, TOML
-* Proper branch resolution and GIT_DIR scoping
+* Proper ref resolution and GIT_DIR scoping
 * Accurate `.jinmap` generation and recovery
 * Multi-scope checkout consistency and rollback
 * Fetch-before-push enforcement
 * Conflict detection and user notification
+* Commit atomicity verification
+* Failure recovery testing
+* Scope precedence validation
 
 ---
 
-## 15. Audit & Metadata
-
-Each commit logs:
-
-```json
-{
-  "timestamp": "2025-10-19T15:04:02Z",
-  "user": "dustin",
-  "project": "ui-dashboard",
-  "mode": "claude",
-  "scope": "language:javascript",
-  "layer": 4,
-  "files": [".claude/config.json"],
-  "base_commit": "abc123",
-  "merge_commit": "def456",
-  "context": {
-    "active_mode": "claude",
-    "active_scope": "language:javascript"
-  }
-}
-```
-
-All audit records live in `jin/.audit/` for offline inspection.
-
----
-
-## 16. Acceptance Criteria
-
-1. ✅ 9-layer hierarchy enforced in merge engine and routing.
-2. ✅ Project automatically inferred from CWD Git origin.
-3. ✅ `jin add` without flags commits to project base layer.
-4. ✅ `jin add --mode` → mode layer; `--mode --scope=<scope>` → mode-scope layer; `--mode --project` → mode-project layer.
-5. ✅ Multi-layer structured merges must resolve without human intervention (text files may require manual resolution).
-6. ✅ `.jinmap` auto-maintained and consistent after every commit.
-7. ✅ Active context (mode/scope) persists across sessions via `.jin/context`.
-8. ✅ Any file added to Jin is automatically added to `.gitignore`.
-9. ✅ `jin push` requires `jin fetch` with clean merge state first.
-10. ✅ `jin status`, `jin diff`, `jin log`, `jin list`, `jin modes`, `jin scopes`, `jin layers` commands implemented.
-11. ✅ `jin reset` supports all layer combinations with Git-standard flags.
-12. ✅ Update notifications when remote has changes to active contexts.
-13. ✅ Multiple scopes cannot be passed simultaneously (error condition).
-14. ✅ No symlink support (error condition).
-15. ✅ No binary file support (guidance only, not enforced).
-16. ✅ No detached workspace states (abort operation).
-17. ✅ Audit logs match real commits and layers touched.
-
----
-
-## 17. Backlog (Prioritized)
+## 23. Backlog
 
 ### High Priority
 1. **Worktree automation** - Git hooks or automation to re-enable Jin state in new worktrees
@@ -674,7 +791,7 @@ All audit records live in `jin/.audit/` for offline inspection.
 
 ---
 
-## 18. Out of Scope
+## 24. Out of Scope
 
 * Dependency management between modes/scopes (developers manage their own tool installations)
 * Security/secrets management (developers manage via env vars and shell commands)
@@ -686,7 +803,44 @@ All audit records live in `jin/.audit/` for offline inspection.
 
 ---
 
-## 19. Appendix
+## 25. Non-Negotiable Invariants
+
+1. No user-facing Git branch explosion
+2. Atomic multi-layer commits
+3. Deterministic structured merges
+4. Workspace is never source of truth
+5. `.gitignore` is safely sandboxed
+6. Scope precedence is explicit
+7. Failure is recoverable
+8. Jin enforces correctness, not social policy
+
+---
+
+## 26. Acceptance Criteria
+
+1. 9-layer hierarchy enforced in merge engine and routing.
+2. Project automatically inferred from CWD Git origin.
+3. `jin add` without flags commits to project base layer.
+4. `jin add --mode` → mode layer; `--mode --scope=<scope>` → mode-scope layer; `--mode --project` → mode-project layer.
+5. Multi-layer structured merges must resolve without human intervention (text files may require manual resolution).
+6. `.jinmap` auto-maintained and consistent after every commit.
+7. Active context (mode/scope) persists across sessions via `.jin/context`.
+8. Any file added to Jin is automatically added to `.gitignore` managed block.
+9. `jin push` requires `jin fetch` with clean merge state first.
+10. `jin status`, `jin diff`, `jin log`, `jin list`, `jin modes`, `jin scopes`, `jin layers` commands implemented.
+11. `jin reset` supports all layer combinations with Git-standard flags.
+12. Update notifications when remote has changes to active contexts.
+13. Multiple scopes cannot be passed simultaneously (error condition).
+14. No symlink support (error condition).
+15. No binary file support (guidance only, not enforced).
+16. No detached workspace states (abort operation).
+17. Audit logs match real commits and layers touched.
+18. Logical refs used instead of user-facing branches.
+19. Commit atomicity guaranteed across all affected layers.
+
+---
+
+## 27. Appendix
 
 **Key Design Principles**
 
@@ -697,7 +851,6 @@ All audit records live in `jin/.audit/` for offline inspection.
 * Active context reduces flag verbosity for common operations.
 * Automatic .gitignore management prevents accidents.
 * Fetch-before-push enforces team coordination.
+* Logical refs prevent branch explosion.
 
 **Configuration is not for secrets. Configuration is for tooling.**
-
----

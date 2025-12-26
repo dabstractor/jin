@@ -25,13 +25,13 @@ fn main() -> ExitCode {
                         ExitCode::FAILURE
                     }
                 },
-                Commands::Commit(cmd) => {
-                    println!(
-                        "jin commit - message: '{}' - command handler to be implemented",
-                        cmd.message
-                    );
-                    ExitCode::SUCCESS
-                }
+                Commands::Commit(cmd) => match commands::commit_execute(&cmd) {
+                    Ok(()) => ExitCode::SUCCESS,
+                    Err(e) => {
+                        eprintln!("Error: {}", e);
+                        ExitCode::FAILURE
+                    }
+                },
                 Commands::Reset(_) => {
                     println!("jin reset - command handler to be implemented");
                     ExitCode::SUCCESS

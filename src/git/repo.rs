@@ -300,6 +300,301 @@ impl JinRepo {
                 _ => JinError::from(e),
             })
     }
+
+    /// Deletes a layer reference.
+    ///
+    /// Uses `Layer.git_ref()` to get the reference name.
+    ///
+    /// # Arguments
+    ///
+    /// * `layer` - The layer whose reference should be deleted
+    ///
+    /// # Errors
+    ///
+    /// - `JinError::InvalidLayer` if the layer is `UserLocal` or `WorkspaceActive`
+    /// - `JinError::RefNotFound` if the reference doesn't exist
+    ///
+    /// # Examples
+    ///
+    /// ```ignore
+    /// let layer = Layer::GlobalBase;
+    /// repo.delete_layer_ref(&layer)?;
+    /// ```
+    pub fn delete_layer_ref(&self, layer: &Layer) -> Result<()> {
+        let ref_name = layer.git_ref().ok_or_else(|| JinError::InvalidLayer {
+            name: format!("{:?}", layer),
+        })?;
+
+        // CRITICAL: Must be mut for delete()
+        let mut reference = self
+            .inner
+            .find_reference(&ref_name)
+            .map_err(|e| match e.code() {
+                git2::ErrorCode::NotFound => JinError::RefNotFound {
+                    name: ref_name.clone(),
+                    layer: format!("{:?}", layer),
+                },
+                _ => JinError::from(e),
+            })?;
+
+        reference.delete()?;
+        Ok(())
+    }
+
+    /// Checks if a layer reference exists.
+    ///
+    /// Uses `Layer.git_ref()` to get the reference name.
+    /// Returns `false` for `UserLocal` and `WorkspaceActive` layers.
+    ///
+    /// # Arguments
+    ///
+    /// * `layer` - The layer to check
+    ///
+    /// # Returns
+    ///
+    /// * `true` - The layer reference exists
+    /// * `false` - The layer reference doesn't exist or is unversioned
+    ///
+    /// # Examples
+    ///
+    /// ```ignore
+    /// let layer = Layer::GlobalBase;
+    /// if repo.layer_ref_exists(&layer) {
+    ///     println!("Layer exists");
+    /// }
+    /// ```
+    pub fn layer_ref_exists(&self, layer: &Layer) -> bool {
+        let ref_name = match layer.git_ref() {
+            Some(name) => name,
+            None => return false, // UserLocal/WorkspaceActive never exist as refs
+        };
+
+        self.inner.find_reference(&ref_name).is_ok()
+    }
+
+    /// Lists all layer references.
+    ///
+    /// Returns a vector of `(Layer, Oid)` tuples for all layer refs that exist.
+    ///
+    /// # Returns
+    ///
+    /// A vector of tuples containing the layer and its target object ID.
+    ///
+    /// # Examples
+    ///
+    /// ```ignore
+    /// let refs = repo.list_layer_refs()?;
+    /// for (layer, oid) in refs {
+    ///     println!("{:?} -> {}", layer, oid);
+    /// }
+    /// ```
+    pub fn list_layer_refs(&self) -> Result<Vec<(Layer, git2::Oid)>> {
+        let mut refs = Vec::new();
+
+        for reference in self.inner.references_glob("refs/jin/layers/*")? {
+            let reference = reference?;
+            if let (Some(name), Some(oid)) = (reference.name(), reference.target()) {
+                // Parse ref name back to Layer
+                if let Some(layer) = Self::ref_name_to_layer(name) {
+                    refs.push((layer, oid));
+                }
+            }
+        }
+
+        Ok(refs)
+    }
+
+    /// Lists layer references matching a glob pattern.
+    ///
+    /// Use this for pattern-based queries like "refs/jin/layers/mode/*".
+    ///
+    /// # Arguments
+    ///
+    /// * `pattern` - Git glob pattern for matching refs (e.g., "refs/jin/layers/mode/*")
+    ///
+    /// # Returns
+    ///
+    /// A vector of reference names matching the pattern.
+    ///
+    /// # Examples
+    ///
+    /// ```ignore
+    /// // List all mode refs
+    /// let mode_refs = repo.list_layer_refs_by_pattern("refs/jin/layers/mode/*")?;
+    /// ```
+    pub fn list_layer_refs_by_pattern(&self, pattern: &str) -> Result<Vec<String>> {
+        let mut refs = Vec::new();
+
+        for reference in self.inner.references_glob(pattern)? {
+            let reference = reference?;
+            if let Some(name) = reference.name() {
+                refs.push(name.to_string());
+            }
+        }
+
+        Ok(refs)
+    }
+
+    /// Creates a staging reference for a transaction.
+    ///
+    /// Staging refs follow the pattern `refs/jin/staging/<transaction-id>`.
+    /// Uses `force=false` to detect conflicting transactions.
+    ///
+    /// # Arguments
+    ///
+    /// * `transaction_id` - Unique identifier for the transaction
+    /// * `oid` - The object ID the staging ref should point to
+    ///
+    /// # Returns
+    ///
+    /// The newly created staging reference.
+    ///
+    /// # Errors
+    ///
+    /// - `JinError::RefExists` if a staging ref with this ID already exists
+    ///
+    /// # Examples
+    ///
+    /// ```ignore
+    /// let transaction_id = "txn-abc123";
+    /// let staging_ref = repo.create_staging_ref(transaction_id, commit_oid)?;
+    /// ```
+    pub fn create_staging_ref(
+        &self,
+        transaction_id: &str,
+        oid: git2::Oid,
+    ) -> Result<git2::Reference> {
+        let ref_name = format!("refs/jin/staging/{}", transaction_id);
+
+        self.inner
+            .reference(
+                &ref_name,
+                oid,
+                false, // force=false - fail if exists (detects conflicts)
+                &format!("Staging ref for transaction: {}", transaction_id),
+            )
+            .map_err(|e| match e.code() {
+                git2::ErrorCode::Exists => JinError::RefExists {
+                    name: ref_name.clone(),
+                    layer: "staging".to_string(),
+                },
+                _ => JinError::from(e),
+            })
+    }
+
+    /// Deletes a staging reference.
+    ///
+    /// Used for cleanup after a transaction completes.
+    ///
+    /// # Arguments
+    ///
+    /// * `transaction_id` - The transaction ID whose staging ref should be deleted
+    ///
+    /// # Errors
+    ///
+    /// - `JinError::RefNotFound` if the staging ref doesn't exist
+    ///
+    /// # Examples
+    ///
+    /// ```ignore
+    /// repo.delete_staging_ref("txn-abc123")?;
+    /// ```
+    pub fn delete_staging_ref(&self, transaction_id: &str) -> Result<()> {
+        let ref_name = format!("refs/jin/staging/{}", transaction_id);
+
+        let mut reference = self
+            .inner
+            .find_reference(&ref_name)
+            .map_err(|e| match e.code() {
+                git2::ErrorCode::NotFound => JinError::RefNotFound {
+                    name: ref_name.clone(),
+                    layer: "staging".to_string(),
+                },
+                _ => JinError::from(e),
+            })?;
+
+        reference.delete()?;
+        Ok(())
+    }
+
+    /// Checks if a staging reference exists.
+    ///
+    /// Used for transaction recovery detection.
+    ///
+    /// # Arguments
+    ///
+    /// * `transaction_id` - The transaction ID to check
+    ///
+    /// # Returns
+    ///
+    /// * `true` - The staging ref exists
+    /// * `false` - The staging ref doesn't exist
+    ///
+    /// # Examples
+    ///
+    /// ```ignore
+    /// if repo.staging_ref_exists("txn-abc123") {
+    ///     println!("Transaction is in progress");
+    /// }
+    /// ```
+    pub fn staging_ref_exists(&self, transaction_id: &str) -> bool {
+        let ref_name = format!("refs/jin/staging/{}", transaction_id);
+        self.inner.find_reference(&ref_name).is_ok()
+    }
+}
+
+// ===== Private Helpers =====
+
+impl JinRepo {
+    /// Parses a reference name back to a Layer variant.
+    ///
+    /// This is the inverse of `Layer.git_ref()`. Returns `None` if the
+    /// reference name doesn't match the expected pattern or is invalid.
+    ///
+    /// # Arguments
+    ///
+    /// * `ref_name` - The full reference name (e.g., "refs/jin/layers/global")
+    ///
+    /// # Returns
+    ///
+    /// * `Some(Layer)` - The parsed layer variant
+    /// * `None` - The reference name is not a valid layer ref
+    fn ref_name_to_layer(ref_name: &str) -> Option<Layer> {
+        if !ref_name.starts_with("refs/jin/layers/") {
+            return None;
+        }
+
+        let path = ref_name.strip_prefix("refs/jin/layers/")?;
+
+        // Parse based on path structure
+        let parts: Vec<&str> = path.split('/').collect();
+        match parts.as_slice() {
+            ["global"] => Some(Layer::GlobalBase),
+            ["mode", mode] => Some(Layer::ModeBase {
+                mode: mode.to_string(),
+            }),
+            ["mode", mode, "scope", scope] => Some(Layer::ModeScope {
+                mode: mode.to_string(),
+                scope: scope.to_string(),
+            }),
+            ["mode", mode, "scope", scope, "project", project] => Some(Layer::ModeScopeProject {
+                mode: mode.to_string(),
+                scope: scope.to_string(),
+                project: project.to_string(),
+            }),
+            ["mode", mode, "project", project] => Some(Layer::ModeProject {
+                mode: mode.to_string(),
+                project: project.to_string(),
+            }),
+            ["scope", scope] => Some(Layer::ScopeBase {
+                scope: scope.to_string(),
+            }),
+            ["project", project] => Some(Layer::ProjectBase {
+                project: project.to_string(),
+            }),
+            _ => None,
+        }
+    }
 }
 
 // ===== Object Creation Helpers =====
@@ -942,5 +1237,432 @@ mod tests {
             .unwrap();
         let result = repo.create_layer_ref(&Layer::GlobalBase, commit_oid);
         assert!(matches!(result, Err(JinError::RefExists { .. })));
+    }
+
+    // ===== Delete Layer Ref Tests =====
+
+    #[test]
+    fn test_jinrepo_delete_layer_ref() {
+        let fixture = TestFixture::new();
+        let commit_oid = fixture.create_initial_commit();
+
+        // Create a layer ref first
+        fixture
+            .repo
+            .create_layer_ref(&Layer::GlobalBase, commit_oid)
+            .unwrap();
+
+        // Verify it exists
+        assert!(fixture.repo.layer_ref_exists(&Layer::GlobalBase));
+
+        // Delete it
+        fixture.repo.delete_layer_ref(&Layer::GlobalBase).unwrap();
+
+        // Verify it's gone
+        assert!(!fixture.repo.layer_ref_exists(&Layer::GlobalBase));
+    }
+
+    #[test]
+    fn test_jinrepo_delete_layer_ref_not_found_errors() {
+        let fixture = TestFixture::new();
+
+        // Deleting non-existent ref should error
+        let result = fixture.repo.delete_layer_ref(&Layer::GlobalBase);
+        assert!(matches!(result, Err(JinError::RefNotFound { .. })));
+    }
+
+    #[test]
+    fn test_jinrepo_delete_unversioned_layer_errors() {
+        let fixture = TestFixture::new();
+
+        // UserLocal should error
+        let result = fixture.repo.delete_layer_ref(&Layer::UserLocal);
+        assert!(matches!(result, Err(JinError::InvalidLayer { .. })));
+
+        // WorkspaceActive should error
+        let result = fixture.repo.delete_layer_ref(&Layer::WorkspaceActive);
+        assert!(matches!(result, Err(JinError::InvalidLayer { .. })));
+    }
+
+    // ===== Layer Ref Exists Tests =====
+
+    #[test]
+    fn test_jinrepo_layer_ref_exists_true() {
+        let fixture = TestFixture::new();
+        let commit_oid = fixture.create_initial_commit();
+
+        // Create a layer ref
+        fixture
+            .repo
+            .set_layer_ref(&Layer::GlobalBase, commit_oid)
+            .unwrap();
+
+        // Should exist now
+        assert!(fixture.repo.layer_ref_exists(&Layer::GlobalBase));
+    }
+
+    #[test]
+    fn test_jinrepo_layer_ref_exists_false() {
+        let fixture = TestFixture::new();
+
+        // Non-existent layer should not exist
+        assert!(!fixture.repo.layer_ref_exists(&Layer::GlobalBase));
+    }
+
+    #[test]
+    fn test_jinrepo_layer_ref_exists_unversioned_layers() {
+        let fixture = TestFixture::new();
+
+        // UserLocal should return false (never exists as ref)
+        assert!(!fixture.repo.layer_ref_exists(&Layer::UserLocal));
+
+        // WorkspaceActive should return false (never exists as ref)
+        assert!(!fixture.repo.layer_ref_exists(&Layer::WorkspaceActive));
+    }
+
+    // ===== List Layer Refs Tests =====
+
+    #[test]
+    fn test_jinrepo_list_layer_refs_empty() {
+        let fixture = TestFixture::new();
+
+        // Empty repo should have no layer refs
+        let refs = fixture.repo.list_layer_refs().unwrap();
+        assert!(refs.is_empty());
+    }
+
+    #[test]
+    fn test_jinrepo_list_layer_refs_multiple() {
+        let fixture = TestFixture::new();
+        let commit_oid = fixture.create_initial_commit();
+
+        // Create multiple layer refs
+        fixture
+            .repo
+            .set_layer_ref(&Layer::GlobalBase, commit_oid)
+            .unwrap();
+        fixture
+            .repo
+            .set_layer_ref(
+                &Layer::ModeBase {
+                    mode: "claude".to_string(),
+                },
+                commit_oid,
+            )
+            .unwrap();
+        fixture
+            .repo
+            .set_layer_ref(
+                &Layer::ScopeBase {
+                    scope: "python".to_string(),
+                },
+                commit_oid,
+            )
+            .unwrap();
+        fixture
+            .repo
+            .set_layer_ref(
+                &Layer::ProjectBase {
+                    project: "myapp".to_string(),
+                },
+                commit_oid,
+            )
+            .unwrap();
+
+        // List all refs
+        let refs = fixture.repo.list_layer_refs().unwrap();
+        assert_eq!(refs.len(), 4);
+
+        // Verify all layers are present
+        let layer_names: Vec<_> = refs.iter().map(|(l, _)| format!("{:?}", l)).collect();
+        assert!(layer_names.contains(&"GlobalBase".to_string()));
+        assert!(layer_names.contains(&"ModeBase { mode: \"claude\" }".to_string()));
+        assert!(layer_names.contains(&"ScopeBase { scope: \"python\" }".to_string()));
+        assert!(layer_names.contains(&"ProjectBase { project: \"myapp\" }".to_string()));
+    }
+
+    #[test]
+    fn test_jinrepo_list_layer_refs_by_pattern() {
+        let fixture = TestFixture::new();
+        let commit_oid = fixture.create_initial_commit();
+
+        // Create refs for different layers
+        fixture
+            .repo
+            .set_layer_ref(&Layer::GlobalBase, commit_oid)
+            .unwrap();
+        fixture
+            .repo
+            .set_layer_ref(
+                &Layer::ModeBase {
+                    mode: "claude".to_string(),
+                },
+                commit_oid,
+            )
+            .unwrap();
+        fixture
+            .repo
+            .set_layer_ref(
+                &Layer::ModeBase {
+                    mode: "cursor".to_string(),
+                },
+                commit_oid,
+            )
+            .unwrap();
+        fixture
+            .repo
+            .set_layer_ref(
+                &Layer::ScopeBase {
+                    scope: "python".to_string(),
+                },
+                commit_oid,
+            )
+            .unwrap();
+
+        // List all mode refs
+        let mode_refs = fixture
+            .repo
+            .list_layer_refs_by_pattern("refs/jin/layers/mode/*")
+            .unwrap();
+        assert_eq!(mode_refs.len(), 2);
+        assert!(mode_refs.contains(&"refs/jin/layers/mode/claude".to_string()));
+        assert!(mode_refs.contains(&"refs/jin/layers/mode/cursor".to_string()));
+
+        // List all scope refs
+        let scope_refs = fixture
+            .repo
+            .list_layer_refs_by_pattern("refs/jin/layers/scope/*")
+            .unwrap();
+        assert_eq!(scope_refs.len(), 1);
+        assert!(scope_refs.contains(&"refs/jin/layers/scope/python".to_string()));
+    }
+
+    // ===== ref_name_to_layer Tests =====
+
+    #[test]
+    fn test_jinrepo_ref_name_to_layer_parsing() {
+        // Test all layer type parsing
+        assert_eq!(
+            JinRepo::ref_name_to_layer("refs/jin/layers/global"),
+            Some(Layer::GlobalBase)
+        );
+
+        assert_eq!(
+            JinRepo::ref_name_to_layer("refs/jin/layers/mode/claude"),
+            Some(Layer::ModeBase {
+                mode: "claude".to_string()
+            })
+        );
+
+        assert_eq!(
+            JinRepo::ref_name_to_layer("refs/jin/layers/mode/claude/scope/python"),
+            Some(Layer::ModeScope {
+                mode: "claude".to_string(),
+                scope: "python".to_string()
+            })
+        );
+
+        assert_eq!(
+            JinRepo::ref_name_to_layer("refs/jin/layers/mode/claude/scope/python/project/myapp"),
+            Some(Layer::ModeScopeProject {
+                mode: "claude".to_string(),
+                scope: "python".to_string(),
+                project: "myapp".to_string()
+            })
+        );
+
+        assert_eq!(
+            JinRepo::ref_name_to_layer("refs/jin/layers/mode/claude/project/myapp"),
+            Some(Layer::ModeProject {
+                mode: "claude".to_string(),
+                project: "myapp".to_string()
+            })
+        );
+
+        assert_eq!(
+            JinRepo::ref_name_to_layer("refs/jin/layers/scope/python"),
+            Some(Layer::ScopeBase {
+                scope: "python".to_string()
+            })
+        );
+
+        assert_eq!(
+            JinRepo::ref_name_to_layer("refs/jin/layers/project/myapp"),
+            Some(Layer::ProjectBase {
+                project: "myapp".to_string()
+            })
+        );
+
+        // Invalid refs should return None
+        assert_eq!(JinRepo::ref_name_to_layer("refs/heads/main"), None);
+        assert_eq!(JinRepo::ref_name_to_layer("refs/jin/layers/invalid"), None);
+        assert_eq!(JinRepo::ref_name_to_layer("refs/jin/staging/abc123"), None);
+    }
+
+    // ===== Staging Ref Tests =====
+
+    #[test]
+    fn test_jinrepo_create_staging_ref() {
+        let fixture = TestFixture::new();
+        let commit_oid = fixture.create_initial_commit();
+
+        // Create a staging ref
+        let staging_ref = fixture
+            .repo
+            .create_staging_ref("txn-abc123", commit_oid)
+            .unwrap();
+
+        assert_eq!(staging_ref.name().unwrap(), "refs/jin/staging/txn-abc123");
+        assert_eq!(staging_ref.target(), Some(commit_oid));
+    }
+
+    #[test]
+    fn test_jinrepo_create_staging_ref_fails_if_exists() {
+        let fixture = TestFixture::new();
+        let commit_oid = fixture.create_initial_commit();
+
+        // First call should succeed
+        fixture
+            .repo
+            .create_staging_ref("txn-abc123", commit_oid)
+            .unwrap();
+
+        // Second call should fail
+        let result = fixture.repo.create_staging_ref("txn-abc123", commit_oid);
+        assert!(matches!(result, Err(JinError::RefExists { .. })));
+    }
+
+    #[test]
+    fn test_jinrepo_delete_staging_ref() {
+        let fixture = TestFixture::new();
+        let commit_oid = fixture.create_initial_commit();
+
+        // Create a staging ref first
+        fixture
+            .repo
+            .create_staging_ref("txn-abc123", commit_oid)
+            .unwrap();
+
+        // Verify it exists
+        assert!(fixture.repo.staging_ref_exists("txn-abc123"));
+
+        // Delete it
+        fixture.repo.delete_staging_ref("txn-abc123").unwrap();
+
+        // Verify it's gone
+        assert!(!fixture.repo.staging_ref_exists("txn-abc123"));
+    }
+
+    #[test]
+    fn test_jinrepo_delete_staging_ref_not_found_errors() {
+        let fixture = TestFixture::new();
+
+        // Deleting non-existent staging ref should error
+        let result = fixture.repo.delete_staging_ref("txn-nonexistent");
+        assert!(matches!(result, Err(JinError::RefNotFound { .. })));
+    }
+
+    #[test]
+    fn test_jinrepo_staging_ref_exists_true() {
+        let fixture = TestFixture::new();
+        let commit_oid = fixture.create_initial_commit();
+
+        // Create a staging ref
+        fixture
+            .repo
+            .create_staging_ref("txn-abc123", commit_oid)
+            .unwrap();
+
+        // Should exist
+        assert!(fixture.repo.staging_ref_exists("txn-abc123"));
+    }
+
+    #[test]
+    fn test_jinrepo_staging_ref_exists_false() {
+        let fixture = TestFixture::new();
+
+        // Non-existent staging ref should not exist
+        assert!(!fixture.repo.staging_ref_exists("txn-abc123"));
+    }
+
+    // ===== Integration Tests =====
+
+    #[test]
+    fn test_jinrepo_layer_ref_crud_cycle() {
+        let fixture = TestFixture::new();
+        let commit_oid = fixture.create_initial_commit();
+
+        // Create
+        fixture
+            .repo
+            .create_layer_ref(&Layer::GlobalBase, commit_oid)
+            .unwrap();
+
+        // Read
+        assert!(fixture.repo.layer_ref_exists(&Layer::GlobalBase));
+        let found = fixture.repo.get_layer_ref(&Layer::GlobalBase).unwrap();
+        assert!(found.is_some());
+        assert_eq!(found.unwrap().target(), Some(commit_oid));
+
+        // List
+        let refs = fixture.repo.list_layer_refs().unwrap();
+        assert_eq!(refs.len(), 1);
+
+        // Delete
+        fixture.repo.delete_layer_ref(&Layer::GlobalBase).unwrap();
+
+        // Verify gone
+        assert!(!fixture.repo.layer_ref_exists(&Layer::GlobalBase));
+        let refs = fixture.repo.list_layer_refs().unwrap();
+        assert!(refs.is_empty());
+    }
+
+    #[test]
+    fn test_jinrepo_staging_ref_crud_cycle() {
+        let fixture = TestFixture::new();
+        let commit_oid = fixture.create_initial_commit();
+
+        // Create
+        fixture
+            .repo
+            .create_staging_ref("txn-test", commit_oid)
+            .unwrap();
+
+        // Exists
+        assert!(fixture.repo.staging_ref_exists("txn-test"));
+
+        // Delete
+        fixture.repo.delete_staging_ref("txn-test").unwrap();
+
+        // Verify gone
+        assert!(!fixture.repo.staging_ref_exists("txn-test"));
+    }
+
+    #[test]
+    fn test_jinrepo_staging_and_layer_refs_isolated() {
+        let fixture = TestFixture::new();
+        let commit_oid = fixture.create_initial_commit();
+
+        // Create both layer and staging refs
+        fixture
+            .repo
+            .create_layer_ref(&Layer::GlobalBase, commit_oid)
+            .unwrap();
+        fixture
+            .repo
+            .create_staging_ref("txn-abc123", commit_oid)
+            .unwrap();
+
+        // Both should exist independently
+        assert!(fixture.repo.layer_ref_exists(&Layer::GlobalBase));
+        assert!(fixture.repo.staging_ref_exists("txn-abc123"));
+
+        // List layer refs should not include staging refs
+        let refs = fixture.repo.list_layer_refs().unwrap();
+        assert_eq!(refs.len(), 1);
+
+        // Delete staging ref should not affect layer ref
+        fixture.repo.delete_staging_ref("txn-abc123").unwrap();
+        assert!(fixture.repo.layer_ref_exists(&Layer::GlobalBase));
     }
 }

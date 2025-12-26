@@ -186,9 +186,12 @@ fn main() -> ExitCode {
                         ExitCode::FAILURE
                     }
                 },
-                Commands::Layers => {
-                    println!("jin layers - command handler to be implemented");
-                    ExitCode::SUCCESS
+                Commands::Layers => match commands::layers_execute() {
+                    Ok(()) => ExitCode::SUCCESS,
+                    Err(e) => {
+                        eprintln!("Error: {}", e);
+                        ExitCode::FAILURE
+                    }
                 }
                 Commands::List => {
                     println!("jin list - command handler to be implemented");

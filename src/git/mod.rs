@@ -16,7 +16,10 @@ pub mod tree;
 pub use objects::{EntryMode, ObjectOps, TreeEntry};
 pub use refs::RefOps;
 pub use repo::JinRepo;
-pub use transaction::JinTransaction;
+pub use transaction::{
+    IncompleteTransaction, JinTransaction, LayerTransaction, LayerUpdate, RecoveryManager,
+    TransactionLog, TransactionState,
+};
 pub use tree::TreeOps;
 
 // Re-export git2 types commonly used

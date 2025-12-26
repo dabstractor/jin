@@ -50,16 +50,17 @@ pub fn execute(cmd: &CommitCommand) -> Result<()> {
     let project_name = detect_project_name(&workspace_root)?;
 
     // 3. Validate Git repository exists
-    let _git_repo = git2::Repository::discover(&workspace_root).map_err(|_| JinError::RepoNotFound {
-        path: workspace_root.display().to_string(),
-    })?;
+    let _git_repo =
+        git2::Repository::discover(&workspace_root).map_err(|_| JinError::RepoNotFound {
+            path: workspace_root.display().to_string(),
+        })?;
 
     // 4. Open Jin repository
     let repo = JinRepo::open_or_create(&workspace_root)?;
 
     // 5. Load staging index (create new if doesn't exist)
-    let mut staging_index = StagingIndex::load_from_disk(&workspace_root)
-        .unwrap_or_else(|_| StagingIndex::new());
+    let mut staging_index =
+        StagingIndex::load_from_disk(&workspace_root).unwrap_or_else(|_| StagingIndex::new());
 
     // 6. Normalize paths in staging index (convert absolute to relative)
     // The add command stores absolute paths, but CommitPipeline expects relative paths
@@ -80,7 +81,10 @@ pub fn execute(cmd: &CommitCommand) -> Result<()> {
     // 8. Show progress message
     let file_count = staging_index.len();
     let layer_count = count_unique_layers(&staging_index);
-    println!("Committing {} file(s) to {} layer(s)...", file_count, layer_count);
+    println!(
+        "Committing {} file(s) to {} layer(s)...",
+        file_count, layer_count
+    );
 
     // 9. Create and execute pipeline
     let pipeline = CommitPipeline::new(&repo, &workspace_root, project_name);
@@ -91,7 +95,10 @@ pub fn execute(cmd: &CommitCommand) -> Result<()> {
     staging_index.save_to_disk(&workspace_root)?;
 
     // 11. Display success output
-    println!("\nCommitted successfully (transaction: {})", result.transaction_id);
+    println!(
+        "\nCommitted successfully (transaction: {})",
+        result.transaction_id
+    );
     println!("\nLayers updated:");
     for (layer, oid) in &result.commits {
         println!("  {:?}: {}", layer, oid);
@@ -254,7 +261,8 @@ mod tests {
         init_jin(project_dir);
 
         // Create and stage a test file
-        let config_file = create_test_file(project_dir, "config.toml", "[settings]\nenabled = true");
+        let config_file =
+            create_test_file(project_dir, "config.toml", "[settings]\nenabled = true");
 
         // Stage the file (simulate staging by manually adding to index)
         // Note: StagedEntry stores relative paths (per documentation at line 106-107)

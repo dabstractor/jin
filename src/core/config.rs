@@ -80,9 +80,11 @@ impl Default for JinConfig {
 }
 
 impl JinConfig {
-    /// Load global Jin configuration from `~/.jin/config.yaml`.
+    /// Load Jin configuration, preferring local `.jin/config.yaml` if it exists.
     ///
-    /// Returns the default configuration if the file doesn't exist.
+    /// This method first tries to load from the current directory's `.jin/config.yaml`,
+    /// falling back to the global `~/.jin/config.yaml` if the local file doesn't exist.
+    /// Returns the default configuration if neither file exists.
     ///
     /// # Errors
     ///
@@ -95,6 +97,20 @@ impl JinConfig {
     /// let config = JinConfig::load()?;
     /// ```
     pub fn load() -> Result<Self> {
+        // First try to load local config from .jin/config.yaml
+        if let Ok(current_dir) = std::env::current_dir() {
+            let local_config_path = current_dir.join(".jin").join("config.yaml");
+            if local_config_path.exists() {
+                let yaml = std::fs::read_to_string(&local_config_path)?;
+                let config: JinConfig =
+                    serde_yaml_ng::from_str(&yaml).map_err(|e| JinError::InvalidConfig {
+                        message: format!("Failed to parse config.yaml: {}", e),
+                    })?;
+                return Ok(config);
+            }
+        }
+
+        // Fall back to global config
         let config_path = Self::config_path();
 
         if !config_path.exists() {

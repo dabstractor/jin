@@ -47,7 +47,8 @@ pub fn execute(_cmd: &StatusCommand) -> Result<()> {
     if !context_path.exists() {
         return Err(crate::core::error::JinError::Message(
             "Jin is not initialized in this directory.\n\
-             Run 'jin init' to initialize.".to_string(),
+             Run 'jin init' to initialize."
+                .to_string(),
         ));
     }
 
@@ -56,8 +57,8 @@ pub fn execute(_cmd: &StatusCommand) -> Result<()> {
     display_active_context(&context);
 
     // 4. Load and display staged files
-    let staging = StagingIndex::load_from_disk(&workspace_root)
-        .unwrap_or_else(|_| StagingIndex::new());
+    let staging =
+        StagingIndex::load_from_disk(&workspace_root).unwrap_or_else(|_| StagingIndex::new());
     display_staged_files(&staging);
 
     // 5. Load and display layer refs (if Git exists)
@@ -192,7 +193,10 @@ mod tests {
 
         // Verify context file was created
         let context_path = ProjectContext::context_path(dir);
-        assert!(context_path.exists(), "Context file should exist after init_jin");
+        assert!(
+            context_path.exists(),
+            "Context file should exist after init_jin"
+        );
 
         // Create staging index
         let staging_index = StagingIndex::new();

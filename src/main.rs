@@ -42,33 +42,61 @@ fn main() -> ExitCode {
                         eprintln!("Error: {}", e);
                         ExitCode::FAILURE
                     }
-                }
+                },
 
                 // Mode Management
                 Commands::Mode(ModeCommand::Create { name }) => {
-                    println!("jin mode create {name} - command handler to be implemented");
-                    ExitCode::SUCCESS
+                    match commands::mode_execute(&ModeCommand::Create { name }) {
+                        Ok(()) => ExitCode::SUCCESS,
+                        Err(e) => {
+                            eprintln!("Error: {}", e);
+                            ExitCode::FAILURE
+                        }
+                    }
                 }
                 Commands::Mode(ModeCommand::Use { name }) => {
-                    println!("jin mode use {name} - command handler to be implemented");
-                    ExitCode::SUCCESS
+                    match commands::mode_execute(&ModeCommand::Use { name }) {
+                        Ok(()) => ExitCode::SUCCESS,
+                        Err(e) => {
+                            eprintln!("Error: {}", e);
+                            ExitCode::FAILURE
+                        }
+                    }
                 }
                 Commands::Mode(ModeCommand::Unset) => {
-                    println!("jin mode unset - command handler to be implemented");
-                    ExitCode::SUCCESS
+                    match commands::mode_execute(&ModeCommand::Unset) {
+                        Ok(()) => ExitCode::SUCCESS,
+                        Err(e) => {
+                            eprintln!("Error: {}", e);
+                            ExitCode::FAILURE
+                        }
+                    }
                 }
                 Commands::Mode(ModeCommand::Delete { name }) => {
-                    println!("jin mode delete {name} - command handler to be implemented");
-                    ExitCode::SUCCESS
+                    match commands::mode_execute(&ModeCommand::Delete { name }) {
+                        Ok(()) => ExitCode::SUCCESS,
+                        Err(e) => {
+                            eprintln!("Error: {}", e);
+                            ExitCode::FAILURE
+                        }
+                    }
                 }
                 Commands::Mode(ModeCommand::Show) => {
-                    println!("jin mode show - command handler to be implemented");
-                    ExitCode::SUCCESS
+                    match commands::mode_execute(&ModeCommand::Show) {
+                        Ok(()) => ExitCode::SUCCESS,
+                        Err(e) => {
+                            eprintln!("Error: {}", e);
+                            ExitCode::FAILURE
+                        }
+                    }
                 }
-                Commands::Modes => {
-                    println!("jin modes - command handler to be implemented");
-                    ExitCode::SUCCESS
-                }
+                Commands::Modes => match commands::mode_list_execute() {
+                    Ok(()) => ExitCode::SUCCESS,
+                    Err(e) => {
+                        eprintln!("Error: {}", e);
+                        ExitCode::FAILURE
+                    }
+                },
 
                 // Scope Management
                 Commands::Scope(ScopeCommand::Create { name, mode }) => {

@@ -212,10 +212,13 @@ fn main() -> ExitCode {
                 },
 
                 // Maintenance
-                Commands::Repair(_) => {
-                    println!("jin repair - command handler to be implemented");
-                    ExitCode::SUCCESS
-                }
+                Commands::Repair(cmd) => match commands::repair_execute(&cmd) {
+                    Ok(()) => ExitCode::SUCCESS,
+                    Err(e) => {
+                        eprintln!("Error: {}", e);
+                        ExitCode::FAILURE
+                    }
+                },
 
                 // Remote Operations
                 Commands::Link(_) => {

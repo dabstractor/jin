@@ -172,9 +172,12 @@ fn main() -> ExitCode {
                         ExitCode::FAILURE
                     }
                 },
-                Commands::Log(_) => {
-                    println!("jin log - command handler to be implemented");
-                    ExitCode::SUCCESS
+                Commands::Log(cmd) => match commands::log_execute(&cmd) {
+                    Ok(()) => ExitCode::SUCCESS,
+                    Err(e) => {
+                        eprintln!("Error: {}", e);
+                        ExitCode::FAILURE
+                    }
                 }
                 Commands::Context => {
                     println!("jin context - command handler to be implemented");

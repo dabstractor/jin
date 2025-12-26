@@ -307,7 +307,7 @@ fn check_binary_file(path: &Path, relative_path: &std::path::Path) -> Result<()>
 ///
 /// - `Ok(())` - File is not git-tracked
 /// - `Err(JinError::ValidationError)` - File is git-tracked
-fn check_git_tracked(workspace_root: &Path, relative_path: &std::path::Path) -> Result<()> {
+pub fn check_git_tracked(workspace_root: &Path, relative_path: &std::path::Path) -> Result<()> {
     // Open the workspace's Git repo (not Jin's repo)
     let git_repo = git2::Repository::open(workspace_root)
         .map_err(|_| JinError::Message("Not a Git repository".to_string()))?;

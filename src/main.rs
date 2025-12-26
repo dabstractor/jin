@@ -18,13 +18,13 @@ fn main() -> ExitCode {
                         ExitCode::FAILURE
                     }
                 },
-                Commands::Add(cmd) => {
-                    println!(
-                        "jin add - staging {} file(s) - command handler to be implemented",
-                        cmd.files.len()
-                    );
-                    ExitCode::SUCCESS
-                }
+                Commands::Add(cmd) => match commands::add_execute(&cmd) {
+                    Ok(()) => ExitCode::SUCCESS,
+                    Err(e) => {
+                        eprintln!("Error: {}", e);
+                        ExitCode::FAILURE
+                    }
+                },
                 Commands::Commit(cmd) => {
                     println!(
                         "jin commit - message: '{}' - command handler to be implemented",

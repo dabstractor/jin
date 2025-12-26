@@ -1,6 +1,7 @@
 use clap::error::ErrorKind;
 use clap::Parser;
 use jin_glm::cli::{Cli, Commands, ModeCommand, ScopeCommand};
+use jin_glm::commands;
 use std::process::ExitCode;
 
 fn main() -> ExitCode {
@@ -10,10 +11,13 @@ fn main() -> ExitCode {
             // For now, show placeholder messages
             match cli.command {
                 // Core Commands
-                Commands::Init(_) => {
-                    println!("jin init - command handler to be implemented");
-                    ExitCode::SUCCESS
-                }
+                Commands::Init(cmd) => match commands::execute(&cmd) {
+                    Ok(()) => ExitCode::SUCCESS,
+                    Err(e) => {
+                        eprintln!("Error: {}", e);
+                        ExitCode::FAILURE
+                    }
+                },
                 Commands::Add(cmd) => {
                     println!(
                         "jin add - staging {} file(s) - command handler to be implemented",

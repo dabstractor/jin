@@ -4,7 +4,7 @@
 //! used by Jin's staging system. Each staged file is represented by a
 //! `StagedEntry` with layer, metadata, and content hash information.
 
-use crate::core::{Layer, error::Result};
+use crate::core::{error::Result, Layer};
 use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
 use std::time::SystemTime;

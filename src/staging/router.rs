@@ -109,7 +109,11 @@ impl LayerRouter {
         project_flag: bool,
         global: bool,
     ) -> Result<Layer> {
-        let project = if project_flag { Some(self.project.as_str()) } else { None };
+        let project = if project_flag {
+            Some(self.project.as_str())
+        } else {
+            None
+        };
         Layer::from_flags(mode, scope, project, global).ok_or_else(|| {
             JinError::Message("No routing target (use --mode, --scope, or --project)".to_string())
         })

@@ -137,10 +137,7 @@ impl StagingIndex {
 
         // Add to entries and layer index
         self.entries.insert(path.clone(), entry);
-        self.by_layer
-            .entry(layer)
-            .or_default()
-            .push(path);
+        self.by_layer.entry(layer).or_default().push(path);
 
         Ok(())
     }
@@ -380,10 +377,7 @@ impl StagingIndex {
         for (path, entry) in &self.entries {
             let layer = entry.layer.clone();
             let path = path.clone();
-            self.by_layer
-                .entry(layer)
-                .or_default()
-                .push(path);
+            self.by_layer.entry(layer).or_default().push(path);
         }
     }
 }

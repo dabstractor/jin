@@ -39,8 +39,8 @@
 //! assert!(!Layer::UserLocal.is_versioned());
 //! ```
 
-use std::path::PathBuf;
 use serde::{Deserialize, Serialize};
+use std::path::PathBuf;
 
 /// The 9-layer hierarchy for Jin configuration management.
 ///

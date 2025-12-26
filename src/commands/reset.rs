@@ -425,9 +425,12 @@ mod tests {
         // Normalize path to relative like add command does
         let relative_path = file_path.strip_prefix(dir).unwrap();
         let mut staging = StagingIndex::load_from_disk(dir).unwrap();
-        let entry =
-            crate::staging::entry::StagedEntry::new(relative_path.to_path_buf(), layer, content.as_bytes())
-                .unwrap();
+        let entry = crate::staging::entry::StagedEntry::new(
+            relative_path.to_path_buf(),
+            layer,
+            content.as_bytes(),
+        )
+        .unwrap();
         staging.add_entry(entry).unwrap();
         staging.save_to_disk(dir).unwrap();
     }

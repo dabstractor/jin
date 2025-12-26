@@ -165,10 +165,13 @@ fn main() -> ExitCode {
                 },
 
                 // Inspection Commands
-                Commands::Diff(_) => {
-                    println!("jin diff - command handler to be implemented");
-                    ExitCode::SUCCESS
-                }
+                Commands::Diff(cmd) => match commands::diff_execute(&cmd) {
+                    Ok(()) => ExitCode::SUCCESS,
+                    Err(e) => {
+                        eprintln!("Error: {}", e);
+                        ExitCode::FAILURE
+                    }
+                },
                 Commands::Log(_) => {
                     println!("jin log - command handler to be implemented");
                     ExitCode::SUCCESS

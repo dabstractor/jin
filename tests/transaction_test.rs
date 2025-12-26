@@ -21,10 +21,8 @@ struct TestRepoFixture {
 impl TestRepoFixture {
     /// Creates a new temporary repository for testing.
     fn new() -> Result<Self, JinError> {
-        let temp_dir = TempDir::new().map_err(|e| JinError::Message(format!(
-            "Failed to create temp dir: {}",
-            e
-        )))?;
+        let temp_dir = TempDir::new()
+            .map_err(|e| JinError::Message(format!("Failed to create temp dir: {}", e)))?;
         let repo = JinRepo::open_or_create(temp_dir.path())?;
         Ok(Self {
             _temp_dir: temp_dir,
@@ -38,9 +36,7 @@ impl TestRepoFixture {
         let tree_id = self.repo.create_empty_tree()?;
 
         // Create a commit pointing to the empty tree
-        let signature = self
-            .repo
-            .signature("Test User", "test@example.com")?;
+        let signature = self.repo.signature("Test User", "test@example.com")?;
 
         self.repo.create_commit(
             Some("HEAD"),
@@ -56,26 +52,27 @@ impl TestRepoFixture {
 
     /// Creates a layer reference pointing to a tree.
     fn create_layer_ref(&self, layer: &Layer, tree_id: git2::Oid) -> Result<(), JinError> {
-        let ref_name = layer
-            .git_ref()
-            .ok_or_else(|| JinError::InvalidLayer {
-                name: format!("{:?}", layer),
-            })?;
+        let ref_name = layer.git_ref().ok_or_else(|| JinError::InvalidLayer {
+            name: format!("{:?}", layer),
+        })?;
 
-        self.repo.create_reference(&ref_name, tree_id, true, &format!("Create {}", ref_name))?;
+        self.repo
+            .create_reference(&ref_name, tree_id, true, &format!("Create {}", ref_name))?;
 
         Ok(())
     }
 
     /// Gets the current OID for a layer reference.
     fn get_layer_oid(&self, layer: &Layer) -> Result<Option<git2::Oid>, JinError> {
-        let ref_name = layer
-            .git_ref()
-            .ok_or_else(|| JinError::InvalidLayer {
-                name: format!("{:?}", layer),
-            })?;
+        let ref_name = layer.git_ref().ok_or_else(|| JinError::InvalidLayer {
+            name: format!("{:?}", layer),
+        })?;
 
-        Ok(self.repo.find_reference(&ref_name).ok().and_then(|r| r.target()))
+        Ok(self
+            .repo
+            .find_reference(&ref_name)
+            .ok()
+            .and_then(|r| r.target()))
     }
 
     /// Creates an empty tree.
@@ -126,8 +123,7 @@ fn test_transaction_add_layer_update() {
     let mut tx = Transaction::begin(&fixture.repo).unwrap();
     let tree_id = git2::Oid::zero();
 
-    tx.add_layer_update(Layer::GlobalBase, tree_id)
-        .unwrap();
+    tx.add_layer_update(Layer::GlobalBase, tree_id).unwrap();
 }
 
 #[test]
@@ -213,14 +209,16 @@ fn test_transaction_commit_atomic_update() {
         .create_layer_ref(&Layer::GlobalBase, old_tree_id)
         .unwrap();
     fixture
-        .create_layer_ref(&Layer::ProjectBase {
-            project: "test".to_string(),
-        }, old_tree_id)
+        .create_layer_ref(
+            &Layer::ProjectBase {
+                project: "test".to_string(),
+            },
+            old_tree_id,
+        )
         .unwrap();
 
     let mut tx = Transaction::begin(&fixture.repo).unwrap();
-    tx.add_layer_update(Layer::GlobalBase, new_tree_id)
-        .unwrap();
+    tx.add_layer_update(Layer::GlobalBase, new_tree_id).unwrap();
     tx.add_layer_update(
         Layer::ProjectBase {
             project: "test".to_string(),
@@ -486,25 +484,33 @@ fn test_multi_layer_atomic_commit() {
         .create_layer_ref(&Layer::GlobalBase, old_tree_id)
         .unwrap();
     fixture
-        .create_layer_ref(&Layer::ModeBase {
-            mode: "dev".to_string(),
-        }, old_tree_id)
+        .create_layer_ref(
+            &Layer::ModeBase {
+                mode: "dev".to_string(),
+            },
+            old_tree_id,
+        )
         .unwrap();
     fixture
-        .create_layer_ref(&Layer::ScopeBase {
-            scope: "python".to_string(),
-        }, old_tree_id)
+        .create_layer_ref(
+            &Layer::ScopeBase {
+                scope: "python".to_string(),
+            },
+            old_tree_id,
+        )
         .unwrap();
     fixture
-        .create_layer_ref(&Layer::ProjectBase {
-            project: "myapp".to_string(),
-        }, old_tree_id)
+        .create_layer_ref(
+            &Layer::ProjectBase {
+                project: "myapp".to_string(),
+            },
+            old_tree_id,
+        )
         .unwrap();
 
     // Create transaction with multiple layer updates
     let mut tx = Transaction::begin(&fixture.repo).unwrap();
-    tx.add_layer_update(Layer::GlobalBase, new_tree_id)
-        .unwrap();
+    tx.add_layer_update(Layer::GlobalBase, new_tree_id).unwrap();
     tx.add_layer_update(
         Layer::ModeBase {
             mode: "dev".to_string(),
@@ -574,9 +580,12 @@ fn test_multi_layer_atomic_commit_all_or_none() {
         .create_layer_ref(&Layer::GlobalBase, old_tree_id)
         .unwrap();
     fixture
-        .create_layer_ref(&Layer::ModeBase {
-            mode: "dev".to_string(),
-        }, old_tree_id)
+        .create_layer_ref(
+            &Layer::ModeBase {
+                mode: "dev".to_string(),
+            },
+            old_tree_id,
+        )
         .unwrap();
 
     // Store original OIDs
@@ -589,8 +598,7 @@ fn test_multi_layer_atomic_commit_all_or_none() {
 
     // Create transaction
     let mut tx = Transaction::begin(&fixture.repo).unwrap();
-    tx.add_layer_update(Layer::GlobalBase, new_tree_id)
-        .unwrap();
+    tx.add_layer_update(Layer::GlobalBase, new_tree_id).unwrap();
     tx.add_layer_update(
         Layer::ModeBase {
             mode: "dev".to_string(),

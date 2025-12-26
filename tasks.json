@@ -198,21 +198,21 @@
           "type": "Milestone",
           "id": "P1.M3",
           "title": "Transaction System",
-          "status": "Planned",
+          "status": "Complete",
           "description": "Implement atomic multi-layer commits with failure recovery.",
           "tasks": [
             {
               "type": "Task",
               "id": "P1.M3.T1",
               "title": "Transaction Implementation",
-              "status": "Planned",
+              "status": "Complete",
               "description": "Implement the atomic transaction system for multi-layer commits.",
               "subtasks": [
                 {
                   "type": "Subtask",
                   "id": "P1.M3.T1.S1",
                   "title": "Define Transaction Types",
-                  "status": "Planned",
+                  "status": "Complete",
                   "story_points": 1,
                   "dependencies": [
                     "P1.M2.T2.S1",
@@ -224,7 +224,7 @@
                   "type": "Subtask",
                   "id": "P1.M3.T1.S2",
                   "title": "Implement Atomic Commit",
-                  "status": "Planned",
+                  "status": "Complete",
                   "story_points": 2,
                   "dependencies": [
                     "P1.M3.T1.S1"
@@ -235,7 +235,7 @@
                   "type": "Subtask",
                   "id": "P1.M3.T1.S3",
                   "title": "Implement Recovery Detection",
-                  "status": "Planned",
+                  "status": "Complete",
                   "story_points": 2,
                   "dependencies": [
                     "P1.M3.T1.S2"

@@ -321,6 +321,22 @@ pub struct ImportCommand {
     /// Files to import
     #[arg(value_name = "FILE", num_args(1..))]
     pub files: Vec<PathBuf>,
+
+    /// Route to mode base layer (uses active mode)
+    #[arg(long)]
+    pub mode: bool,
+
+    /// Route to scope layer
+    #[arg(long, value_name = "SCOPE")]
+    pub scope: Option<String>,
+
+    /// Route to project layer
+    #[arg(long)]
+    pub project: bool,
+
+    /// Route to global layer
+    #[arg(long)]
+    pub global: bool,
 }
 
 /// Arguments for 'jin export'

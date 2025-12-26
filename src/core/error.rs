@@ -119,6 +119,10 @@ pub enum JinError {
     #[error("File not found: {path}")]
     FileNotFound { path: String },
 
+    /// File is not tracked by Git.
+    #[error("File is not tracked by Git: {path}")]
+    FileNotTracked { path: String },
+
     /// Permission denied for the specified path.
     #[error("Permission denied: {path}")]
     PermissionDenied { path: String },
@@ -198,6 +202,7 @@ impl From<JinError> for i32 {
             JinError::RepoNotFound { .. }
             | JinError::RefNotFound { .. }
             | JinError::FileNotFound { .. }
+            | JinError::FileNotTracked { .. }
             | JinError::ModeNotFound { .. }
             | JinError::ScopeNotFound { .. } => 3,
 
@@ -296,6 +301,7 @@ impl JinError {
             JinError::RepoNotFound { .. }
             | JinError::RefNotFound { .. }
             | JinError::FileNotFound { .. }
+            | JinError::FileNotTracked { .. }
             | JinError::ModeNotFound { .. }
             | JinError::ScopeNotFound { .. } => 3,
 

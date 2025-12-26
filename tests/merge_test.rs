@@ -68,8 +68,16 @@ fn test_from_json_nested() {
     let value = MergeValue::from_json(json).expect("JSON parsing should succeed");
 
     let outer = value.as_object().expect("Should have outer object");
-    let inner_obj = outer.get("outer").expect("Should have inner key").as_object().expect("Should be object");
-    let inner = inner_obj.get("inner").expect("Should have deepest key").as_object().expect("Should be object");
+    let inner_obj = outer
+        .get("outer")
+        .expect("Should have inner key")
+        .as_object()
+        .expect("Should be object");
+    let inner = inner_obj
+        .get("inner")
+        .expect("Should have deepest key")
+        .as_object()
+        .expect("Should be object");
 
     assert_eq!(inner.get("value").and_then(|v| v.as_i64()), Some(42));
 }
@@ -131,8 +139,16 @@ fn test_from_yaml_nested() {
     let value = MergeValue::from_yaml(yaml).expect("YAML parsing should succeed");
 
     let outer = value.as_object().expect("Should have outer object");
-    let inner_obj = outer.get("outer").expect("Should have outer key").as_object().expect("Should be object");
-    let inner = inner_obj.get("inner").expect("Should have inner key").as_object().expect("Should be object");
+    let inner_obj = outer
+        .get("outer")
+        .expect("Should have outer key")
+        .as_object()
+        .expect("Should be object");
+    let inner = inner_obj
+        .get("inner")
+        .expect("Should have inner key")
+        .as_object()
+        .expect("Should be object");
 
     assert_eq!(inner.get("value").and_then(|v| v.as_i64()), Some(42));
 }
@@ -173,11 +189,19 @@ fn test_from_toml_table() {
     let obj = value.as_object().expect("Should be an object");
     assert_eq!(obj.len(), 2);
 
-    let db = obj.get("database").expect("Should have database key").as_object().expect("Should be object");
+    let db = obj
+        .get("database")
+        .expect("Should have database key")
+        .as_object()
+        .expect("Should be object");
     assert_eq!(db.get("host").and_then(|v| v.as_str()), Some("localhost"));
     assert_eq!(db.get("port").and_then(|v| v.as_i64()), Some(5432));
 
-    let server = obj.get("server").expect("Should have server key").as_object().expect("Should be object");
+    let server = obj
+        .get("server")
+        .expect("Should have server key")
+        .as_object()
+        .expect("Should be object");
     assert_eq!(server.get("port").and_then(|v| v.as_i64()), Some(8080));
 }
 
@@ -208,11 +232,19 @@ fn test_from_ini_valid() {
     let obj = value.as_object().expect("Should be an object");
     assert_eq!(obj.len(), 2);
 
-    let db = obj.get("database").expect("Should have database key").as_object().expect("Should be object");
+    let db = obj
+        .get("database")
+        .expect("Should have database key")
+        .as_object()
+        .expect("Should be object");
     assert_eq!(db.get("host").and_then(|v| v.as_str()), Some("localhost"));
     assert_eq!(db.get("port").and_then(|v| v.as_str()), Some("5432"));
 
-    let server = obj.get("server").expect("Should have server key").as_object().expect("Should be object");
+    let server = obj
+        .get("server")
+        .expect("Should have server key")
+        .as_object()
+        .expect("Should be object");
     assert_eq!(server.get("port").and_then(|v| v.as_str()), Some("8080"));
 }
 
@@ -228,10 +260,18 @@ fn test_from_ini_empty_sections() {
     let obj = value.as_object().expect("Should be an object");
     assert_eq!(obj.len(), 2);
 
-    let empty = obj.get("empty").expect("Should have empty key").as_object().expect("Should be object");
+    let empty = obj
+        .get("empty")
+        .expect("Should have empty key")
+        .as_object()
+        .expect("Should be object");
     assert_eq!(empty.len(), 0);
 
-    let filled = obj.get("filled").expect("Should have filled key").as_object().expect("Should be object");
+    let filled = obj
+        .get("filled")
+        .expect("Should have filled key")
+        .as_object()
+        .expect("Should be object");
     assert_eq!(filled.len(), 1);
 }
 
@@ -239,32 +279,60 @@ fn test_from_ini_empty_sections() {
 
 #[test]
 fn test_merge_objects_deep() {
-    let base = MergeValue::from_json(r#"{"a": {"x": 1}, "b": 2}"#).expect("JSON parsing should succeed");
-    let override_val = MergeValue::from_json(r#"{"a": {"y": 2}}"#).expect("JSON parsing should succeed");
+    let base =
+        MergeValue::from_json(r#"{"a": {"x": 1}, "b": 2}"#).expect("JSON parsing should succeed");
+    let override_val =
+        MergeValue::from_json(r#"{"a": {"y": 2}}"#).expect("JSON parsing should succeed");
     let merged = base.merge(&override_val).expect("Merge should succeed");
 
     let obj = merged.as_object().expect("Result should be object");
 
     // Check deep merge occurred
-    let a_obj = obj.get("a").expect("Should have 'a' key").as_object().expect("'a' should be object");
-    assert_eq!(a_obj.get("x").and_then(|v| v.as_i64()), Some(1), "Original value preserved");
-    assert_eq!(a_obj.get("y").and_then(|v| v.as_i64()), Some(2), "New value added");
+    let a_obj = obj
+        .get("a")
+        .expect("Should have 'a' key")
+        .as_object()
+        .expect("'a' should be object");
+    assert_eq!(
+        a_obj.get("x").and_then(|v| v.as_i64()),
+        Some(1),
+        "Original value preserved"
+    );
+    assert_eq!(
+        a_obj.get("y").and_then(|v| v.as_i64()),
+        Some(2),
+        "New value added"
+    );
 
     // Check unrelated key preserved
-    assert_eq!(obj.get("b").and_then(|v| v.as_i64()), Some(2), "Unrelated key preserved");
+    assert_eq!(
+        obj.get("b").and_then(|v| v.as_i64()),
+        Some(2),
+        "Unrelated key preserved"
+    );
 }
 
 #[test]
 fn test_merge_null_deletes_key() {
-    let base = MergeValue::from_json(r#"{"a": 1, "b": 2, "c": 3}"#).expect("JSON parsing should succeed");
-    let override_val = MergeValue::from_json(r#"{"a": null, "b": 20}"#).expect("JSON parsing should succeed");
+    let base =
+        MergeValue::from_json(r#"{"a": 1, "b": 2, "c": 3}"#).expect("JSON parsing should succeed");
+    let override_val =
+        MergeValue::from_json(r#"{"a": null, "b": 20}"#).expect("JSON parsing should succeed");
     let merged = base.merge(&override_val).expect("Merge should succeed");
 
     let obj = merged.as_object().expect("Result should be object");
 
     assert!(!obj.contains_key("a"), "Key 'a' should be deleted by null");
-    assert_eq!(obj.get("b").and_then(|v| v.as_i64()), Some(20), "Key 'b' should be updated");
-    assert_eq!(obj.get("c").and_then(|v| v.as_i64()), Some(3), "Key 'c' should be preserved");
+    assert_eq!(
+        obj.get("b").and_then(|v| v.as_i64()),
+        Some(20),
+        "Key 'b' should be updated"
+    );
+    assert_eq!(
+        obj.get("c").and_then(|v| v.as_i64()),
+        Some(3),
+        "Key 'c' should be preserved"
+    );
 }
 
 #[test]
@@ -275,9 +343,21 @@ fn test_merge_arrays_replace() {
 
     let arr = merged.as_array().expect("Result should be array");
     assert_eq!(arr.len(), 3, "Array should be replaced, not concatenated");
-    assert_eq!(arr[0].as_i64(), Some(4), "First element should be from override");
-    assert_eq!(arr[1].as_i64(), Some(5), "Second element should be from override");
-    assert_eq!(arr[2].as_i64(), Some(6), "Third element should be from override");
+    assert_eq!(
+        arr[0].as_i64(),
+        Some(4),
+        "First element should be from override"
+    );
+    assert_eq!(
+        arr[1].as_i64(),
+        Some(5),
+        "Second element should be from override"
+    );
+    assert_eq!(
+        arr[2].as_i64(),
+        Some(6),
+        "Third element should be from override"
+    );
 }
 
 #[test]
@@ -297,7 +377,11 @@ fn test_merge_empty_with_object() {
 
     let obj = merged.as_object().expect("Result should be object");
     assert_eq!(obj.len(), 1, "Should have one key");
-    assert_eq!(obj.get("a").and_then(|v| v.as_i64()), Some(1), "Should have the value");
+    assert_eq!(
+        obj.get("a").and_then(|v| v.as_i64()),
+        Some(1),
+        "Should have the value"
+    );
 }
 
 #[test]
@@ -308,39 +392,87 @@ fn test_merge_null_in_nested_object_deletes() {
         .expect("JSON parsing should succeed");
     let merged = base.merge(&override_val).expect("Merge should succeed");
 
-    let outer = merged.as_object().expect("Result should be object")
-        .get("outer").expect("Should have outer key").as_object().expect("Outer should be object");
+    let outer = merged
+        .as_object()
+        .expect("Result should be object")
+        .get("outer")
+        .expect("Should have outer key")
+        .as_object()
+        .expect("Outer should be object");
 
-    assert_eq!(outer.get("inner").and_then(|v| v.as_str()), Some("value"), "Sibling key preserved");
-    assert!(!outer.contains_key("delete_me"), "Nested key deleted by null");
+    assert_eq!(
+        outer.get("inner").and_then(|v| v.as_str()),
+        Some("value"),
+        "Sibling key preserved"
+    );
+    assert!(
+        !outer.contains_key("delete_me"),
+        "Nested key deleted by null"
+    );
 }
 
 #[test]
 fn test_merge_three_levels_deep() {
-    let base = MergeValue::from_json(r#"{"a": {"b": {"c": 1, "d": 2}}}"#).expect("JSON parsing should succeed");
-    let override_val = MergeValue::from_json(r#"{"a": {"b": {"c": 10, "e": 3}}}"#).expect("JSON parsing should succeed");
+    let base = MergeValue::from_json(r#"{"a": {"b": {"c": 1, "d": 2}}}"#)
+        .expect("JSON parsing should succeed");
+    let override_val = MergeValue::from_json(r#"{"a": {"b": {"c": 10, "e": 3}}}"#)
+        .expect("JSON parsing should succeed");
     let merged = base.merge(&override_val).expect("Merge should succeed");
 
-    let a = merged.as_object().expect("Result should be object")
-        .get("a").expect("Should have 'a' key").as_object().expect("'a' should be object");
-    let b = a.get("b").expect("Should have 'b' key").as_object().expect("'b' should be object");
+    let a = merged
+        .as_object()
+        .expect("Result should be object")
+        .get("a")
+        .expect("Should have 'a' key")
+        .as_object()
+        .expect("'a' should be object");
+    let b = a
+        .get("b")
+        .expect("Should have 'b' key")
+        .as_object()
+        .expect("'b' should be object");
 
-    assert_eq!(b.get("c").and_then(|v| v.as_i64()), Some(10), "Deep value updated");
-    assert_eq!(b.get("d").and_then(|v| v.as_i64()), Some(2), "Deep sibling preserved");
-    assert_eq!(b.get("e").and_then(|v| v.as_i64()), Some(3), "New deep key added");
+    assert_eq!(
+        b.get("c").and_then(|v| v.as_i64()),
+        Some(10),
+        "Deep value updated"
+    );
+    assert_eq!(
+        b.get("d").and_then(|v| v.as_i64()),
+        Some(2),
+        "Deep sibling preserved"
+    );
+    assert_eq!(
+        b.get("e").and_then(|v| v.as_i64()),
+        Some(3),
+        "New deep key added"
+    );
 }
 
 #[test]
 fn test_merge_adds_new_keys() {
     let base = MergeValue::from_json(r#"{"a": 1}"#).expect("JSON parsing should succeed");
-    let override_val = MergeValue::from_json(r#"{"b": 2, "c": 3}"#).expect("JSON parsing should succeed");
+    let override_val =
+        MergeValue::from_json(r#"{"b": 2, "c": 3}"#).expect("JSON parsing should succeed");
     let merged = base.merge(&override_val).expect("Merge should succeed");
 
     let obj = merged.as_object().expect("Result should be object");
 
-    assert_eq!(obj.get("a").and_then(|v| v.as_i64()), Some(1), "Original key preserved");
-    assert_eq!(obj.get("b").and_then(|v| v.as_i64()), Some(2), "New key added");
-    assert_eq!(obj.get("c").and_then(|v| v.as_i64()), Some(3), "New key added");
+    assert_eq!(
+        obj.get("a").and_then(|v| v.as_i64()),
+        Some(1),
+        "Original key preserved"
+    );
+    assert_eq!(
+        obj.get("b").and_then(|v| v.as_i64()),
+        Some(2),
+        "New key added"
+    );
+    assert_eq!(
+        obj.get("c").and_then(|v| v.as_i64()),
+        Some(3),
+        "New key added"
+    );
 }
 
 #[test]
@@ -394,7 +526,11 @@ fn test_helper_methods() {
     let arr_val = MergeValue::Array(vec![MergeValue::Integer(1), MergeValue::Integer(2)]);
     assert!(arr_val.is_array(), "Should be array");
     assert!(!arr_val.is_object(), "Array should not be object");
-    assert_eq!(arr_val.as_array().map(|a| a.len()), Some(2), "Should get array length");
+    assert_eq!(
+        arr_val.as_array().map(|a| a.len()),
+        Some(2),
+        "Should get array length"
+    );
 
     // Object
     let mut obj_map = indexmap::IndexMap::new();
@@ -402,7 +538,11 @@ fn test_helper_methods() {
     let obj_val = MergeValue::Object(obj_map);
     assert!(obj_val.is_object(), "Should be object");
     assert!(!obj_val.is_array(), "Object should not be array");
-    assert_eq!(obj_val.as_object().map(|o| o.len()), Some(1), "Should get object size");
+    assert_eq!(
+        obj_val.as_object().map(|o| o.len()),
+        Some(1),
+        "Should get object size"
+    );
 }
 
 // ===== FROM CONVERSION TESTS =====
@@ -463,7 +603,7 @@ fn test_order_preservation() {
 
 // ===== ARRAY MERGE STRATEGY TESTS =====
 
-use jin_glm::merge::value::{MergeConfig, ArrayMergeStrategy};
+use jin_glm::merge::value::{ArrayMergeStrategy, MergeConfig};
 
 #[test]
 fn test_merge_array_replace_strategy_default() {
@@ -481,68 +621,102 @@ fn test_merge_array_replace_strategy_default() {
 
 #[test]
 fn test_merge_array_by_key_with_id() {
-    let base = MergeValue::from_json(r#"
+    let base = MergeValue::from_json(
+        r#"
         [
             {"id": "server-a", "port": 8080},
             {"id": "server-b", "port": 8081}
         ]
-    "#).expect("JSON parsing should succeed");
+    "#,
+    )
+    .expect("JSON parsing should succeed");
 
-    let patch = MergeValue::from_json(r#"
+    let patch = MergeValue::from_json(
+        r#"
         [
             {"id": "server-a", "port": 9090},
             {"id": "server-c", "port": 8082}
         ]
-    "#).expect("JSON parsing should succeed");
+    "#,
+    )
+    .expect("JSON parsing should succeed");
 
     let config = MergeConfig {
         array_strategy: ArrayMergeStrategy::MergeByKey,
         ..Default::default()
     };
 
-    let merged = base.merge_with_config(&patch, &config).expect("Merge should succeed");
+    let merged = base
+        .merge_with_config(&patch, &config)
+        .expect("Merge should succeed");
     let arr = merged.as_array().expect("Result should be array");
 
     assert_eq!(arr.len(), 3, "Should have 3 elements");
 
     // server-a should have updated port
     let server_a = &arr[0];
-    assert_eq!(server_a.as_object().unwrap().get("id").unwrap().as_str(), Some("server-a"));
-    assert_eq!(server_a.as_object().unwrap().get("port").unwrap().as_i64(), Some(9090));
+    assert_eq!(
+        server_a.as_object().unwrap().get("id").unwrap().as_str(),
+        Some("server-a")
+    );
+    assert_eq!(
+        server_a.as_object().unwrap().get("port").unwrap().as_i64(),
+        Some(9090)
+    );
 
     // server-b should be unchanged
     let server_b = &arr[1];
-    assert_eq!(server_b.as_object().unwrap().get("id").unwrap().as_str(), Some("server-b"));
-    assert_eq!(server_b.as_object().unwrap().get("port").unwrap().as_i64(), Some(8081));
+    assert_eq!(
+        server_b.as_object().unwrap().get("id").unwrap().as_str(),
+        Some("server-b")
+    );
+    assert_eq!(
+        server_b.as_object().unwrap().get("port").unwrap().as_i64(),
+        Some(8081)
+    );
 
     // server-c should be added
     let server_c = &arr[2];
-    assert_eq!(server_c.as_object().unwrap().get("id").unwrap().as_str(), Some("server-c"));
-    assert_eq!(server_c.as_object().unwrap().get("port").unwrap().as_i64(), Some(8082));
+    assert_eq!(
+        server_c.as_object().unwrap().get("id").unwrap().as_str(),
+        Some("server-c")
+    );
+    assert_eq!(
+        server_c.as_object().unwrap().get("port").unwrap().as_i64(),
+        Some(8082)
+    );
 }
 
 #[test]
 fn test_merge_array_by_key_with_name() {
-    let base = MergeValue::from_json(r#"
+    let base = MergeValue::from_json(
+        r#"
         [
             {"name": "database", "host": "localhost"},
             {"name": "cache", "host": "redis"}
         ]
-    "#).expect("JSON parsing should succeed");
+    "#,
+    )
+    .expect("JSON parsing should succeed");
 
-    let patch = MergeValue::from_json(r#"
+    let patch = MergeValue::from_json(
+        r#"
         [
             {"name": "database", "port": 5432},
             {"name": "queue", "host": "rabbitmq"}
         ]
-    "#).expect("JSON parsing should succeed");
+    "#,
+    )
+    .expect("JSON parsing should succeed");
 
     let config = MergeConfig {
         array_strategy: ArrayMergeStrategy::MergeByKey,
         ..Default::default()
     };
 
-    let merged = base.merge_with_config(&patch, &config).expect("Merge should succeed");
+    let merged = base
+        .merge_with_config(&patch, &config)
+        .expect("Merge should succeed");
     let arr = merged.as_array().expect("Result should be array");
 
     assert_eq!(arr.len(), 3, "Should have 3 elements");
@@ -550,45 +724,74 @@ fn test_merge_array_by_key_with_name() {
     // Elements from base maintain their relative order
     // database (from base position 0, merged)
     let database = &arr[0];
-    assert_eq!(database.as_object().unwrap().get("name").unwrap().as_str(), Some("database"));
-    assert_eq!(database.as_object().unwrap().get("host").unwrap().as_str(), Some("localhost"));
-    assert_eq!(database.as_object().unwrap().get("port").unwrap().as_i64(), Some(5432));
+    assert_eq!(
+        database.as_object().unwrap().get("name").unwrap().as_str(),
+        Some("database")
+    );
+    assert_eq!(
+        database.as_object().unwrap().get("host").unwrap().as_str(),
+        Some("localhost")
+    );
+    assert_eq!(
+        database.as_object().unwrap().get("port").unwrap().as_i64(),
+        Some(5432)
+    );
 
     // cache (from base position 1, unchanged)
     let cache = &arr[1];
-    assert_eq!(cache.as_object().unwrap().get("name").unwrap().as_str(), Some("cache"));
+    assert_eq!(
+        cache.as_object().unwrap().get("name").unwrap().as_str(),
+        Some("cache")
+    );
 
     // queue (new from patch, added after base elements, sorted among new keys)
     let queue = &arr[2];
-    assert_eq!(queue.as_object().unwrap().get("name").unwrap().as_str(), Some("queue"));
+    assert_eq!(
+        queue.as_object().unwrap().get("name").unwrap().as_str(),
+        Some("queue")
+    );
 }
 
 #[test]
 fn test_merge_array_by_key_with_nested_object_merging() {
-    let base = MergeValue::from_json(r#"
+    let base = MergeValue::from_json(
+        r#"
         [
             {"id": "svc1", "config": {"timeout": 100}}
         ]
-    "#).expect("JSON parsing should succeed");
+    "#,
+    )
+    .expect("JSON parsing should succeed");
 
-    let patch = MergeValue::from_json(r#"
+    let patch = MergeValue::from_json(
+        r#"
         [
             {"id": "svc1", "config": {"retries": 3}}
         ]
-    "#).expect("JSON parsing should succeed");
+    "#,
+    )
+    .expect("JSON parsing should succeed");
 
     let config = MergeConfig {
         array_strategy: ArrayMergeStrategy::MergeByKey,
         ..Default::default()
     };
 
-    let merged = base.merge_with_config(&patch, &config).expect("Merge should succeed");
+    let merged = base
+        .merge_with_config(&patch, &config)
+        .expect("Merge should succeed");
     let arr = merged.as_array().expect("Result should be array");
 
     assert_eq!(arr.len(), 1, "Should have 1 element");
 
     let svc = &arr[0];
-    let config_obj = svc.as_object().unwrap().get("config").unwrap().as_object().unwrap();
+    let config_obj = svc
+        .as_object()
+        .unwrap()
+        .get("config")
+        .unwrap()
+        .as_object()
+        .unwrap();
     assert_eq!(config_obj.get("timeout").unwrap().as_i64(), Some(100));
     assert_eq!(config_obj.get("retries").unwrap().as_i64(), Some(3));
 }
@@ -603,7 +806,9 @@ fn test_merge_array_concatenate_strategy() {
         ..Default::default()
     };
 
-    let merged = base.merge_with_config(&patch, &config).expect("Merge should succeed");
+    let merged = base
+        .merge_with_config(&patch, &config)
+        .expect("Merge should succeed");
     let arr = merged.as_array().expect("Result should be array");
 
     assert_eq!(arr.len(), 6, "Should have 6 elements");
@@ -617,27 +822,35 @@ fn test_merge_array_concatenate_strategy() {
 
 #[test]
 fn test_merge_array_by_key_with_non_object_elements() {
-    let base = MergeValue::from_json(r#"
+    let base = MergeValue::from_json(
+        r#"
         [
             "string-element",
             {"id": "obj1", "value": 1},
             42
         ]
-    "#).expect("JSON parsing should succeed");
+    "#,
+    )
+    .expect("JSON parsing should succeed");
 
-    let patch = MergeValue::from_json(r#"
+    let patch = MergeValue::from_json(
+        r#"
         [
             {"id": "obj1", "value": 2},
             "another-string"
         ]
-    "#).expect("JSON parsing should succeed");
+    "#,
+    )
+    .expect("JSON parsing should succeed");
 
     let config = MergeConfig {
         array_strategy: ArrayMergeStrategy::MergeByKey,
         ..Default::default()
     };
 
-    let merged = base.merge_with_config(&patch, &config).expect("Merge should succeed");
+    let merged = base
+        .merge_with_config(&patch, &config)
+        .expect("Merge should succeed");
     let arr = merged.as_array().expect("Result should be array");
 
     assert_eq!(arr.len(), 4, "Should have 4 elements");
@@ -646,8 +859,14 @@ fn test_merge_array_by_key_with_non_object_elements() {
     assert_eq!(arr[0].as_str(), Some("string-element"));
 
     // Merged object
-    assert_eq!(arr[1].as_object().unwrap().get("id").unwrap().as_str(), Some("obj1"));
-    assert_eq!(arr[1].as_object().unwrap().get("value").unwrap().as_i64(), Some(2));
+    assert_eq!(
+        arr[1].as_object().unwrap().get("id").unwrap().as_str(),
+        Some("obj1")
+    );
+    assert_eq!(
+        arr[1].as_object().unwrap().get("value").unwrap().as_i64(),
+        Some(2)
+    );
 
     // Non-object from base
     assert_eq!(arr[2].as_i64(), Some(42));
@@ -659,24 +878,32 @@ fn test_merge_array_by_key_with_non_object_elements() {
 #[test]
 fn test_merge_array_empty_arrays() {
     let base = MergeValue::from_json(r#"[]"#).expect("JSON parsing should succeed");
-    let patch = MergeValue::from_json(r#"[{"id": "a", "x": 1}]"#).expect("JSON parsing should succeed");
+    let patch =
+        MergeValue::from_json(r#"[{"id": "a", "x": 1}]"#).expect("JSON parsing should succeed");
 
     let config = MergeConfig {
         array_strategy: ArrayMergeStrategy::MergeByKey,
         ..Default::default()
     };
 
-    let merged = base.merge_with_config(&patch, &config).expect("Merge should succeed");
+    let merged = base
+        .merge_with_config(&patch, &config)
+        .expect("Merge should succeed");
     let arr = merged.as_array().expect("Result should be array");
 
     assert_eq!(arr.len(), 1);
-    assert_eq!(arr[0].as_object().unwrap().get("id").unwrap().as_str(), Some("a"));
+    assert_eq!(
+        arr[0].as_object().unwrap().get("id").unwrap().as_str(),
+        Some("a")
+    );
 }
 
 #[test]
 fn test_merge_array_max_depth_limit() {
-    let base = MergeValue::from_json(r#"{"a": {"b": {"c": 1}}}"#).expect("JSON parsing should succeed");
-    let patch = MergeValue::from_json(r#"{"a": {"b": {"c": 2}}}"#).expect("JSON parsing should succeed");
+    let base =
+        MergeValue::from_json(r#"{"a": {"b": {"c": 1}}}"#).expect("JSON parsing should succeed");
+    let patch =
+        MergeValue::from_json(r#"{"a": {"b": {"c": 2}}}"#).expect("JSON parsing should succeed");
 
     let config = MergeConfig {
         array_strategy: ArrayMergeStrategy::Replace,
@@ -684,7 +911,9 @@ fn test_merge_array_max_depth_limit() {
     };
 
     // Should succeed - depth is just enough
-    let _merged = base.merge_with_config(&patch, &config).expect("Merge should succeed");
+    let _merged = base
+        .merge_with_config(&patch, &config)
+        .expect("Merge should succeed");
 
     // Now with insufficient depth
     let config = MergeConfig {
@@ -694,71 +923,114 @@ fn test_merge_array_max_depth_limit() {
 
     let result = base.merge_with_config(&patch, &config);
     assert!(result.is_err(), "Should fail with insufficient depth");
-    assert!(result.unwrap_err().to_string().contains("Maximum merge depth exceeded"));
+    assert!(result
+        .unwrap_err()
+        .to_string()
+        .contains("Maximum merge depth exceeded"));
 }
 
 #[test]
 fn test_merge_array_by_key_objects_without_key_field() {
-    let base = MergeValue::from_json(r#"
+    let base = MergeValue::from_json(
+        r#"
         [
             {"id": "obj1", "value": 1},
             {"nokey": "should-be-preserved"}
         ]
-    "#).expect("JSON parsing should succeed");
+    "#,
+    )
+    .expect("JSON parsing should succeed");
 
-    let patch = MergeValue::from_json(r#"
+    let patch = MergeValue::from_json(
+        r#"
         [
             {"id": "obj1", "value": 2},
             {"another": "nokey-object"}
         ]
-    "#).expect("JSON parsing should succeed");
+    "#,
+    )
+    .expect("JSON parsing should succeed");
 
     let config = MergeConfig {
         array_strategy: ArrayMergeStrategy::MergeByKey,
         ..Default::default()
     };
 
-    let merged = base.merge_with_config(&patch, &config).expect("Merge should succeed");
+    let merged = base
+        .merge_with_config(&patch, &config)
+        .expect("Merge should succeed");
     let arr = merged.as_array().expect("Result should be array");
 
     assert_eq!(arr.len(), 3);
 
     // Merged object
-    assert_eq!(arr[0].as_object().unwrap().get("id").unwrap().as_str(), Some("obj1"));
+    assert_eq!(
+        arr[0].as_object().unwrap().get("id").unwrap().as_str(),
+        Some("obj1")
+    );
 
     // Non-keyed object from base
-    assert_eq!(arr[1].as_object().unwrap().get("nokey").unwrap().as_str(), Some("should-be-preserved"));
+    assert_eq!(
+        arr[1].as_object().unwrap().get("nokey").unwrap().as_str(),
+        Some("should-be-preserved")
+    );
 
     // Non-keyed object from patch
-    assert_eq!(arr[2].as_object().unwrap().get("another").unwrap().as_str(), Some("nokey-object"));
+    assert_eq!(
+        arr[2].as_object().unwrap().get("another").unwrap().as_str(),
+        Some("nokey-object")
+    );
 }
 
 #[test]
 fn test_merge_backward_compatibility() {
     // All existing tests must still pass
-    let base = MergeValue::from_json(r#"{"a": {"x": 1}, "b": 2}"#).expect("JSON parsing should succeed");
+    let base =
+        MergeValue::from_json(r#"{"a": {"x": 1}, "b": 2}"#).expect("JSON parsing should succeed");
     let patch = MergeValue::from_json(r#"{"a": {"y": 2}}"#).expect("JSON parsing should succeed");
 
     let merged = base.merge(&patch).expect("Merge should succeed");
 
     let obj = merged.as_object().expect("Result should be object");
-    let a_obj = obj.get("a").expect("Should have 'a' key").as_object().expect("'a' should be object");
+    let a_obj = obj
+        .get("a")
+        .expect("Should have 'a' key")
+        .as_object()
+        .expect("'a' should be object");
 
-    assert_eq!(a_obj.get("x").and_then(|v| v.as_i64()), Some(1), "Original value preserved");
-    assert_eq!(a_obj.get("y").and_then(|v| v.as_i64()), Some(2), "New value added");
-    assert_eq!(obj.get("b").and_then(|v| v.as_i64()), Some(2), "Unrelated key preserved");
+    assert_eq!(
+        a_obj.get("x").and_then(|v| v.as_i64()),
+        Some(1),
+        "Original value preserved"
+    );
+    assert_eq!(
+        a_obj.get("y").and_then(|v| v.as_i64()),
+        Some(2),
+        "New value added"
+    );
+    assert_eq!(
+        obj.get("b").and_then(|v| v.as_i64()),
+        Some(2),
+        "Unrelated key preserved"
+    );
 }
 
 #[test]
 fn test_merge_rfc7396_null_deletion() {
     // Example from RFC 7396 Section 3
-    let target = MergeValue::from_json(r#"
+    let target = MergeValue::from_json(
+        r#"
         {"title": "Goodbye!", "author": {"given": "John", "family": "Doe"}, "tags": ["example"]}
-    "#).expect("JSON parsing should succeed");
+    "#,
+    )
+    .expect("JSON parsing should succeed");
 
-    let patch = MergeValue::from_json(r#"
+    let patch = MergeValue::from_json(
+        r#"
         {"title": "Hello!", "author": null, "tags": ["sample"]}
-    "#).expect("JSON parsing should succeed");
+    "#,
+    )
+    .expect("JSON parsing should succeed");
 
     let merged = target.merge(&patch).expect("Merge should succeed");
 
@@ -771,32 +1043,43 @@ fn test_merge_rfc7396_null_deletion() {
     assert!(!obj.contains_key("author"), "author key should be deleted");
 
     // tags array should be replaced (RFC 7396)
-    let tags = obj.get("tags").and_then(|v| v.as_array()).expect("Should have tags");
+    let tags = obj
+        .get("tags")
+        .and_then(|v| v.as_array())
+        .expect("Should have tags");
     assert_eq!(tags.len(), 1);
     assert_eq!(tags[0].as_str(), Some("sample"));
 }
 
 #[test]
 fn test_merge_array_by_key_with_null_values() {
-    let base = MergeValue::from_json(r#"
+    let base = MergeValue::from_json(
+        r#"
         [
             {"id": "a", "x": 1},
             {"id": "b", "y": 2}
         ]
-    "#).expect("JSON parsing should succeed");
+    "#,
+    )
+    .expect("JSON parsing should succeed");
 
-    let patch = MergeValue::from_json(r#"
+    let patch = MergeValue::from_json(
+        r#"
         [
             {"id": "a", "x": null}
         ]
-    "#).expect("JSON parsing should succeed");
+    "#,
+    )
+    .expect("JSON parsing should succeed");
 
     let config = MergeConfig {
         array_strategy: ArrayMergeStrategy::MergeByKey,
         ..Default::default()
     };
 
-    let merged = base.merge_with_config(&patch, &config).expect("Merge should succeed");
+    let merged = base
+        .merge_with_config(&patch, &config)
+        .expect("Merge should succeed");
     let arr = merged.as_array().expect("Result should be array");
 
     // The null value in the object should not delete the entire object
@@ -805,11 +1088,17 @@ fn test_merge_array_by_key_with_null_values() {
 
     // Object 'a' should still exist, but 'x' might be null depending on merge behavior
     let obj_a = &arr[0];
-    assert_eq!(obj_a.as_object().unwrap().get("id").unwrap().as_str(), Some("a"));
+    assert_eq!(
+        obj_a.as_object().unwrap().get("id").unwrap().as_str(),
+        Some("a")
+    );
 
     // Object 'b' should be preserved
     let obj_b = &arr[1];
-    assert_eq!(obj_b.as_object().unwrap().get("id").unwrap().as_str(), Some("b"));
+    assert_eq!(
+        obj_b.as_object().unwrap().get("id").unwrap().as_str(),
+        Some("b")
+    );
 }
 
 #[test]
@@ -822,9 +1111,18 @@ fn test_merge_config_default() {
 #[test]
 fn test_merge_array_strategy_equality() {
     assert_eq!(ArrayMergeStrategy::Replace, ArrayMergeStrategy::Replace);
-    assert_eq!(ArrayMergeStrategy::MergeByKey, ArrayMergeStrategy::MergeByKey);
-    assert_eq!(ArrayMergeStrategy::Concatenate, ArrayMergeStrategy::Concatenate);
+    assert_eq!(
+        ArrayMergeStrategy::MergeByKey,
+        ArrayMergeStrategy::MergeByKey
+    );
+    assert_eq!(
+        ArrayMergeStrategy::Concatenate,
+        ArrayMergeStrategy::Concatenate
+    );
 
     assert_ne!(ArrayMergeStrategy::Replace, ArrayMergeStrategy::MergeByKey);
-    assert_ne!(ArrayMergeStrategy::MergeByKey, ArrayMergeStrategy::Concatenate);
+    assert_ne!(
+        ArrayMergeStrategy::MergeByKey,
+        ArrayMergeStrategy::Concatenate
+    );
 }

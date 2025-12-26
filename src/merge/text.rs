@@ -200,7 +200,10 @@ impl TextMerge {
         let right_lines: Vec<&str> = right.lines().collect();
 
         // Determine the maximum length
-        let max_len = base_lines.len().max(left_lines.len()).max(right_lines.len());
+        let max_len = base_lines
+            .len()
+            .max(left_lines.len())
+            .max(right_lines.len());
 
         let mut result = Vec::new();
         let mut has_conflicts = false;
@@ -291,10 +294,18 @@ impl TextMerge {
     }
 
     /// Formats conflict markers with the given left and right content.
-    fn format_conflict_content(left: &str, right: &str, left_layer: &Layer, right_layer: &Layer) -> String {
+    fn format_conflict_content(
+        left: &str,
+        right: &str,
+        left_layer: &Layer,
+        right_layer: &Layer,
+    ) -> String {
         let left_marker = format_marker_start(left_layer);
         let right_marker = format_marker_end(right_layer);
-        format!("{}\n{}\n{}\n{}\n", left_marker, left, CONFLICT_SEPARATOR, right)
+        format!(
+            "{}\n{}\n{}\n{}\n",
+            left_marker, left, CONFLICT_SEPARATOR, right
+        )
     }
 
     /// Extracts content lines from a diff op.
@@ -303,22 +314,29 @@ impl TextMerge {
             similar::DiffOp::Equal { new_index, len, .. } => {
                 let start = *new_index;
                 let end = start + *len;
-                lines.get(start..end)
+                lines
+                    .get(start..end)
                     .map(|s| s.iter().copied().map(String::from).collect())
                     .unwrap_or_default()
             }
-            similar::DiffOp::Insert { new_index, new_len, .. } => {
+            similar::DiffOp::Insert {
+                new_index, new_len, ..
+            } => {
                 let start = *new_index;
                 let end = start + *new_len;
-                lines.get(start..end)
+                lines
+                    .get(start..end)
                     .map(|s| s.iter().copied().map(String::from).collect())
                     .unwrap_or_default()
             }
             similar::DiffOp::Delete { .. } => Vec::new(),
-            similar::DiffOp::Replace { new_index, new_len, .. } => {
+            similar::DiffOp::Replace {
+                new_index, new_len, ..
+            } => {
                 let start = *new_index;
                 let end = start + *new_len;
-                lines.get(start..end)
+                lines
+                    .get(start..end)
                     .map(|s| s.iter().copied().map(String::from).collect())
                     .unwrap_or_default()
             }
@@ -485,7 +503,8 @@ mod tests {
             project: "myproject".to_string(),
         };
 
-        let result = TextMerge::three_way_merge(base, left, right, &left_layer, &right_layer).unwrap();
+        let result =
+            TextMerge::three_way_merge(base, left, right, &left_layer, &right_layer).unwrap();
 
         assert!(!result.has_conflicts());
         let text = result.into_text();
@@ -505,7 +524,8 @@ mod tests {
             project: "test".to_string(),
         };
 
-        let result = TextMerge::three_way_merge(base, left, right, &left_layer, &right_layer).unwrap();
+        let result =
+            TextMerge::three_way_merge(base, left, right, &left_layer, &right_layer).unwrap();
 
         assert!(!result.has_conflicts());
         assert_eq!(result.into_text(), base);
@@ -524,7 +544,8 @@ mod tests {
             project: "test".to_string(),
         };
 
-        let result = TextMerge::three_way_merge(base, left, right, &left_layer, &right_layer).unwrap();
+        let result =
+            TextMerge::three_way_merge(base, left, right, &left_layer, &right_layer).unwrap();
 
         assert!(!result.has_conflicts());
         assert_eq!(result.into_text(), "line 1\nline 2\nline 3 added");
@@ -543,7 +564,8 @@ mod tests {
             project: "test".to_string(),
         };
 
-        let result = TextMerge::three_way_merge(base, left, right, &left_layer, &right_layer).unwrap();
+        let result =
+            TextMerge::three_way_merge(base, left, right, &left_layer, &right_layer).unwrap();
 
         assert!(!result.has_conflicts());
         assert_eq!(result.into_text(), "line 1\nline 2\nline 3 added");
@@ -562,7 +584,8 @@ mod tests {
             project: "test".to_string(),
         };
 
-        let result = TextMerge::three_way_merge(base, left, right, &left_layer, &right_layer).unwrap();
+        let result =
+            TextMerge::three_way_merge(base, left, right, &left_layer, &right_layer).unwrap();
 
         assert!(!result.has_conflicts());
         assert_eq!(result.into_text(), "line 1\nline 2 modified\nline 3");
@@ -583,7 +606,8 @@ mod tests {
             project: "myproject".to_string(),
         };
 
-        let result = TextMerge::three_way_merge(base, left, right, &left_layer, &right_layer).unwrap();
+        let result =
+            TextMerge::three_way_merge(base, left, right, &left_layer, &right_layer).unwrap();
 
         assert!(result.has_conflicts());
         let text = result.as_text();
@@ -607,7 +631,8 @@ mod tests {
             project: "myproject".to_string(),
         };
 
-        let result = TextMerge::three_way_merge(base, left, right, &left_layer, &right_layer).unwrap();
+        let result =
+            TextMerge::three_way_merge(base, left, right, &left_layer, &right_layer).unwrap();
 
         assert!(result.has_conflicts());
         let text = result.as_text();
@@ -628,7 +653,8 @@ mod tests {
             project: "myproject".to_string(),
         };
 
-        let result = TextMerge::three_way_merge(base, left, right, &left_layer, &right_layer).unwrap();
+        let result =
+            TextMerge::three_way_merge(base, left, right, &left_layer, &right_layer).unwrap();
 
         assert!(result.has_conflicts());
     }
@@ -648,7 +674,8 @@ mod tests {
             project: "myproject".to_string(),
         };
 
-        let result = TextMerge::three_way_merge(base, left, right, &left_layer, &right_layer).unwrap();
+        let result =
+            TextMerge::three_way_merge(base, left, right, &left_layer, &right_layer).unwrap();
 
         assert!(result.has_conflicts());
         let text = result.as_text();
@@ -669,7 +696,8 @@ mod tests {
             project: "myproject".to_string(),
         };
 
-        let result = TextMerge::three_way_merge(base, left, right, &left_layer, &right_layer).unwrap();
+        let result =
+            TextMerge::three_way_merge(base, left, right, &left_layer, &right_layer).unwrap();
 
         // Both equal (left is empty which equals base with all deleted)
         // This should produce a clean result
@@ -689,7 +717,8 @@ mod tests {
             project: "myproject".to_string(),
         };
 
-        let result = TextMerge::three_way_merge(base, left, right, &left_layer, &right_layer).unwrap();
+        let result =
+            TextMerge::three_way_merge(base, left, right, &left_layer, &right_layer).unwrap();
 
         assert!(!result.has_conflicts());
     }
@@ -707,7 +736,8 @@ mod tests {
             project: "myproject".to_string(),
         };
 
-        let result = TextMerge::three_way_merge(base, left, right, &left_layer, &right_layer).unwrap();
+        let result =
+            TextMerge::three_way_merge(base, left, right, &left_layer, &right_layer).unwrap();
 
         assert!(!result.has_conflicts());
         assert_eq!(result.into_text(), "");
@@ -726,7 +756,8 @@ mod tests {
             project: "myproject".to_string(),
         };
 
-        let result = TextMerge::three_way_merge(base, left, right, &left_layer, &right_layer).unwrap();
+        let result =
+            TextMerge::three_way_merge(base, left, right, &left_layer, &right_layer).unwrap();
 
         assert!(result.has_conflicts());
         let text = result.as_text();
@@ -747,7 +778,8 @@ mod tests {
             project: "myproject".to_string(),
         };
 
-        let result = TextMerge::three_way_merge(base, left, right, &left_layer, &right_layer).unwrap();
+        let result =
+            TextMerge::three_way_merge(base, left, right, &left_layer, &right_layer).unwrap();
 
         assert!(result.has_conflicts());
         let text = result.as_text();
@@ -769,7 +801,8 @@ mod tests {
             project: "myproject".to_string(),
         };
 
-        let result = TextMerge::three_way_merge(base, left, right, &left_layer, &right_layer).unwrap();
+        let result =
+            TextMerge::three_way_merge(base, left, right, &left_layer, &right_layer).unwrap();
 
         assert!(!result.has_conflicts());
         let text = result.into_text();
@@ -792,7 +825,8 @@ mod tests {
             project: "test".to_string(),
         };
 
-        let result = TextMerge::three_way_merge(base, left, right, &left_layer, &right_layer).unwrap();
+        let result =
+            TextMerge::three_way_merge(base, left, right, &left_layer, &right_layer).unwrap();
 
         // Should merge cleanly with left's trailing newline
         assert!(!result.has_conflicts());
@@ -813,7 +847,8 @@ mod tests {
             project: "ui-dashboard".to_string(),
         };
 
-        let result = TextMerge::three_way_merge(base, left, right, &left_layer, &right_layer).unwrap();
+        let result =
+            TextMerge::three_way_merge(base, left, right, &left_layer, &right_layer).unwrap();
 
         let text = result.as_text();
 

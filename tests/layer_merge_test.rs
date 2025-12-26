@@ -69,14 +69,38 @@ fn create_commit_with_files(repo: &JinRepo, layer: &Layer, files: &[(&str, &[u8]
 
 #[test]
 fn test_layer_merge_format_detection() {
-    assert_eq!(FileFormat::from_path(Path::new("config.json")), FileFormat::Json);
-    assert_eq!(FileFormat::from_path(Path::new("settings.yaml")), FileFormat::Yaml);
-    assert_eq!(FileFormat::from_path(Path::new("config.yml")), FileFormat::Yaml);
-    assert_eq!(FileFormat::from_path(Path::new("app.toml")), FileFormat::Toml);
-    assert_eq!(FileFormat::from_path(Path::new("setup.ini")), FileFormat::Ini);
-    assert_eq!(FileFormat::from_path(Path::new("README.md")), FileFormat::Text);
-    assert_eq!(FileFormat::from_path(Path::new("script.sh")), FileFormat::Text);
-    assert_eq!(FileFormat::from_path(Path::new("data.unknown")), FileFormat::Text);
+    assert_eq!(
+        FileFormat::from_path(Path::new("config.json")),
+        FileFormat::Json
+    );
+    assert_eq!(
+        FileFormat::from_path(Path::new("settings.yaml")),
+        FileFormat::Yaml
+    );
+    assert_eq!(
+        FileFormat::from_path(Path::new("config.yml")),
+        FileFormat::Yaml
+    );
+    assert_eq!(
+        FileFormat::from_path(Path::new("app.toml")),
+        FileFormat::Toml
+    );
+    assert_eq!(
+        FileFormat::from_path(Path::new("setup.ini")),
+        FileFormat::Ini
+    );
+    assert_eq!(
+        FileFormat::from_path(Path::new("README.md")),
+        FileFormat::Text
+    );
+    assert_eq!(
+        FileFormat::from_path(Path::new("script.sh")),
+        FileFormat::Text
+    );
+    assert_eq!(
+        FileFormat::from_path(Path::new("data.unknown")),
+        FileFormat::Text
+    );
 }
 
 // ===== LayerMerge Construction Tests =====
@@ -226,7 +250,12 @@ fn test_layer_merge_precedence_ordering() {
 
     // Each subsequent layer should have higher precedence
     for i in 1..layers.len() {
-        assert!(layers[i - 1] < layers[i], "Layer at {} should be < layer at {}", i - 1, i);
+        assert!(
+            layers[i - 1] < layers[i],
+            "Layer at {} should be < layer at {}",
+            i - 1,
+            i
+        );
     }
 }
 
@@ -262,14 +291,30 @@ fn test_layer_merge_json_deep_merge_two_layers() {
     let merger = LayerMerge::new(&repo, "testproject");
 
     // Create GlobalBase layer with base config
-    let global_content = br#"{"database": {"host": "localhost", "port": 5432}, "feature": {"enabled": true}}"#;
-    let global_commit = create_commit_with_file(&repo, &Layer::GlobalBase, "config.json", global_content);
-    repo.set_layer_ref(&Layer::GlobalBase, global_commit).unwrap();
+    let global_content =
+        br#"{"database": {"host": "localhost", "port": 5432}, "feature": {"enabled": true}}"#;
+    let global_commit =
+        create_commit_with_file(&repo, &Layer::GlobalBase, "config.json", global_content);
+    repo.set_layer_ref(&Layer::GlobalBase, global_commit)
+        .unwrap();
 
     // Create ProjectBase layer with override
     let project_content = br#"{"database": {"port": 3306}, "feature": {"name": "myfeature"}}"#;
-    let project_commit = create_commit_with_file(&repo, &Layer::ProjectBase { project: "testproject".to_string() }, "config.json", project_content);
-    repo.set_layer_ref(&Layer::ProjectBase { project: "testproject".to_string() }, project_commit).unwrap();
+    let project_commit = create_commit_with_file(
+        &repo,
+        &Layer::ProjectBase {
+            project: "testproject".to_string(),
+        },
+        "config.json",
+        project_content,
+    );
+    repo.set_layer_ref(
+        &Layer::ProjectBase {
+            project: "testproject".to_string(),
+        },
+        project_commit,
+    )
+    .unwrap();
 
     // Merge layers
     let result = merger.merge_all().unwrap();
@@ -285,7 +330,10 @@ fn test_layer_merge_json_deep_merge_two_layers() {
 
     let feature = obj.get("feature").unwrap().as_object().unwrap();
     assert_eq!(feature.get("enabled").and_then(|v| v.as_bool()), Some(true));
-    assert_eq!(feature.get("name").and_then(|v| v.as_str()), Some("myfeature"));
+    assert_eq!(
+        feature.get("name").and_then(|v| v.as_str()),
+        Some("myfeature")
+    );
 }
 
 #[test]
@@ -296,18 +344,46 @@ fn test_layer_merge_json_deep_merge_three_layers() {
 
     // Create GlobalBase
     let global_content = br#"{"setting": {"a": 1, "b": 2, "c": 3}}"#;
-    let global_commit = create_commit_with_file(&repo, &Layer::GlobalBase, "config.json", global_content);
-    repo.set_layer_ref(&Layer::GlobalBase, global_commit).unwrap();
+    let global_commit =
+        create_commit_with_file(&repo, &Layer::GlobalBase, "config.json", global_content);
+    repo.set_layer_ref(&Layer::GlobalBase, global_commit)
+        .unwrap();
 
     // Create ModeBase
     let mode_content = br#"{"setting": {"b": 20, "d": 4}}"#;
-    let mode_commit = create_commit_with_file(&repo, &Layer::ModeBase { mode: "claude".to_string() }, "config.json", mode_content);
-    repo.set_layer_ref(&Layer::ModeBase { mode: "claude".to_string() }, mode_commit).unwrap();
+    let mode_commit = create_commit_with_file(
+        &repo,
+        &Layer::ModeBase {
+            mode: "claude".to_string(),
+        },
+        "config.json",
+        mode_content,
+    );
+    repo.set_layer_ref(
+        &Layer::ModeBase {
+            mode: "claude".to_string(),
+        },
+        mode_commit,
+    )
+    .unwrap();
 
     // Create ProjectBase
     let project_content = br#"{"setting": {"c": 30, "e": 5}}"#;
-    let project_commit = create_commit_with_file(&repo, &Layer::ProjectBase { project: "testproject".to_string() }, "config.json", project_content);
-    repo.set_layer_ref(&Layer::ProjectBase { project: "testproject".to_string() }, project_commit).unwrap();
+    let project_commit = create_commit_with_file(
+        &repo,
+        &Layer::ProjectBase {
+            project: "testproject".to_string(),
+        },
+        "config.json",
+        project_content,
+    );
+    repo.set_layer_ref(
+        &Layer::ProjectBase {
+            project: "testproject".to_string(),
+        },
+        project_commit,
+    )
+    .unwrap();
 
     // Merge layers
     let result = merger.merge_all().unwrap();
@@ -331,13 +407,28 @@ fn test_layer_merge_json_null_deletes_key() {
 
     // Create GlobalBase with multiple keys
     let global_content = br#"{"a": 1, "b": 2, "c": 3}"#;
-    let global_commit = create_commit_with_file(&repo, &Layer::GlobalBase, "config.json", global_content);
-    repo.set_layer_ref(&Layer::GlobalBase, global_commit).unwrap();
+    let global_commit =
+        create_commit_with_file(&repo, &Layer::GlobalBase, "config.json", global_content);
+    repo.set_layer_ref(&Layer::GlobalBase, global_commit)
+        .unwrap();
 
     // Create ProjectBase that deletes key "b" with null
     let project_content = br#"{"b": null, "d": 4}"#;
-    let project_commit = create_commit_with_file(&repo, &Layer::ProjectBase { project: "testproject".to_string() }, "config.json", project_content);
-    repo.set_layer_ref(&Layer::ProjectBase { project: "testproject".to_string() }, project_commit).unwrap();
+    let project_commit = create_commit_with_file(
+        &repo,
+        &Layer::ProjectBase {
+            project: "testproject".to_string(),
+        },
+        "config.json",
+        project_content,
+    );
+    repo.set_layer_ref(
+        &Layer::ProjectBase {
+            project: "testproject".to_string(),
+        },
+        project_commit,
+    )
+    .unwrap();
 
     // Merge layers
     let result = merger.merge_all().unwrap();
@@ -369,8 +460,10 @@ features:
   - alpha
   - beta
 ";
-    let global_commit = create_commit_with_file(&repo, &Layer::GlobalBase, "config.yaml", global_content);
-    repo.set_layer_ref(&Layer::GlobalBase, global_commit).unwrap();
+    let global_commit =
+        create_commit_with_file(&repo, &Layer::GlobalBase, "config.yaml", global_content);
+    repo.set_layer_ref(&Layer::GlobalBase, global_commit)
+        .unwrap();
 
     // Create ProjectBase with YAML override
     let project_content = b"
@@ -380,8 +473,21 @@ database:
 features:
   - gamma
 ";
-    let project_commit = create_commit_with_file(&repo, &Layer::ProjectBase { project: "testproject".to_string() }, "config.yaml", project_content);
-    repo.set_layer_ref(&Layer::ProjectBase { project: "testproject".to_string() }, project_commit).unwrap();
+    let project_commit = create_commit_with_file(
+        &repo,
+        &Layer::ProjectBase {
+            project: "testproject".to_string(),
+        },
+        "config.yaml",
+        project_content,
+    );
+    repo.set_layer_ref(
+        &Layer::ProjectBase {
+            project: "testproject".to_string(),
+        },
+        project_commit,
+    )
+    .unwrap();
 
     // Merge layers
     let result = merger.merge_all().unwrap();
@@ -418,8 +524,10 @@ port = 8080
 [database]
 name = \"mydb\"
 ";
-    let global_commit = create_commit_with_file(&repo, &Layer::GlobalBase, "config.toml", global_content);
-    repo.set_layer_ref(&Layer::GlobalBase, global_commit).unwrap();
+    let global_commit =
+        create_commit_with_file(&repo, &Layer::GlobalBase, "config.toml", global_content);
+    repo.set_layer_ref(&Layer::GlobalBase, global_commit)
+        .unwrap();
 
     // Create ProjectBase with TOML override
     let project_content = b"
@@ -430,8 +538,21 @@ ssl = true
 [cache]
 enabled = true
 ";
-    let project_commit = create_commit_with_file(&repo, &Layer::ProjectBase { project: "testproject".to_string() }, "config.toml", project_content);
-    repo.set_layer_ref(&Layer::ProjectBase { project: "testproject".to_string() }, project_commit).unwrap();
+    let project_commit = create_commit_with_file(
+        &repo,
+        &Layer::ProjectBase {
+            project: "testproject".to_string(),
+        },
+        "config.toml",
+        project_content,
+    );
+    repo.set_layer_ref(
+        &Layer::ProjectBase {
+            project: "testproject".to_string(),
+        },
+        project_commit,
+    )
+    .unwrap();
 
     // Merge layers
     let result = merger.merge_all().unwrap();
@@ -440,7 +561,10 @@ enabled = true
 
     // Verify deep merge
     let server = obj.get("server").unwrap().as_object().unwrap();
-    assert_eq!(server.get("host").and_then(|v| v.as_str()), Some("localhost"));
+    assert_eq!(
+        server.get("host").and_then(|v| v.as_str()),
+        Some("localhost")
+    );
     assert_eq!(server.get("port").and_then(|v| v.as_i64()), Some(9000)); // Overridden
     assert_eq!(server.get("ssl").and_then(|v| v.as_bool()), Some(true));
 
@@ -468,8 +592,10 @@ port = 5432
 [server]
 port = 8080
 ";
-    let global_commit = create_commit_with_file(&repo, &Layer::GlobalBase, "config.ini", global_content);
-    repo.set_layer_ref(&Layer::GlobalBase, global_commit).unwrap();
+    let global_commit =
+        create_commit_with_file(&repo, &Layer::GlobalBase, "config.ini", global_content);
+    repo.set_layer_ref(&Layer::GlobalBase, global_commit)
+        .unwrap();
 
     // Create ProjectBase with INI override
     let project_content = b"
@@ -480,8 +606,21 @@ ssl = true
 [cache]
 enabled = true
 ";
-    let project_commit = create_commit_with_file(&repo, &Layer::ProjectBase { project: "testproject".to_string() }, "config.ini", project_content);
-    repo.set_layer_ref(&Layer::ProjectBase { project: "testproject".to_string() }, project_commit).unwrap();
+    let project_commit = create_commit_with_file(
+        &repo,
+        &Layer::ProjectBase {
+            project: "testproject".to_string(),
+        },
+        "config.ini",
+        project_content,
+    );
+    repo.set_layer_ref(
+        &Layer::ProjectBase {
+            project: "testproject".to_string(),
+        },
+        project_commit,
+    )
+    .unwrap();
 
     // Merge layers
     let result = merger.merge_all().unwrap();
@@ -511,20 +650,38 @@ fn test_layer_merge_text_file_replacement() {
 
     // Create GlobalBase with text file
     let global_content = b"This is the base version of the text file";
-    let global_commit = create_commit_with_file(&repo, &Layer::GlobalBase, "README.md", global_content);
-    repo.set_layer_ref(&Layer::GlobalBase, global_commit).unwrap();
+    let global_commit =
+        create_commit_with_file(&repo, &Layer::GlobalBase, "README.md", global_content);
+    repo.set_layer_ref(&Layer::GlobalBase, global_commit)
+        .unwrap();
 
     // Create ProjectBase with different text
     let project_content = b"This is the project-specific version";
-    let project_commit = create_commit_with_file(&repo, &Layer::ProjectBase { project: "testproject".to_string() }, "README.md", project_content);
-    repo.set_layer_ref(&Layer::ProjectBase { project: "testproject".to_string() }, project_commit).unwrap();
+    let project_commit = create_commit_with_file(
+        &repo,
+        &Layer::ProjectBase {
+            project: "testproject".to_string(),
+        },
+        "README.md",
+        project_content,
+    );
+    repo.set_layer_ref(
+        &Layer::ProjectBase {
+            project: "testproject".to_string(),
+        },
+        project_commit,
+    )
+    .unwrap();
 
     // Merge layers - higher layer should replace
     let result = merger.merge_all().unwrap();
     let merged = result.get("README.md").unwrap();
 
     // Text files are replaced (not deep merged)
-    assert_eq!(merged.as_str(), Some("This is the project-specific version"));
+    assert_eq!(
+        merged.as_str(),
+        Some("This is the project-specific version")
+    );
 }
 
 // ===== merge_subset Tests =====
@@ -537,13 +694,28 @@ fn test_layer_merge_subset_specific_layers() {
 
     // Create GlobalBase
     let global_content = br#"{"value": "global"}"#;
-    let global_commit = create_commit_with_file(&repo, &Layer::GlobalBase, "config.json", global_content);
-    repo.set_layer_ref(&Layer::GlobalBase, global_commit).unwrap();
+    let global_commit =
+        create_commit_with_file(&repo, &Layer::GlobalBase, "config.json", global_content);
+    repo.set_layer_ref(&Layer::GlobalBase, global_commit)
+        .unwrap();
 
     // Create ModeBase
     let mode_content = br#"{"value": "mode"}"#;
-    let mode_commit = create_commit_with_file(&repo, &Layer::ModeBase { mode: "claude".to_string() }, "config.json", mode_content);
-    repo.set_layer_ref(&Layer::ModeBase { mode: "claude".to_string() }, mode_commit).unwrap();
+    let mode_commit = create_commit_with_file(
+        &repo,
+        &Layer::ModeBase {
+            mode: "claude".to_string(),
+        },
+        "config.json",
+        mode_content,
+    );
+    repo.set_layer_ref(
+        &Layer::ModeBase {
+            mode: "claude".to_string(),
+        },
+        mode_commit,
+    )
+    .unwrap();
 
     // Merge only specific layers
     let layers = vec![Layer::GlobalBase];
@@ -595,7 +767,8 @@ fn test_layer_merge_multiple_file_types() {
         ("README.md", b"Text content"),
     ];
     let global_commit = create_commit_with_files(&repo, &Layer::GlobalBase, &files);
-    repo.set_layer_ref(&Layer::GlobalBase, global_commit).unwrap();
+    repo.set_layer_ref(&Layer::GlobalBase, global_commit)
+        .unwrap();
 
     // Merge and verify all files are present
     let result = merger.merge_all().unwrap();
@@ -684,7 +857,11 @@ fn test_layer_merge_all_nine_layers() {
     ];
 
     for (layer, value) in &layers_to_create {
-        let content = format!(r#"{{"layer": "{}", "precedence": {}}}"#, format!("{:?}", layer), value);
+        let content = format!(
+            r#"{{"layer": "{}", "precedence": {}}}"#,
+            format!("{:?}", layer),
+            value
+        );
         let commit = create_commit_with_file(&repo, layer, "config.json", content.as_bytes());
         repo.set_layer_ref(layer, commit).unwrap();
     }

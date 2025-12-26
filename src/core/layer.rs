@@ -40,6 +40,7 @@
 //! ```
 
 use std::path::PathBuf;
+use serde::{Deserialize, Serialize};
 
 /// The 9-layer hierarchy for Jin configuration management.
 ///
@@ -51,7 +52,7 @@ use std::path::PathBuf;
 /// Variants that include mode, scope, or project fields store these values as owned
 /// `String` data to enable self-contained layer instances that can be passed around
 /// without requiring additional context.
-#[derive(Debug, Clone, PartialEq, Eq, Hash, PartialOrd, Ord)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash, PartialOrd, Ord, Serialize, Deserialize)]
 #[non_exhaustive]
 pub enum Layer {
     // ===== Base Layers (1-2) =====

@@ -31,8 +31,8 @@
 use crate::core::error::{JinError, Result};
 use crate::core::Layer;
 use crate::git::JinRepo;
-use crate::merge::value::MergeValue;
 use crate::merge::text::TextMerge;
+use crate::merge::value::MergeValue;
 use indexmap::IndexMap;
 use std::collections::HashMap;
 use std::path::Path;
@@ -70,7 +70,10 @@ impl FileFormat {
 
     /// Returns true if this format supports structured merging.
     pub fn is_structured(&self) -> bool {
-        matches!(self, FileFormat::Json | FileFormat::Yaml | FileFormat::Toml | FileFormat::Ini)
+        matches!(
+            self,
+            FileFormat::Json | FileFormat::Yaml | FileFormat::Toml | FileFormat::Ini
+        )
     }
 }
 
@@ -235,9 +238,7 @@ impl<'a> LayerMerge<'a> {
         ];
 
         if let Some(ref mode) = self.mode {
-            layers.push(Layer::ModeBase {
-                mode: mode.clone(),
-            });
+            layers.push(Layer::ModeBase { mode: mode.clone() });
             layers.push(Layer::ModeProject {
                 mode: mode.clone(),
                 project: self.project.clone(),
@@ -294,13 +295,16 @@ impl<'a> LayerMerge<'a> {
         };
 
         // Get commit OID from reference
-        let commit_oid = reference.target().ok_or_else(|| JinError::Message(format!(
-            "Layer {:?} has no target OID",
-            layer
-        )))?;
+        let commit_oid = reference
+            .target()
+            .ok_or_else(|| JinError::Message(format!("Layer {:?} has no target OID", layer)))?;
 
         // Get the commit object to find its tree
-        let commit = self.repo.inner.find_commit(commit_oid).map_err(JinError::from)?;
+        let commit = self
+            .repo
+            .inner
+            .find_commit(commit_oid)
+            .map_err(JinError::from)?;
         let tree_id = commit.tree_id();
 
         // Handle empty trees gracefully
@@ -339,10 +343,8 @@ impl<'a> LayerMerge<'a> {
     fn parse_file_by_format(&self, path: &str, content: &[u8]) -> Result<MergeValue> {
         let path_obj = Path::new(path);
         let format = FileFormat::from_path(path_obj);
-        let content_str = std::str::from_utf8(content).map_err(|_| JinError::Message(format!(
-            "File {} is not valid UTF-8",
-            path
-        )))?;
+        let content_str = std::str::from_utf8(content)
+            .map_err(|_| JinError::Message(format!("File {} is not valid UTF-8", path)))?;
 
         match format {
             FileFormat::Json => MergeValue::from_json(content_str),
@@ -491,14 +493,38 @@ mod tests {
 
     #[test]
     fn test_file_format_from_path() {
-        assert_eq!(FileFormat::from_path(Path::new("config.json")), FileFormat::Json);
-        assert_eq!(FileFormat::from_path(Path::new("settings.yaml")), FileFormat::Yaml);
-        assert_eq!(FileFormat::from_path(Path::new("config.yml")), FileFormat::Yaml);
-        assert_eq!(FileFormat::from_path(Path::new("app.toml")), FileFormat::Toml);
-        assert_eq!(FileFormat::from_path(Path::new("setup.ini")), FileFormat::Ini);
-        assert_eq!(FileFormat::from_path(Path::new("README.md")), FileFormat::Text);
-        assert_eq!(FileFormat::from_path(Path::new("data.unknown")), FileFormat::Text);
-        assert_eq!(FileFormat::from_path(Path::new("noextension")), FileFormat::Text);
+        assert_eq!(
+            FileFormat::from_path(Path::new("config.json")),
+            FileFormat::Json
+        );
+        assert_eq!(
+            FileFormat::from_path(Path::new("settings.yaml")),
+            FileFormat::Yaml
+        );
+        assert_eq!(
+            FileFormat::from_path(Path::new("config.yml")),
+            FileFormat::Yaml
+        );
+        assert_eq!(
+            FileFormat::from_path(Path::new("app.toml")),
+            FileFormat::Toml
+        );
+        assert_eq!(
+            FileFormat::from_path(Path::new("setup.ini")),
+            FileFormat::Ini
+        );
+        assert_eq!(
+            FileFormat::from_path(Path::new("README.md")),
+            FileFormat::Text
+        );
+        assert_eq!(
+            FileFormat::from_path(Path::new("data.unknown")),
+            FileFormat::Text
+        );
+        assert_eq!(
+            FileFormat::from_path(Path::new("noextension")),
+            FileFormat::Text
+        );
     }
 
     #[test]
@@ -527,7 +553,10 @@ mod tests {
         ctx.merge_file("config.json".to_string(), MergeValue::Integer(42));
 
         assert_eq!(ctx.merged_files.len(), 1);
-        assert_eq!(ctx.merged_files.get("config.json"), Some(&MergeValue::Integer(42)));
+        assert_eq!(
+            ctx.merged_files.get("config.json"),
+            Some(&MergeValue::Integer(42))
+        );
     }
 
     #[test]
@@ -825,7 +854,10 @@ mod tests {
         let content = b"This is plain text content";
         let result = merger.parse_file_by_format("README.md", content).unwrap();
 
-        assert_eq!(result, MergeValue::String("This is plain text content".to_string()));
+        assert_eq!(
+            result,
+            MergeValue::String("This is plain text content".to_string())
+        );
     }
 
     #[test]

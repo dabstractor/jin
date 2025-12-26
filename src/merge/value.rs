@@ -452,7 +452,9 @@ impl MergeValue {
     pub fn merge_with_config(&self, other: &MergeValue, config: &MergeConfig) -> Result<Self> {
         // Check depth limit first
         if config.max_depth == 0 {
-            return Err(JinError::Message("Maximum merge depth exceeded".to_string()));
+            return Err(JinError::Message(
+                "Maximum merge depth exceeded".to_string(),
+            ));
         }
 
         let child_config = MergeConfig {
@@ -471,7 +473,8 @@ impl MergeValue {
                 for (key, patch_value) in patch_map {
                     if let Some(base_value) = merged.get(key) {
                         // Recursively merge nested values
-                        let merged_value = base_value.merge_with_config(patch_value, &child_config)?;
+                        let merged_value =
+                            base_value.merge_with_config(patch_value, &child_config)?;
 
                         // Check for null deletion
                         if matches!(merged_value, MergeValue::Null) {
@@ -530,7 +533,8 @@ impl MergeValue {
         fn get_key(value: &MergeValue) -> Option<String> {
             if let MergeValue::Object(obj) = value {
                 // Check "id" field first, then "name"
-                obj.get("id").and_then(|v| v.as_str())
+                obj.get("id")
+                    .and_then(|v| v.as_str())
                     .or_else(|| obj.get("name").and_then(|v| v.as_str()))
                     .map(|k| k.to_string())
             } else {
@@ -549,7 +553,9 @@ impl MergeValue {
                     patch_by_key.insert(key.clone(), elem.clone());
                     patch_has_key.insert(key);
                 }
-                None => { patch_non_objects.push(elem.clone()); }
+                None => {
+                    patch_non_objects.push(elem.clone());
+                }
             }
         }
 
@@ -578,7 +584,8 @@ impl MergeValue {
         }
 
         // Add new keyed elements from patch (not in base)
-        let mut new_keys: Vec<String> = patch_has_key.iter()
+        let mut new_keys: Vec<String> = patch_has_key
+            .iter()
             .filter(|k| !merged_keys.contains(*k))
             .cloned()
             .collect();

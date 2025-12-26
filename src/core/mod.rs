@@ -1,7 +1,11 @@
 // Core type exports
-// This module will contain fundamental types: error, layer, config
+// This module contains fundamental types: error, layer, config
 
-// Re-exports for future implementations
+pub mod error;
+
+// Re-exports for convenience
+pub use error::{JinError, Result};
+
+// Future modules
 // pub mod config;
-// pub mod error;
 // pub mod layer;

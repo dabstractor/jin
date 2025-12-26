@@ -153,10 +153,13 @@ fn main() -> ExitCode {
                 },
 
                 // Workspace Operations
-                Commands::Apply(_) => {
-                    println!("jin apply - command handler to be implemented");
-                    ExitCode::SUCCESS
-                }
+                Commands::Apply(cmd) => match commands::apply_execute(&cmd) {
+                    Ok(()) => ExitCode::SUCCESS,
+                    Err(e) => {
+                        eprintln!("Error: {}", e);
+                        ExitCode::FAILURE
+                    }
+                },
 
                 // Inspection Commands
                 Commands::Diff(_) => {

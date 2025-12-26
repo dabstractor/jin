@@ -475,6 +475,52 @@ impl Layer {
     }
 }
 
+// ===== DISPLAY IMPLEMENTATION =====
+
+impl std::fmt::Display for Layer {
+    /// Formats the layer as a path string for use in conflict markers and logging.
+    ///
+    /// The format follows the layer hierarchy pattern:
+    /// - `global` for GlobalBase
+    /// - `mode/<mode>` for ModeBase
+    /// - `mode/<mode>/scope/<scope>` for ModeScope
+    /// - `mode/<mode>/scope/<scope>/project/<project>` for ModeScopeProject
+    /// - `mode/<mode>/project/<project>` for ModeProject
+    /// - `scope/<scope>` for ScopeBase
+    /// - `project/<project>` for ProjectBase
+    /// - `user-local` for UserLocal
+    /// - `workspace-active` for WorkspaceActive
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use jin_glm::core::Layer;
+    ///
+    /// assert_eq!(Layer::GlobalBase.to_string(), "global");
+    /// assert_eq!(Layer::ModeBase { mode: "claude".to_string() }.to_string(), "mode/claude");
+    /// assert_eq!(Layer::ProjectBase { project: "myproject".to_string() }.to_string(), "project/myproject");
+    /// ```
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Layer::GlobalBase => write!(f, "global"),
+            Layer::ModeBase { mode } => write!(f, "mode/{}", mode),
+            Layer::ModeScope { mode, scope } => write!(f, "mode/{}/scope/{}", mode, scope),
+            Layer::ModeScopeProject {
+                mode,
+                scope,
+                project,
+            } => write!(f, "mode/{}/scope/{}/project/{}", mode, scope, project),
+            Layer::ModeProject { mode, project } => {
+                write!(f, "mode/{}/project/{}", mode, project)
+            }
+            Layer::ScopeBase { scope } => write!(f, "scope/{}", scope),
+            Layer::ProjectBase { project } => write!(f, "project/{}", project),
+            Layer::UserLocal => write!(f, "user-local"),
+            Layer::WorkspaceActive => write!(f, "workspace-active"),
+        }
+    }
+}
+
 // ===== Tests =====
 
 #[cfg(test)]
@@ -947,6 +993,78 @@ mod tests {
         assert_eq!(Layer::USER_LOCAL_PATH, "~/.jin/local");
         assert_eq!(Layer::WORKSPACE_PATH, ".jin/workspace");
         assert_eq!(Layer::GIT_REF_PREFIX, "refs/jin/layers");
+    }
+
+    // ===== Display Tests =====
+
+    #[test]
+    fn test_display_global_base() {
+        assert_eq!(Layer::GlobalBase.to_string(), "global");
+    }
+
+    #[test]
+    fn test_display_mode_base() {
+        let layer = Layer::ModeBase {
+            mode: "claude".to_string(),
+        };
+        assert_eq!(layer.to_string(), "mode/claude");
+    }
+
+    #[test]
+    fn test_display_mode_scope() {
+        let layer = Layer::ModeScope {
+            mode: "claude".to_string(),
+            scope: "javascript".to_string(),
+        };
+        assert_eq!(layer.to_string(), "mode/claude/scope/javascript");
+    }
+
+    #[test]
+    fn test_display_mode_scope_project() {
+        let layer = Layer::ModeScopeProject {
+            mode: "claude".to_string(),
+            scope: "javascript".to_string(),
+            project: "ui-dashboard".to_string(),
+        };
+        assert_eq!(
+            layer.to_string(),
+            "mode/claude/scope/javascript/project/ui-dashboard"
+        );
+    }
+
+    #[test]
+    fn test_display_mode_project() {
+        let layer = Layer::ModeProject {
+            mode: "claude".to_string(),
+            project: "ui-dashboard".to_string(),
+        };
+        assert_eq!(layer.to_string(), "mode/claude/project/ui-dashboard");
+    }
+
+    #[test]
+    fn test_display_scope_base() {
+        let layer = Layer::ScopeBase {
+            scope: "javascript".to_string(),
+        };
+        assert_eq!(layer.to_string(), "scope/javascript");
+    }
+
+    #[test]
+    fn test_display_project_base() {
+        let layer = Layer::ProjectBase {
+            project: "myproject".to_string(),
+        };
+        assert_eq!(layer.to_string(), "project/myproject");
+    }
+
+    #[test]
+    fn test_display_user_local() {
+        assert_eq!(Layer::UserLocal.to_string(), "user-local");
+    }
+
+    #[test]
+    fn test_display_workspace_active() {
+        assert_eq!(Layer::WorkspaceActive.to_string(), "workspace-active");
     }
 
     // ===== Clone and Equality Tests =====

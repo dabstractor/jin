@@ -3,5 +3,7 @@
 
 pub mod value;
 pub mod layer;
+pub mod text;
 pub use value::{MergeValue, ArrayMergeStrategy, MergeConfig};
 pub use layer::{LayerMerge, FileFormat, MergeContext};
+pub use text::{TextMerge, MergeResult};

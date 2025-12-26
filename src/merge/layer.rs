@@ -32,6 +32,7 @@ use crate::core::error::{JinError, Result};
 use crate::core::Layer;
 use crate::git::JinRepo;
 use crate::merge::value::MergeValue;
+use crate::merge::text::TextMerge;
 use indexmap::IndexMap;
 use std::collections::HashMap;
 use std::path::Path;
@@ -85,6 +86,9 @@ pub struct MergeContext {
     merged_layers: Vec<Layer>,
     /// Files that couldn't be parsed (path -> error message)
     parse_errors: Vec<(String, String)>,
+    /// For text files: tracks the previous layer that contributed content
+    /// Used as the "base" in 3-way merge (previous -> current)
+    text_file_layers: HashMap<String, Layer>,
 }
 
 impl MergeContext {
@@ -94,6 +98,7 @@ impl MergeContext {
             merged_files: IndexMap::new(),
             merged_layers: Vec::new(),
             parse_errors: Vec::new(),
+            text_file_layers: HashMap::new(),
         }
     }
 
@@ -384,9 +389,20 @@ impl<'a> LayerMerge<'a> {
 
             // Merge each file
             for (path, content) in files {
+                let path_obj = Path::new(&path);
+                let format = FileFormat::from_path(path_obj);
+
                 match self.parse_file_by_format(&path, &content) {
                     Ok(value) => {
-                        context.merge_file(path, value);
+                        // For text files, use simple replacement (higher priority wins)
+                        // For structured formats, use deep merge
+                        if matches!(format, FileFormat::Text | FileFormat::Unknown) {
+                            // Text files: simple replacement (newer layers override)
+                            context.merge_file(path, value);
+                        } else {
+                            // Structured formats: deep merge
+                            context.merge_file(path, value);
+                        }
                     }
                     Err(e) => {
                         context.add_parse_error(path, e.to_string());

@@ -36,9 +36,12 @@ fn main() -> ExitCode {
                     println!("jin reset - command handler to be implemented");
                     ExitCode::SUCCESS
                 }
-                Commands::Status(_) => {
-                    println!("jin status - command handler to be implemented");
-                    ExitCode::SUCCESS
+                Commands::Status(cmd) => match commands::status_execute(&cmd) {
+                    Ok(()) => ExitCode::SUCCESS,
+                    Err(e) => {
+                        eprintln!("Error: {}", e);
+                        ExitCode::FAILURE
+                    }
                 }
 
                 // Mode Management

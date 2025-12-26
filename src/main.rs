@@ -32,10 +32,13 @@ fn main() -> ExitCode {
                         ExitCode::FAILURE
                     }
                 },
-                Commands::Reset(_) => {
-                    println!("jin reset - command handler to be implemented");
-                    ExitCode::SUCCESS
-                }
+                Commands::Reset(cmd) => match commands::reset_execute(&cmd) {
+                    Ok(()) => ExitCode::SUCCESS,
+                    Err(e) => {
+                        eprintln!("Error: {}", e);
+                        ExitCode::FAILURE
+                    }
+                },
                 Commands::Status(cmd) => match commands::status_execute(&cmd) {
                     Ok(()) => ExitCode::SUCCESS,
                     Err(e) => {

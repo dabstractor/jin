@@ -768,6 +768,42 @@ impl JinRepo {
     pub fn treebuilder(&self) -> Result<git2::TreeBuilder> {
         Ok(self.inner.treebuilder(None)?)
     }
+
+    /// Creates an empty tree.
+    ///
+    /// # Returns
+    ///
+    /// The object ID of the newly created empty tree.
+    pub fn create_empty_tree(&self) -> Result<git2::Oid> {
+        Ok(self.treebuilder()?.write()?)
+    }
+
+    /// Creates a new reference.
+    ///
+    /// # Arguments
+    ///
+    /// * `name` - The reference name (e.g., "refs/heads/main")
+    /// * `id` - The object ID the reference should point to
+    /// * `force` - Whether to overwrite an existing reference
+    /// * `log_message` - Message to write to the reflog
+    pub fn create_reference(
+        &self,
+        name: &str,
+        id: git2::Oid,
+        force: bool,
+        log_message: &str,
+    ) -> Result<git2::Reference> {
+        Ok(self.inner.reference(name, id, force, log_message)?)
+    }
+
+    /// Finds a reference by name.
+    ///
+    /// # Arguments
+    ///
+    /// * `name` - The reference name (e.g., "refs/heads/main")
+    pub fn find_reference(&self, name: &str) -> Result<git2::Reference> {
+        Ok(self.inner.find_reference(name)?)
+    }
 }
 
 // ===== Tree Walking Methods =====
@@ -1933,10 +1969,7 @@ mod tests {
         let files = fixture.repo.list_tree_files(tree_oid).unwrap();
 
         assert_eq!(files.len(), 2);
-        assert_eq!(
-            files.get("root.txt"),
-            Some(&b"root file content".to_vec())
-        );
+        assert_eq!(files.get("root.txt"), Some(&b"root file content".to_vec()));
         assert_eq!(
             files.get("subdir/sub.txt"),
             Some(&b"sub file content".to_vec())

@@ -178,11 +178,14 @@ fn main() -> ExitCode {
                         eprintln!("Error: {}", e);
                         ExitCode::FAILURE
                     }
-                }
-                Commands::Context => {
-                    println!("jin context - command handler to be implemented");
-                    ExitCode::SUCCESS
-                }
+                },
+                Commands::Context => match commands::context_execute() {
+                    Ok(()) => ExitCode::SUCCESS,
+                    Err(e) => {
+                        eprintln!("Error: {}", e);
+                        ExitCode::FAILURE
+                    }
+                },
                 Commands::Layers => {
                     println!("jin layers - command handler to be implemented");
                     ExitCode::SUCCESS

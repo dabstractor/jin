@@ -4,6 +4,7 @@
 pub mod add;
 pub mod apply;
 pub mod commit;
+pub mod context;
 pub mod diff;
 pub mod init;
 pub mod log;
@@ -15,6 +16,7 @@ pub mod status;
 pub use add::execute as add_execute;
 pub use apply::execute as apply_execute;
 pub use commit::execute as commit_execute;
+pub use context::execute as context_execute;
 pub use diff::execute as diff_execute;
 pub use init::execute;
 pub use log::execute as log_execute;

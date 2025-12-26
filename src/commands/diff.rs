@@ -29,9 +29,9 @@ struct FileDiff {
 /// Status of a file in a diff comparison.
 #[derive(Debug, Clone, PartialEq)]
 enum DiffStatus {
-    Added,    // File only in target (new)
-    Deleted,  // File only in source (removed)
-    Modified, // File in both with differences
+    Added,     // File only in target (new)
+    Deleted,   // File only in source (removed)
+    Modified,  // File in both with differences
     Unchanged, // File in both with same content
 }
 
@@ -179,11 +179,7 @@ fn diff_files_in_layer(
 /// # Returns
 ///
 /// A formatted string in unified diff format.
-fn format_unified_diff(
-    file_diff: &FileDiff,
-    source_layer: &Layer,
-    target_layer: &Layer,
-) -> String {
+fn format_unified_diff(file_diff: &FileDiff, source_layer: &Layer, target_layer: &Layer) -> String {
     let mut output = String::new();
 
     // Header
@@ -279,12 +275,7 @@ fn format_text_diff(old: &str, new: &str) -> String {
 /// # Errors
 ///
 /// Propagates errors from layer file reading or parsing.
-fn diff_layers(
-    repo: &JinRepo,
-    layer1: &Layer,
-    layer2: &Layer,
-    project: &str,
-) -> Result<i32> {
+fn diff_layers(repo: &JinRepo, layer1: &Layer, layer2: &Layer, project: &str) -> Result<i32> {
     let merger = LayerMerge::new(repo, project);
 
     // Only versioned layers can be read
@@ -339,9 +330,8 @@ fn convert_merge_result_to_bytes(
 ) -> Result<HashMap<String, Vec<u8>>> {
     let mut files = HashMap::new();
     for (path, merge_value) in result {
-        let content = serde_json::to_string_pretty(&merge_value).map_err(|e| {
-            JinError::Message(format!("Failed to serialize merged result: {}", e))
-        })?;
+        let content = serde_json::to_string_pretty(&merge_value)
+            .map_err(|e| JinError::Message(format!("Failed to serialize merged result: {}", e)))?;
         files.insert(path, content.into_bytes());
     }
     Ok(files)
@@ -364,11 +354,7 @@ fn convert_merge_result_to_bytes(
 /// # Errors
 ///
 /// Propagates errors from layer merging or file reading.
-fn diff_workspace(
-    repo: &JinRepo,
-    project: &str,
-    context: &ProjectContext,
-) -> Result<i32> {
+fn diff_workspace(repo: &JinRepo, project: &str, context: &ProjectContext) -> Result<i32> {
     // Get merged result
     let mut merger = LayerMerge::new(repo, project);
     if let Some(ref mode) = context.mode {
@@ -479,12 +465,15 @@ fn diff_staged(repo: &JinRepo, project: &str) -> Result<i32> {
 
         // Read committed content from layer
         let committed_result = merger.merge_subset(&[layer.clone()])?;
-        let committed_files: HashMap<String, Vec<u8>> = convert_merge_result_to_bytes(committed_result)?;
+        let committed_files: HashMap<String, Vec<u8>> =
+            convert_merge_result_to_bytes(committed_result)?;
 
         // Get staged content from the staging directory
         let staging_dir = workspace_root.join(".jin/staging/files");
         // Use the hash bytes directly as the filename (first 16 chars as hex representation)
-        let hash_str: String = entry.content_hash.iter()
+        let hash_str: String = entry
+            .content_hash
+            .iter()
             .take(16)
             .map(|b| format!("{:02x}", b))
             .collect();
@@ -643,11 +632,10 @@ pub fn execute(cmd: &DiffCommand) -> Result<()> {
     let project_name = detect_project_name(&workspace_root)?;
 
     // 4. Validate Git repository exists
-    let _git_repo = git2::Repository::discover(&workspace_root).map_err(|_| {
-        JinError::RepoNotFound {
+    let _git_repo =
+        git2::Repository::discover(&workspace_root).map_err(|_| JinError::RepoNotFound {
             path: workspace_root.display().to_string(),
-        }
-    })?;
+        })?;
 
     // 5. Open Jin repository
     let repo = JinRepo::open_or_create(&workspace_root)?;

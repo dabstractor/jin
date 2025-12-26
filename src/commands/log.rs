@@ -186,12 +186,9 @@ fn walk_layer_history<'a>(
     }
 
     // Get the layer's git reference
-    let ref_name = layer.git_ref().ok_or_else(|| {
-        JinError::Message(format!(
-            "Layer '{}' has no git reference",
-            layer
-        ))
-    })?;
+    let ref_name = layer
+        .git_ref()
+        .ok_or_else(|| JinError::Message(format!("Layer '{}' has no git reference", layer)))?;
 
     // Find the reference in the git repository
     let reference = repo
@@ -200,9 +197,9 @@ fn walk_layer_history<'a>(
         .map_err(|_| JinError::Message(format!("Layer '{}' has no history", layer)))?;
 
     // Get the commit OID that the reference points to
-    let commit_oid = reference.target().ok_or_else(|| {
-        JinError::Message("Layer reference points to nothing".to_string())
-    })?;
+    let commit_oid = reference
+        .target()
+        .ok_or_else(|| JinError::Message("Layer reference points to nothing".to_string()))?;
 
     // Create a RevWalk for iterating commits
     // CRITICAL: Set sorting for newest-first order (TIME | REVERSE)
@@ -327,15 +324,15 @@ fn display_layer_history(repo: &JinRepo, layer: &Layer, count: Option<usize>) ->
 
         println!(
             "  {}{}{} {}{}{} <{}>",
-            ANSI_YELLOW, short_sha, ANSI_RESET,
-            ANSI_GREEN, author_name, ANSI_RESET,
+            ANSI_YELLOW,
+            short_sha,
+            ANSI_RESET,
+            ANSI_GREEN,
+            author_name,
+            ANSI_RESET,
             author.email().unwrap_or("")
         );
-        println!(
-            "    {}{}{} {}",
-            ANSI_BLUE, time_str, ANSI_RESET,
-            first_line
-        );
+        println!("    {}{}{} {}", ANSI_BLUE, time_str, ANSI_RESET, first_line);
     }
 
     Ok(())
@@ -381,11 +378,10 @@ pub fn execute(cmd: &LogCommand) -> Result<()> {
     let project_name = detect_project_name(&workspace_root)?;
 
     // 4. Validate Git repository exists
-    let _git_repo = git2::Repository::discover(&workspace_root).map_err(|_| {
-        JinError::RepoNotFound {
+    let _git_repo =
+        git2::Repository::discover(&workspace_root).map_err(|_| JinError::RepoNotFound {
             path: workspace_root.display().to_string(),
-        }
-    })?;
+        })?;
 
     // 5. Open Jin repository
     let repo = JinRepo::open_or_create(&workspace_root)?;
@@ -667,26 +663,30 @@ mod tests {
         // Global layer commit
         let tree_oid = git_repo.treebuilder(None).unwrap().write().unwrap();
         let tree = git_repo.find_tree(tree_oid).unwrap();
-        git_repo.commit(
-            Some("refs/jin/layers/global"),
-            &signature,
-            &signature,
-            "First global commit",
-            &tree,
-            &[],
-        ).unwrap();
+        git_repo
+            .commit(
+                Some("refs/jin/layers/global"),
+                &signature,
+                &signature,
+                "First global commit",
+                &tree,
+                &[],
+            )
+            .unwrap();
 
         // Mode layer commit
         let tree_oid2 = git_repo.treebuilder(None).unwrap().write().unwrap();
         let tree2 = git_repo.find_tree(tree_oid2).unwrap();
-        git_repo.commit(
-            Some("refs/jin/layers/mode/claude"),
-            &signature,
-            &signature,
-            "Claude mode commit",
-            &tree2,
-            &[],
-        ).unwrap();
+        git_repo
+            .commit(
+                Some("refs/jin/layers/mode/claude"),
+                &signature,
+                &signature,
+                "Claude mode commit",
+                &tree2,
+                &[],
+            )
+            .unwrap();
 
         let cmd = LogCommand {
             layer: None,
@@ -713,14 +713,16 @@ mod tests {
         let tree = git_repo.find_tree(tree_oid).unwrap();
         let time = git2::Time::new(0, 0);
         let signature = git2::Signature::new("Test User", "test@example.com", &time).unwrap();
-        git_repo.commit(
-            Some(ref_name),
-            &signature,
-            &signature,
-            "Test commit",
-            &tree,
-            &[],
-        ).unwrap();
+        git_repo
+            .commit(
+                Some(ref_name),
+                &signature,
+                &signature,
+                "Test commit",
+                &tree,
+                &[],
+            )
+            .unwrap();
 
         let cmd = LogCommand {
             layer: Some("global".to_string()),
@@ -749,38 +751,46 @@ mod tests {
         // First commit
         let tree_oid = git_repo.treebuilder(None).unwrap().write().unwrap();
         let tree = git_repo.find_tree(tree_oid).unwrap();
-        git_repo.commit(
-            Some(ref_name),
-            &signature,
-            &signature,
-            "Commit 1",
-            &tree,
-            &[],
-        ).unwrap();
+        git_repo
+            .commit(
+                Some(ref_name),
+                &signature,
+                &signature,
+                "Commit 1",
+                &tree,
+                &[],
+            )
+            .unwrap();
 
         // Second commit
         let tree_oid2 = git_repo.treebuilder(None).unwrap().write().unwrap();
         let tree2 = git_repo.find_tree(tree_oid2).unwrap();
-        let commit1_oid = git_repo.commit(
-            Some(ref_name),
-            &signature,
-            &signature,
-            "Commit 2",
-            &tree2,
-            &[&git_repo.find_commit(git_repo.refname_to_id(ref_name).unwrap()).unwrap()],
-        ).unwrap();
+        let commit1_oid = git_repo
+            .commit(
+                Some(ref_name),
+                &signature,
+                &signature,
+                "Commit 2",
+                &tree2,
+                &[&git_repo
+                    .find_commit(git_repo.refname_to_id(ref_name).unwrap())
+                    .unwrap()],
+            )
+            .unwrap();
 
         // Third commit
         let tree_oid3 = git_repo.treebuilder(None).unwrap().write().unwrap();
         let tree3 = git_repo.find_tree(tree_oid3).unwrap();
-        git_repo.commit(
-            Some(ref_name),
-            &signature,
-            &signature,
-            "Commit 3",
-            &tree3,
-            &[&git_repo.find_commit(commit1_oid).unwrap()],
-        ).unwrap();
+        git_repo
+            .commit(
+                Some(ref_name),
+                &signature,
+                &signature,
+                "Commit 3",
+                &tree3,
+                &[&git_repo.find_commit(commit1_oid).unwrap()],
+            )
+            .unwrap();
 
         let cmd = LogCommand {
             layer: Some("global".to_string()),

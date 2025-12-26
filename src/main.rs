@@ -203,10 +203,13 @@ fn main() -> ExitCode {
                         ExitCode::FAILURE
                     }
                 },
-                Commands::Export(_) => {
-                    println!("jin export - command handler to be implemented");
-                    ExitCode::SUCCESS
-                }
+                Commands::Export(cmd) => match commands::export_execute(&cmd) {
+                    Ok(()) => ExitCode::SUCCESS,
+                    Err(e) => {
+                        eprintln!("Error: {}", e);
+                        ExitCode::FAILURE
+                    }
+                },
 
                 // Maintenance
                 Commands::Repair(_) => {

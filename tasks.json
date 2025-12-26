@@ -4,28 +4,28 @@
       "type": "Phase",
       "id": "P1",
       "title": "Foundation & Core Infrastructure",
-      "status": "Researching",
+      "status": "Complete",
       "description": "Establish the Rust project structure, core types, error handling, and foundational Git integration. This phase creates the skeleton upon which all features are built.",
       "milestones": [
         {
           "type": "Milestone",
           "id": "P1.M1",
           "title": "Project Scaffolding",
-          "status": "Planned",
+          "status": "Complete",
           "description": "Create Rust project structure with all dependencies, module layout, and basic CLI skeleton.",
           "tasks": [
             {
               "type": "Task",
               "id": "P1.M1.T1",
               "title": "Initialize Rust Project",
-              "status": "Planned",
+              "status": "Complete",
               "description": "Create Cargo.toml with all dependencies and establish the module directory structure.",
               "subtasks": [
                 {
                   "type": "Subtask",
                   "id": "P1.M1.T1.S1",
                   "title": "Create Cargo.toml with Dependencies",
-                  "status": "Planned",
+                  "status": "Complete",
                   "story_points": 1,
                   "dependencies": [],
                   "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: See plan/architecture/external_deps.md for exact crate versions.\n2. INPUT: None - this is the first subtask.\n3. LOGIC: Create Cargo.toml with all required dependencies.\n4. OUTPUT: Valid Cargo.toml that compiles with `cargo check`."
@@ -34,7 +34,7 @@
                   "type": "Subtask",
                   "id": "P1.M1.T1.S2",
                   "title": "Create Module Directory Structure",
-                  "status": "Planned",
+                  "status": "Complete",
                   "story_points": 1,
                   "dependencies": [
                     "P1.M1.T1.S1"
@@ -47,14 +47,14 @@
               "type": "Task",
               "id": "P1.M1.T2",
               "title": "Core Error Types",
-              "status": "Planned",
+              "status": "Complete",
               "description": "Define the error hierarchy for all Jin operations using thiserror.",
               "subtasks": [
                 {
                   "type": "Subtask",
                   "id": "P1.M1.T2.S1",
                   "title": "Define JinError Enum",
-                  "status": "Planned",
+                  "status": "Complete",
                   "story_points": 2,
                   "dependencies": [
                     "P1.M1.T1.S2"
@@ -67,14 +67,14 @@
               "type": "Task",
               "id": "P1.M1.T3",
               "title": "Layer Type Definitions",
-              "status": "Planned",
+              "status": "Complete",
               "description": "Define the 9-layer hierarchy as Rust types with routing logic.",
               "subtasks": [
                 {
                   "type": "Subtask",
                   "id": "P1.M1.T3.S1",
                   "title": "Define Layer Enum and Paths",
-                  "status": "Planned",
+                  "status": "Complete",
                   "story_points": 2,
                   "dependencies": [
                     "P1.M1.T2.S1"
@@ -87,14 +87,14 @@
               "type": "Task",
               "id": "P1.M1.T4",
               "title": "Configuration Types",
-              "status": "Planned",
+              "status": "Complete",
               "description": "Define configuration structures for Jin global config and project context.",
               "subtasks": [
                 {
                   "type": "Subtask",
                   "id": "P1.M1.T4.S1",
                   "title": "Define Config and Context Structs",
-                  "status": "Planned",
+                  "status": "Complete",
                   "story_points": 2,
                   "dependencies": [
                     "P1.M1.T3.S1"
@@ -109,21 +109,21 @@
           "type": "Milestone",
           "id": "P1.M2",
           "title": "Git Layer Integration",
-          "status": "Planned",
+          "status": "Complete",
           "description": "Implement the phantom Git layer using libgit2, including repository management, ref operations, and object creation.",
           "tasks": [
             {
               "type": "Task",
               "id": "P1.M2.T1",
               "title": "Jin Repository Wrapper",
-              "status": "Planned",
+              "status": "Complete",
               "description": "Create a wrapper around git2::Repository for Jin-specific operations.",
               "subtasks": [
                 {
                   "type": "Subtask",
                   "id": "P1.M2.T1.S1",
                   "title": "Implement JinRepo Struct",
-                  "status": "Planned",
+                  "status": "Complete",
                   "story_points": 2,
                   "dependencies": [
                     "P1.M1.T4.S1"
@@ -136,14 +136,14 @@
               "type": "Task",
               "id": "P1.M2.T2",
               "title": "Reference Management",
-              "status": "Planned",
+              "status": "Complete",
               "description": "Implement CRUD operations for Jin's custom ref namespace.",
               "subtasks": [
                 {
                   "type": "Subtask",
                   "id": "P1.M2.T2.S1",
                   "title": "Implement Ref Operations",
-                  "status": "Planned",
+                  "status": "Complete",
                   "story_points": 2,
                   "dependencies": [
                     "P1.M2.T1.S1"
@@ -156,14 +156,14 @@
               "type": "Task",
               "id": "P1.M2.T3",
               "title": "Git Object Creation",
-              "status": "Planned",
+              "status": "Complete",
               "description": "Implement blob, tree, and commit creation for layer content.",
               "subtasks": [
                 {
                   "type": "Subtask",
                   "id": "P1.M2.T3.S1",
                   "title": "Implement Object Creation",
-                  "status": "Planned",
+                  "status": "Complete",
                   "story_points": 2,
                   "dependencies": [
                     "P1.M2.T1.S1"
@@ -176,14 +176,14 @@
               "type": "Task",
               "id": "P1.M2.T4",
               "title": "Tree Reading and Walking",
-              "status": "Planned",
+              "status": "Complete",
               "description": "Implement tree traversal for reading layer content.",
               "subtasks": [
                 {
                   "type": "Subtask",
                   "id": "P1.M2.T4.S1",
                   "title": "Implement Tree Walking",
-                  "status": "Planned",
+                  "status": "Complete",
                   "story_points": 2,
                   "dependencies": [
                     "P1.M2.T3.S1"

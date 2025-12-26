@@ -1,0 +1,1148 @@
+{
+  "backlog": [
+    {
+      "type": "Phase",
+      "id": "P1",
+      "title": "Foundation & Core Infrastructure",
+      "status": "Researching",
+      "description": "Establish the Rust project structure, core types, error handling, and foundational Git integration. This phase creates the skeleton upon which all features are built.",
+      "milestones": [
+        {
+          "type": "Milestone",
+          "id": "P1.M1",
+          "title": "Project Scaffolding",
+          "status": "Planned",
+          "description": "Create Rust project structure with all dependencies, module layout, and basic CLI skeleton.",
+          "tasks": [
+            {
+              "type": "Task",
+              "id": "P1.M1.T1",
+              "title": "Initialize Rust Project",
+              "status": "Planned",
+              "description": "Create Cargo.toml with all dependencies and establish the module directory structure.",
+              "subtasks": [
+                {
+                  "type": "Subtask",
+                  "id": "P1.M1.T1.S1",
+                  "title": "Create Cargo.toml with Dependencies",
+                  "status": "Planned",
+                  "story_points": 1,
+                  "dependencies": [],
+                  "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: See plan/architecture/external_deps.md for exact crate versions.\n2. INPUT: None - this is the first subtask.\n3. LOGIC: Create Cargo.toml with all required dependencies.\n4. OUTPUT: Valid Cargo.toml that compiles with `cargo check`."
+                },
+                {
+                  "type": "Subtask",
+                  "id": "P1.M1.T1.S2",
+                  "title": "Create Module Directory Structure",
+                  "status": "Planned",
+                  "story_points": 1,
+                  "dependencies": [
+                    "P1.M1.T1.S1"
+                  ],
+                  "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: See plan/architecture/system_context.md Section 2.1 for structure.\n2. INPUT: Cargo.toml from P1.M1.T1.S1.\n3. LOGIC: Create all module directories and mod.rs files.\n4. OUTPUT: Compilable project structure."
+                }
+              ]
+            },
+            {
+              "type": "Task",
+              "id": "P1.M1.T2",
+              "title": "Core Error Types",
+              "status": "Planned",
+              "description": "Define the error hierarchy for all Jin operations using thiserror.",
+              "subtasks": [
+                {
+                  "type": "Subtask",
+                  "id": "P1.M1.T2.S1",
+                  "title": "Define JinError Enum",
+                  "status": "Planned",
+                  "story_points": 2,
+                  "dependencies": [
+                    "P1.M1.T1.S2"
+                  ],
+                  "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: See src/core/error.rs for implementation.\n2. INPUT: Module structure from P1.M1.T1.S2.\n3. LOGIC: Define JinError with all variants and From impls.\n4. OUTPUT: JinError type exported from core::error."
+                }
+              ]
+            },
+            {
+              "type": "Task",
+              "id": "P1.M1.T3",
+              "title": "Layer Type Definitions",
+              "status": "Planned",
+              "description": "Define the 9-layer hierarchy as Rust types with routing logic.",
+              "subtasks": [
+                {
+                  "type": "Subtask",
+                  "id": "P1.M1.T3.S1",
+                  "title": "Define Layer Enum and Paths",
+                  "status": "Planned",
+                  "story_points": 2,
+                  "dependencies": [
+                    "P1.M1.T2.S1"
+                  ],
+                  "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: See PRD Section 4.1 and src/core/layer.rs.\n2. INPUT: JinError from P1.M1.T2.S1.\n3. LOGIC: Define Layer enum with precedence, ref_path, storage_path methods.\n4. OUTPUT: Layer enum exported from core::layer."
+                }
+              ]
+            },
+            {
+              "type": "Task",
+              "id": "P1.M1.T4",
+              "title": "Configuration Types",
+              "status": "Planned",
+              "description": "Define configuration structures for Jin global config and project context.",
+              "subtasks": [
+                {
+                  "type": "Subtask",
+                  "id": "P1.M1.T4.S1",
+                  "title": "Define Config and Context Structs",
+                  "status": "Planned",
+                  "story_points": 2,
+                  "dependencies": [
+                    "P1.M1.T3.S1"
+                  ],
+                  "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: See src/core/config.rs for implementation.\n2. INPUT: Layer enum from P1.M1.T3.S1.\n3. LOGIC: Define JinConfig, ProjectContext with load/save.\n4. OUTPUT: Config types exported from core::config."
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "Milestone",
+          "id": "P1.M2",
+          "title": "Git Layer Integration",
+          "status": "Planned",
+          "description": "Implement the phantom Git layer using libgit2, including repository management, ref operations, and object creation.",
+          "tasks": [
+            {
+              "type": "Task",
+              "id": "P1.M2.T1",
+              "title": "Jin Repository Wrapper",
+              "status": "Planned",
+              "description": "Create a wrapper around git2::Repository for Jin-specific operations.",
+              "subtasks": [
+                {
+                  "type": "Subtask",
+                  "id": "P1.M2.T1.S1",
+                  "title": "Implement JinRepo Struct",
+                  "status": "Planned",
+                  "story_points": 2,
+                  "dependencies": [
+                    "P1.M1.T4.S1"
+                  ],
+                  "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: See src/git/repo.rs.\n2. INPUT: Paths from core::config.\n3. LOGIC: Wrap git2::Repository with open/init methods.\n4. OUTPUT: JinRepo struct exported from git::repo."
+                }
+              ]
+            },
+            {
+              "type": "Task",
+              "id": "P1.M2.T2",
+              "title": "Reference Management",
+              "status": "Planned",
+              "description": "Implement CRUD operations for Jin's custom ref namespace.",
+              "subtasks": [
+                {
+                  "type": "Subtask",
+                  "id": "P1.M2.T2.S1",
+                  "title": "Implement Ref Operations",
+                  "status": "Planned",
+                  "story_points": 2,
+                  "dependencies": [
+                    "P1.M2.T1.S1"
+                  ],
+                  "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: See src/git/refs.rs.\n2. INPUT: JinRepo, Layer types.\n3. LOGIC: Implement get/create/update/delete for layer refs.\n4. OUTPUT: Ref operations in git::refs."
+                }
+              ]
+            },
+            {
+              "type": "Task",
+              "id": "P1.M2.T3",
+              "title": "Git Object Creation",
+              "status": "Planned",
+              "description": "Implement blob, tree, and commit creation for layer content.",
+              "subtasks": [
+                {
+                  "type": "Subtask",
+                  "id": "P1.M2.T3.S1",
+                  "title": "Implement Object Creation",
+                  "status": "Planned",
+                  "story_points": 2,
+                  "dependencies": [
+                    "P1.M2.T1.S1"
+                  ],
+                  "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: See src/git/objects.rs.\n2. INPUT: JinRepo.\n3. LOGIC: Create blob, tree, commit functions.\n4. OUTPUT: Object creation in git::objects."
+                }
+              ]
+            },
+            {
+              "type": "Task",
+              "id": "P1.M2.T4",
+              "title": "Tree Reading and Walking",
+              "status": "Planned",
+              "description": "Implement tree traversal for reading layer content.",
+              "subtasks": [
+                {
+                  "type": "Subtask",
+                  "id": "P1.M2.T4.S1",
+                  "title": "Implement Tree Walking",
+                  "status": "Planned",
+                  "story_points": 2,
+                  "dependencies": [
+                    "P1.M2.T3.S1"
+                  ],
+                  "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: See src/git/objects.rs walk_tree function.\n2. INPUT: JinRepo.\n3. LOGIC: Recursively walk tree entries.\n4. OUTPUT: Tree walking in git::objects."
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "Milestone",
+          "id": "P1.M3",
+          "title": "Transaction System",
+          "status": "Planned",
+          "description": "Implement atomic multi-layer commits with failure recovery.",
+          "tasks": [
+            {
+              "type": "Task",
+              "id": "P1.M3.T1",
+              "title": "Transaction Implementation",
+              "status": "Planned",
+              "description": "Implement the atomic transaction system for multi-layer commits.",
+              "subtasks": [
+                {
+                  "type": "Subtask",
+                  "id": "P1.M3.T1.S1",
+                  "title": "Define Transaction Types",
+                  "status": "Planned",
+                  "story_points": 1,
+                  "dependencies": [
+                    "P1.M2.T2.S1",
+                    "P1.M2.T3.S1"
+                  ],
+                  "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: See src/git/transaction.rs.\n2. INPUT: Layer, ref operations, object creation.\n3. LOGIC: Define Transaction, TransactionStatus, LayerUpdate.\n4. OUTPUT: Transaction types in git::transaction."
+                },
+                {
+                  "type": "Subtask",
+                  "id": "P1.M3.T1.S2",
+                  "title": "Implement Atomic Commit",
+                  "status": "Planned",
+                  "story_points": 2,
+                  "dependencies": [
+                    "P1.M3.T1.S1"
+                  ],
+                  "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: See src/git/transaction.rs.\n2. INPUT: Transaction types.\n3. LOGIC: Implement begin/prepare/commit/rollback.\n4. OUTPUT: Complete transaction impl."
+                },
+                {
+                  "type": "Subtask",
+                  "id": "P1.M3.T1.S3",
+                  "title": "Implement Recovery Detection",
+                  "status": "Planned",
+                  "story_points": 2,
+                  "dependencies": [
+                    "P1.M3.T1.S2"
+                  ],
+                  "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: See src/git/transaction.rs.\n2. INPUT: Transaction types.\n3. LOGIC: Find and clean orphan staging refs.\n4. OUTPUT: Recovery functions in git::transaction."
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "Phase",
+      "id": "P2",
+      "title": "Merge Engine",
+      "status": "Planned",
+      "description": "Implement the deterministic merge system for structured data formats and text files. This is the algorithmic core of Jin.",
+      "milestones": [
+        {
+          "type": "Milestone",
+          "id": "P2.M1",
+          "title": "Merge Value System",
+          "status": "Planned",
+          "description": "Create the unified value representation for all parseable formats.",
+          "tasks": [
+            {
+              "type": "Task",
+              "id": "P2.M1.T1",
+              "title": "MergeValue Type",
+              "status": "Planned",
+              "description": "Define the unified value type for merge operations.",
+              "subtasks": [
+                {
+                  "type": "Subtask",
+                  "id": "P2.M1.T1.S1",
+                  "title": "Define MergeValue Enum",
+                  "status": "Planned",
+                  "story_points": 2,
+                  "dependencies": [
+                    "P1.M1.T2.S1"
+                  ],
+                  "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: See src/merge/value.rs.\n2. INPUT: JinError.\n3. LOGIC: Define MergeValue with Object(IndexMap), Array, etc.\n4. OUTPUT: MergeValue in merge::value."
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "Milestone",
+          "id": "P2.M2",
+          "title": "Format Parsers",
+          "status": "Planned",
+          "description": "Implement parsers for JSON, YAML, TOML, and INI formats.",
+          "tasks": [
+            {
+              "type": "Task",
+              "id": "P2.M2.T1",
+              "title": "All Format Parsers",
+              "status": "Planned",
+              "description": "Implement JSON, YAML, TOML, INI parsers.",
+              "subtasks": [
+                {
+                  "type": "Subtask",
+                  "id": "P2.M2.T1.S1",
+                  "title": "Implement Format Parsers",
+                  "status": "Planned",
+                  "story_points": 2,
+                  "dependencies": [
+                    "P2.M1.T1.S1"
+                  ],
+                  "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: See src/merge/ directory.\n2. INPUT: MergeValue.\n3. LOGIC: Implement parse/serialize for each format.\n4. OUTPUT: Parsers in merge module."
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "Milestone",
+          "id": "P2.M3",
+          "title": "Deep Merge Algorithm",
+          "status": "Planned",
+          "description": "Implement the core deep merge algorithm with null-deletion and array strategies.",
+          "tasks": [
+            {
+              "type": "Task",
+              "id": "P2.M3.T1",
+              "title": "Deep Merge Implementation",
+              "status": "Planned",
+              "description": "Implement recursive deep merge with RFC 7396 semantics.",
+              "subtasks": [
+                {
+                  "type": "Subtask",
+                  "id": "P2.M3.T1.S1",
+                  "title": "Implement Deep Merge",
+                  "status": "Planned",
+                  "story_points": 2,
+                  "dependencies": [
+                    "P2.M1.T1.S1"
+                  ],
+                  "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: See src/merge/deep.rs.\n2. INPUT: MergeValue.\n3. LOGIC: Recursive merge with null-deletion.\n4. OUTPUT: deep_merge in merge::deep."
+                },
+                {
+                  "type": "Subtask",
+                  "id": "P2.M3.T1.S2",
+                  "title": "Implement Array Strategies",
+                  "status": "Planned",
+                  "story_points": 2,
+                  "dependencies": [
+                    "P2.M3.T1.S1"
+                  ],
+                  "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: See src/merge/array.rs.\n2. INPUT: deep_merge.\n3. LOGIC: Keyed array merge, replace strategy.\n4. OUTPUT: Array merge in merge::array."
+                }
+              ]
+            },
+            {
+              "type": "Task",
+              "id": "P2.M3.T2",
+              "title": "Layer Merge Orchestration",
+              "status": "Planned",
+              "description": "Merge multiple layers in precedence order.",
+              "subtasks": [
+                {
+                  "type": "Subtask",
+                  "id": "P2.M3.T2.S1",
+                  "title": "Implement Layer Merge",
+                  "status": "Planned",
+                  "story_points": 2,
+                  "dependencies": [
+                    "P2.M3.T1.S2"
+                  ],
+                  "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: See src/merge/layer.rs.\n2. INPUT: Deep merge, parsers.\n3. LOGIC: Sort by precedence, merge sequentially.\n4. OUTPUT: merge_layers in merge::layer."
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "Milestone",
+          "id": "P2.M4",
+          "title": "Text Merge",
+          "status": "Planned",
+          "description": "Implement 3-way text merge with conflict detection.",
+          "tasks": [
+            {
+              "type": "Task",
+              "id": "P2.M4.T1",
+              "title": "3-Way Text Merge",
+              "status": "Planned",
+              "description": "Implement text merge with conflict markers.",
+              "subtasks": [
+                {
+                  "type": "Subtask",
+                  "id": "P2.M4.T1.S1",
+                  "title": "Implement Text Merge",
+                  "status": "Planned",
+                  "story_points": 2,
+                  "dependencies": [
+                    "P2.M1.T1.S1"
+                  ],
+                  "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: See src/merge/text.rs.\n2. INPUT: Base, ours, theirs text.\n3. LOGIC: 3-way merge with conflict markers.\n4. OUTPUT: text_merge in merge::text."
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "Phase",
+      "id": "P3",
+      "title": "Staging & Commit Pipeline",
+      "status": "Planned",
+      "description": "Implement the staging system for layer routing and the commit pipeline for atomic multi-layer commits.",
+      "milestones": [
+        {
+          "type": "Milestone",
+          "id": "P3.M1",
+          "title": "Staging System",
+          "status": "Planned",
+          "description": "Implement file staging with layer routing.",
+          "tasks": [
+            {
+              "type": "Task",
+              "id": "P3.M1.T1",
+              "title": "Staging Implementation",
+              "status": "Planned",
+              "description": "Implement StagedEntry, StagingIndex, and router.",
+              "subtasks": [
+                {
+                  "type": "Subtask",
+                  "id": "P3.M1.T1.S1",
+                  "title": "Implement Staging Types",
+                  "status": "Planned",
+                  "story_points": 2,
+                  "dependencies": [
+                    "P1.M1.T3.S1"
+                  ],
+                  "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: See src/staging/.\n2. INPUT: Layer types.\n3. LOGIC: StagedEntry, StagingIndex, router.\n4. OUTPUT: Staging module complete."
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "Milestone",
+          "id": "P3.M2",
+          "title": "Commit Pipeline",
+          "status": "Planned",
+          "description": "Implement the orchestrated commit flow.",
+          "tasks": [
+            {
+              "type": "Task",
+              "id": "P3.M2.T1",
+              "title": "Pipeline Implementation",
+              "status": "Planned",
+              "description": "Implement CommitPipeline with validation and jinmap.",
+              "subtasks": [
+                {
+                  "type": "Subtask",
+                  "id": "P3.M2.T1.S1",
+                  "title": "Implement Commit Pipeline",
+                  "status": "Planned",
+                  "story_points": 2,
+                  "dependencies": [
+                    "P3.M1.T1.S1",
+                    "P1.M3.T1.S2"
+                  ],
+                  "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: See src/commit/.\n2. INPUT: StagingIndex, Transaction.\n3. LOGIC: Validate, build trees, commit, update jinmap.\n4. OUTPUT: CommitPipeline in commit::pipeline."
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "Phase",
+      "id": "P4",
+      "title": "CLI Commands",
+      "status": "Planned",
+      "description": "Implement all CLI commands by wiring them to existing infrastructure.",
+      "milestones": [
+        {
+          "type": "Milestone",
+          "id": "P4.M1",
+          "title": "CLI Framework",
+          "status": "Planned",
+          "description": "Set up clap-based CLI with all command definitions.",
+          "tasks": [
+            {
+              "type": "Task",
+              "id": "P4.M1.T1",
+              "title": "CLI Structure",
+              "status": "Planned",
+              "description": "Define all commands and subcommands with clap.",
+              "subtasks": [
+                {
+                  "type": "Subtask",
+                  "id": "P4.M1.T1.S1",
+                  "title": "Define CLI Structure",
+                  "status": "Planned",
+                  "story_points": 2,
+                  "dependencies": [
+                    "P1.M1.T1.S2"
+                  ],
+                  "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: See src/cli/mod.rs.\n2. INPUT: Module structure.\n3. LOGIC: Define Cli, Commands enum with all variants.\n4. OUTPUT: CLI definition in cli/mod.rs."
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "Milestone",
+          "id": "P4.M2",
+          "title": "Core Commands",
+          "status": "Planned",
+          "description": "Implement init, add, commit, and status commands.",
+          "tasks": [
+            {
+              "type": "Task",
+              "id": "P4.M2.T1",
+              "title": "Init Command",
+              "status": "Planned",
+              "description": "Initialize Jin in a project directory.",
+              "subtasks": [
+                {
+                  "type": "Subtask",
+                  "id": "P4.M2.T1.S1",
+                  "title": "Implement jin init",
+                  "status": "Planned",
+                  "story_points": 2,
+                  "dependencies": [
+                    "P4.M1.T1.S1",
+                    "P1.M1.T4.S1"
+                  ],
+                  "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: See PRD Section 18.1 and plan/architecture/system_context.md.\n2. INPUT: CLI args from P4.M1.T1.S1, JinConfig/ProjectContext from P1.M1.T4.S1.\n3. LOGIC: Wire InitCommand.execute() to:\n   a. Detect Git project root (error if not in Git repo)\n   b. Create .jin/ directory structure (.jin/context, .jin/workspace/, .jin/staging/)\n   c. Initialize JinRepo at ~/.jin/ if not exists\n   d. Create empty ProjectContext with inferred project name\n   e. Add .jin/ to .gitignore managed block\n   f. Print success message with project name\n4. OUTPUT: Functional `jin init` command. Returns Ok(()) on success."
+                }
+              ]
+            },
+            {
+              "type": "Task",
+              "id": "P4.M2.T2",
+              "title": "Add Command",
+              "status": "Planned",
+              "description": "Stage files to the appropriate layer.",
+              "subtasks": [
+                {
+                  "type": "Subtask",
+                  "id": "P4.M2.T2.S1",
+                  "title": "Implement jin add",
+                  "status": "Planned",
+                  "story_points": 2,
+                  "dependencies": [
+                    "P4.M2.T1.S1",
+                    "P3.M1.T1.S1"
+                  ],
+                  "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: See PRD Section 9 for routing table and src/staging/router.rs.\n2. INPUT: CLI args, StagingIndex from P3.M1.T1.S1, ProjectContext.\n3. LOGIC: Wire AddCommand.execute() to:\n   a. Load ProjectContext to get active mode/scope\n   b. Build RouteOptions from --mode, --scope, --global, --project flags\n   c. Call route_to_layer() to determine target Layer\n   d. For each file path:\n      - Verify file exists and is not tracked by project Git\n      - Read file content and compute hash\n      - Create StagedEntry with layer, path, metadata\n      - Add to StagingIndex\n   e. Add files to .gitignore managed block\n   f. Save StagingIndex\n   g. Print summary: N files staged to layer X\n4. OUTPUT: Functional `jin add <files>` command."
+                }
+              ]
+            },
+            {
+              "type": "Task",
+              "id": "P4.M2.T3",
+              "title": "Commit Command",
+              "status": "Planned",
+              "description": "Commit staged files atomically.",
+              "subtasks": [
+                {
+                  "type": "Subtask",
+                  "id": "P4.M2.T3.S1",
+                  "title": "Implement jin commit",
+                  "status": "Planned",
+                  "story_points": 2,
+                  "dependencies": [
+                    "P4.M2.T2.S1",
+                    "P3.M2.T1.S1"
+                  ],
+                  "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: See PRD Section 6 and src/commit/pipeline.rs.\n2. INPUT: CLI args, CommitPipeline from P3.M2.T1.S1, StagingIndex.\n3. LOGIC: Wire CommitCommand.execute() to:\n   a. Load StagingIndex (error if empty)\n   b. Create CommitPipeline with staged entries\n   c. If --dry-run: print what would be committed, return\n   d. Run pipeline.execute() with commit message\n   e. Handle CommitResult:\n      - Success: print commit summary, layers touched\n      - Failure: print error, rollback happened automatically\n   f. Clear StagingIndex on success\n4. OUTPUT: Functional `jin commit -m \"message\"` command."
+                }
+              ]
+            },
+            {
+              "type": "Task",
+              "id": "P4.M2.T4",
+              "title": "Status Command",
+              "status": "Planned",
+              "description": "Show workspace and staging state.",
+              "subtasks": [
+                {
+                  "type": "Subtask",
+                  "id": "P4.M2.T4.S1",
+                  "title": "Implement jin status",
+                  "status": "Planned",
+                  "story_points": 1,
+                  "dependencies": [
+                    "P4.M2.T1.S1"
+                  ],
+                  "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: See PRD Section 18.6.\n2. INPUT: StagingIndex, ProjectContext, workspace state.\n3. LOGIC: Wire StatusCommand.execute() to:\n   a. Load ProjectContext and print active mode/scope\n   b. Load StagingIndex and list staged files by layer\n   c. Check workspace for modified files (compare to applied state)\n   d. Format output:\n      Active mode: claude\n      Active scope: language:javascript\n      Staged changes:\n        mode/claude/project/myproj:\n          .claude/config.json\n      Workspace changes:\n        (modified) .claude/settings.json\n4. OUTPUT: Functional `jin status` command."
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "Milestone",
+          "id": "P4.M3",
+          "title": "Mode & Scope Commands",
+          "status": "Planned",
+          "description": "Implement mode and scope lifecycle commands.",
+          "tasks": [
+            {
+              "type": "Task",
+              "id": "P4.M3.T1",
+              "title": "Mode Commands",
+              "status": "Planned",
+              "description": "Implement mode create/use/list/delete subcommands.",
+              "subtasks": [
+                {
+                  "type": "Subtask",
+                  "id": "P4.M3.T1.S1",
+                  "title": "Wire Mode Subcommands to CLI",
+                  "status": "Planned",
+                  "story_points": 2,
+                  "dependencies": [
+                    "P4.M2.T4.S1"
+                  ],
+                  "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: See src/commands/mode.rs - helper functions exist.\n2. INPUT: CLI ModeAction enum, existing mode functions.\n3. LOGIC: Wire ModeAction variants to existing functions:\n   a. ModeAction::Create{name} -> create_mode(name)\n   b. ModeAction::Use{name} -> update ProjectContext.mode, call apply\n   c. ModeAction::List -> list_modes()\n   d. ModeAction::Delete{name} -> delete_mode(name)\n   e. ModeAction::Show -> show_mode() current context\n   f. ModeAction::Unset -> clear ProjectContext.mode\n4. OUTPUT: Functional `jin mode create|use|list|delete|show|unset`."
+                }
+              ]
+            },
+            {
+              "type": "Task",
+              "id": "P4.M3.T2",
+              "title": "Scope Commands",
+              "status": "Planned",
+              "description": "Implement scope create/use/list/delete subcommands.",
+              "subtasks": [
+                {
+                  "type": "Subtask",
+                  "id": "P4.M3.T2.S1",
+                  "title": "Wire Scope Subcommands to CLI",
+                  "status": "Planned",
+                  "story_points": 2,
+                  "dependencies": [
+                    "P4.M3.T1.S1"
+                  ],
+                  "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: See src/commands/scope.rs - helper functions exist.\n2. INPUT: CLI ScopeAction enum, existing scope functions.\n3. LOGIC: Wire ScopeAction variants to existing functions:\n   a. ScopeAction::Create{name, mode} -> create_scope(name, mode)\n   b. ScopeAction::Use{name} -> update ProjectContext.scope, call apply\n   c. ScopeAction::List -> list_scopes()\n   d. ScopeAction::Delete{name} -> delete_scope(name)\n   e. ScopeAction::Show -> show_scope() current context\n   f. ScopeAction::Unset -> clear ProjectContext.scope\n4. OUTPUT: Functional `jin scope create|use|list|delete|show|unset`."
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "Milestone",
+          "id": "P4.M4",
+          "title": "Workspace Commands",
+          "status": "Planned",
+          "description": "Implement apply and workspace management.",
+          "tasks": [
+            {
+              "type": "Task",
+              "id": "P4.M4.T1",
+              "title": "Apply Command",
+              "status": "Planned",
+              "description": "Implement jin apply to merge layers into workspace.",
+              "subtasks": [
+                {
+                  "type": "Subtask",
+                  "id": "P4.M4.T1.S1",
+                  "title": "Complete Apply Command Wiring",
+                  "status": "Planned",
+                  "story_points": 1,
+                  "dependencies": [
+                    "P4.M3.T2.S1"
+                  ],
+                  "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: ApplyCommand.execute() exists but needs polish.\n2. INPUT: apply_workspace() from workspace module.\n3. LOGIC: Enhance ApplyCommand:\n   a. Add --force flag handling (skip dirty check)\n   b. Add --dry-run flag (print plan without applying)\n   c. Better output formatting with file list\n   d. Error handling for conflicts\n4. OUTPUT: Polished `jin apply` command."
+                }
+              ]
+            },
+            {
+              "type": "Task",
+              "id": "P4.M4.T2",
+              "title": "Reset Command",
+              "status": "Planned",
+              "description": "Implement jin reset for undoing changes.",
+              "subtasks": [
+                {
+                  "type": "Subtask",
+                  "id": "P4.M4.T2.S1",
+                  "title": "Implement jin reset",
+                  "status": "Planned",
+                  "story_points": 2,
+                  "dependencies": [
+                    "P4.M4.T1.S1"
+                  ],
+                  "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: See PRD Section 18.7 for reset semantics.\n2. INPUT: Git refs, StagingIndex.\n3. LOGIC: Implement reset with layer targeting:\n   a. Parse layer flags (--mode, --scope, --project)\n   b. --soft: keep changes in staging\n   c. --mixed (default): unstage but keep in workspace\n   d. --hard: discard all changes\n   e. Update refs to previous commit\n   f. Re-apply if --hard\n4. OUTPUT: Functional `jin reset [--soft|--mixed|--hard]`."
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "Milestone",
+          "id": "P4.M5",
+          "title": "Utility Commands",
+          "status": "Planned",
+          "description": "Implement diff, log, context, import, export, repair, layers, list.",
+          "tasks": [
+            {
+              "type": "Task",
+              "id": "P4.M5.T1",
+              "title": "Diff Command",
+              "status": "Planned",
+              "description": "Show differences between layers or workspace.",
+              "subtasks": [
+                {
+                  "type": "Subtask",
+                  "id": "P4.M5.T1.S1",
+                  "title": "Wire DiffCommand",
+                  "status": "Planned",
+                  "story_points": 2,
+                  "dependencies": [
+                    "P4.M4.T1.S1"
+                  ],
+                  "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: DiffCommand struct exists in src/commands/diff.rs.\n2. INPUT: Layer refs, workspace files, similar crate.\n3. LOGIC: Wire DiffCommand.execute():\n   a. If --staged: diff staged vs layer current\n   b. If layer specified: show layer content\n   c. Default: diff workspace vs merged layers\n   d. Use similar crate for unified diff\n   e. Color output (green add, red delete)\n4. OUTPUT: Functional `jin diff [layer]`."
+                }
+              ]
+            },
+            {
+              "type": "Task",
+              "id": "P4.M5.T2",
+              "title": "Log Command",
+              "status": "Planned",
+              "description": "Show commit history for layers.",
+              "subtasks": [
+                {
+                  "type": "Subtask",
+                  "id": "P4.M5.T2.S1",
+                  "title": "Wire LogCommand",
+                  "status": "Planned",
+                  "story_points": 1,
+                  "dependencies": [
+                    "P4.M5.T1.S1"
+                  ],
+                  "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: LogCommand struct exists in src/commands/log.rs.\n2. INPUT: Layer refs, git2 commit walking.\n3. LOGIC: Wire LogCommand.execute():\n   a. If layer specified: walk that layer's history\n   b. Default: interleave history from active layers\n   c. Format: short SHA, date, message\n   d. Limit to --count entries\n4. OUTPUT: Functional `jin log [--layer=X] [--count=N]`."
+                }
+              ]
+            },
+            {
+              "type": "Task",
+              "id": "P4.M5.T3",
+              "title": "Context Command",
+              "status": "Planned",
+              "description": "Show/set active context.",
+              "subtasks": [
+                {
+                  "type": "Subtask",
+                  "id": "P4.M5.T3.S1",
+                  "title": "Wire ContextCommand",
+                  "status": "Planned",
+                  "story_points": 1,
+                  "dependencies": [
+                    "P4.M5.T2.S1"
+                  ],
+                  "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: ContextCommand exists in src/commands/context.rs.\n2. INPUT: ProjectContext.\n3. LOGIC: Wire ContextCommand.execute():\n   a. Load and display ProjectContext\n   b. Show: Mode, Scope, Project, last-updated\n4. OUTPUT: Functional `jin context`."
+                }
+              ]
+            },
+            {
+              "type": "Task",
+              "id": "P4.M5.T4",
+              "title": "Import Command",
+              "status": "Planned",
+              "description": "Import Git-tracked files into Jin.",
+              "subtasks": [
+                {
+                  "type": "Subtask",
+                  "id": "P4.M5.T4.S1",
+                  "title": "Wire ImportCommand",
+                  "status": "Planned",
+                  "story_points": 2,
+                  "dependencies": [
+                    "P4.M5.T3.S1"
+                  ],
+                  "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: ImportCommand exists in src/commands/import_cmd.rs.\n2. INPUT: Project Git repo, staging system.\n3. LOGIC: Wire ImportCommand.execute():\n   a. Verify file IS tracked by project Git\n   b. Read file content\n   c. Stage to Jin layer\n   d. Run `git rm --cached <file>`\n   e. Add to .gitignore managed block\n   f. Require --force for modified files\n4. OUTPUT: Functional `jin import <files>`."
+                }
+              ]
+            },
+            {
+              "type": "Task",
+              "id": "P4.M5.T5",
+              "title": "Export Command",
+              "status": "Planned",
+              "description": "Export Jin files back to Git.",
+              "subtasks": [
+                {
+                  "type": "Subtask",
+                  "id": "P4.M5.T5.S1",
+                  "title": "Wire ExportCommand",
+                  "status": "Planned",
+                  "story_points": 1,
+                  "dependencies": [
+                    "P4.M5.T4.S1"
+                  ],
+                  "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: ExportCommand exists in src/commands/export.rs.\n2. INPUT: Workspace files, project Git.\n3. LOGIC: Wire ExportCommand.execute():\n   a. Verify file is in Jin workspace\n   b. Remove from .gitignore managed block\n   c. Run `git add <file>`\n   d. Warn if file differs between layers\n4. OUTPUT: Functional `jin export <files>`."
+                }
+              ]
+            },
+            {
+              "type": "Task",
+              "id": "P4.M5.T6",
+              "title": "Repair Command",
+              "status": "Planned",
+              "description": "Repair Jin state.",
+              "subtasks": [
+                {
+                  "type": "Subtask",
+                  "id": "P4.M5.T6.S1",
+                  "title": "Wire RepairCommand",
+                  "status": "Planned",
+                  "story_points": 2,
+                  "dependencies": [
+                    "P4.M5.T5.S1"
+                  ],
+                  "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: RepairCommand exists in src/commands/repair.rs.\n2. INPUT: Transaction recovery, jinmap recovery.\n3. LOGIC: Wire RepairCommand.execute():\n   a. Clean orphan transaction refs\n   b. Regenerate .jinmap from Git\n   c. Validate/reset ProjectContext\n   d. Re-apply layers to workspace\n   e. Fix .gitignore managed block\n   f. --dry-run shows what would be fixed\n4. OUTPUT: Functional `jin repair [--dry-run]`."
+                }
+              ]
+            },
+            {
+              "type": "Task",
+              "id": "P4.M5.T7",
+              "title": "Layers Command",
+              "status": "Planned",
+              "description": "Show current layer composition.",
+              "subtasks": [
+                {
+                  "type": "Subtask",
+                  "id": "P4.M5.T7.S1",
+                  "title": "Implement jin layers",
+                  "status": "Planned",
+                  "story_points": 1,
+                  "dependencies": [
+                    "P4.M5.T6.S1"
+                  ],
+                  "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: See PRD Section 18.6.\n2. INPUT: Layer refs, active context.\n3. LOGIC: Implement layers command:\n   a. List all 9 layers with status (exists/empty)\n   b. Highlight active layers based on context\n   c. Show merge order (precedence)\n4. OUTPUT: Functional `jin layers`."
+                }
+              ]
+            },
+            {
+              "type": "Task",
+              "id": "P4.M5.T8",
+              "title": "List Command",
+              "status": "Planned",
+              "description": "List available modes/scopes/projects.",
+              "subtasks": [
+                {
+                  "type": "Subtask",
+                  "id": "P4.M5.T8.S1",
+                  "title": "Implement jin list",
+                  "status": "Planned",
+                  "story_points": 1,
+                  "dependencies": [
+                    "P4.M5.T7.S1"
+                  ],
+                  "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: See PRD Section 18.6.\n2. INPUT: Jin repo refs.\n3. LOGIC: Implement list command:\n   a. Enumerate refs/jin/layers/mode/* -> modes\n   b. Enumerate refs/jin/layers/scope/* -> scopes\n   c. Enumerate refs/jin/layers/project/* -> projects\n   d. Format as tree or table\n4. OUTPUT: Functional `jin list`."
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "Milestone",
+          "id": "P4.M6",
+          "title": "Link Command",
+          "status": "Planned",
+          "description": "Implement jin link for remote config repos.",
+          "tasks": [
+            {
+              "type": "Task",
+              "id": "P4.M6.T1",
+              "title": "Link Command",
+              "status": "Planned",
+              "description": "Link to shared Jin config repository.",
+              "subtasks": [
+                {
+                  "type": "Subtask",
+                  "id": "P4.M6.T1.S1",
+                  "title": "Implement jin link",
+                  "status": "Planned",
+                  "story_points": 2,
+                  "dependencies": [
+                    "P4.M5.T8.S1"
+                  ],
+                  "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: See PRD Section 18.1.\n2. INPUT: Remote URL, JinConfig.\n3. LOGIC: Implement link command:\n   a. Parse and validate remote URL\n   b. Add remote to Jin repo config\n   c. Update JinConfig.remote.url\n   d. Optionally fetch immediately\n4. OUTPUT: Functional `jin link <repo-url>`."
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "Phase",
+      "id": "P5",
+      "title": "Synchronization",
+      "status": "Planned",
+      "description": "Implement remote synchronization: fetch, pull, push, and sync commands.",
+      "milestones": [
+        {
+          "type": "Milestone",
+          "id": "P5.M1",
+          "title": "Remote Operations",
+          "status": "Planned",
+          "description": "Implement fetch, pull, push, and sync commands.",
+          "tasks": [
+            {
+              "type": "Task",
+              "id": "P5.M1.T1",
+              "title": "Fetch Command",
+              "status": "Planned",
+              "description": "Fetch updates from remote Jin repo.",
+              "subtasks": [
+                {
+                  "type": "Subtask",
+                  "id": "P5.M1.T1.S1",
+                  "title": "Implement jin fetch",
+                  "status": "Planned",
+                  "story_points": 2,
+                  "dependencies": [
+                    "P4.M6.T1.S1"
+                  ],
+                  "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: See PRD Section 14 for sync rules.\n2. INPUT: JinConfig.remote.url, git2 remote APIs.\n3. LOGIC: Implement fetch command:\n   a. Load JinConfig to get remote URL\n   b. Create git2::Remote for Jin repo\n   c. Configure credential callbacks for SSH/HTTPS\n   d. Fetch refs/jin/* from remote\n   e. Update local refs/jin/remote/* tracking refs\n   f. Report: N refs updated\n   g. Notify if active contexts have updates\n4. OUTPUT: Functional `jin fetch`."
+                }
+              ]
+            },
+            {
+              "type": "Task",
+              "id": "P5.M1.T2",
+              "title": "Pull Command",
+              "status": "Planned",
+              "description": "Merge remote changes into local.",
+              "subtasks": [
+                {
+                  "type": "Subtask",
+                  "id": "P5.M1.T2.S1",
+                  "title": "Implement jin pull",
+                  "status": "Planned",
+                  "story_points": 2,
+                  "dependencies": [
+                    "P5.M1.T1.S1"
+                  ],
+                  "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: See PRD Section 14 - requires clean state.\n2. INPUT: fetch, merge_layers, transaction.\n3. LOGIC: Implement pull command:\n   a. Run fetch first\n   b. For each layer with remote changes:\n      - Try fast-forward if possible\n      - Else: merge remote into local (may conflict)\n   c. Use atomic transaction for all updates\n   d. Re-apply layers to workspace\n   e. Report conflicts if any\n4. OUTPUT: Functional `jin pull`."
+                }
+              ]
+            },
+            {
+              "type": "Task",
+              "id": "P5.M1.T3",
+              "title": "Push Command",
+              "status": "Planned",
+              "description": "Push local changes to remote.",
+              "subtasks": [
+                {
+                  "type": "Subtask",
+                  "id": "P5.M1.T3.S1",
+                  "title": "Implement jin push",
+                  "status": "Planned",
+                  "story_points": 2,
+                  "dependencies": [
+                    "P5.M1.T1.S1"
+                  ],
+                  "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: See PRD Section 14 - requires fetch first.\n2. INPUT: fetch, git2 push APIs.\n3. LOGIC: Implement push command:\n   a. Run fetch (required per PRD)\n   b. Check for conflicts with remote\n   c. Reject if behind remote (must pull first)\n   d. Push refs/jin/layers/* to remote\n   e. --force allows overwrite (with warning)\n   f. Configure credential callbacks\n4. OUTPUT: Functional `jin push [--force]`."
+                }
+              ]
+            },
+            {
+              "type": "Task",
+              "id": "P5.M1.T4",
+              "title": "Sync Command",
+              "status": "Planned",
+              "description": "Convenience wrapper for fetch+pull+push.",
+              "subtasks": [
+                {
+                  "type": "Subtask",
+                  "id": "P5.M1.T4.S1",
+                  "title": "Implement jin sync",
+                  "status": "Planned",
+                  "story_points": 1,
+                  "dependencies": [
+                    "P5.M1.T2.S1",
+                    "P5.M1.T3.S1"
+                  ],
+                  "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: See PRD Section 14.\n2. INPUT: fetch, pull, push commands.\n3. LOGIC: Implement sync command:\n   a. Call fetch\n   b. Call pull\n   c. Call push\n   d. Stop on first error\n   e. Report overall status\n4. OUTPUT: Functional `jin sync`."
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "Phase",
+      "id": "P6",
+      "title": "Polish & Production Readiness",
+      "status": "Planned",
+      "description": "Shell completion, comprehensive testing, documentation, and release preparation.",
+      "milestones": [
+        {
+          "type": "Milestone",
+          "id": "P6.M1",
+          "title": "Shell Completion",
+          "status": "Planned",
+          "description": "Implement shell completion for bash, zsh, fish, powershell.",
+          "tasks": [
+            {
+              "type": "Task",
+              "id": "P6.M1.T1",
+              "title": "Completion Generator",
+              "status": "Planned",
+              "description": "Implement jin completion subcommand.",
+              "subtasks": [
+                {
+                  "type": "Subtask",
+                  "id": "P6.M1.T1.S1",
+                  "title": "Implement Shell Completions",
+                  "status": "Planned",
+                  "story_points": 1,
+                  "dependencies": [
+                    "P5.M1.T4.S1"
+                  ],
+                  "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: Use clap_complete crate.\n2. INPUT: CLI structure.\n3. LOGIC: Implement completion command:\n   a. Add clap_complete dependency\n   b. Shell enum: Bash, Zsh, Fish, PowerShell\n   c. Use clap_complete to generate scripts\n   d. Output to stdout for piping\n4. OUTPUT: Functional `jin completion <shell>`."
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "Milestone",
+          "id": "P6.M2",
+          "title": "Integration Testing",
+          "status": "Planned",
+          "description": "Comprehensive end-to-end test suite.",
+          "tasks": [
+            {
+              "type": "Task",
+              "id": "P6.M2.T1",
+              "title": "CLI Integration Tests",
+              "status": "Planned",
+              "description": "End-to-end tests for all CLI commands.",
+              "subtasks": [
+                {
+                  "type": "Subtask",
+                  "id": "P6.M2.T1.S1",
+                  "title": "Core Workflow Tests",
+                  "status": "Planned",
+                  "story_points": 2,
+                  "dependencies": [
+                    "P6.M1.T1.S1"
+                  ],
+                  "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: Use assert_cmd, predicates.\n2. INPUT: All CLI commands.\n3. LOGIC: Create tests/integration/core_workflow.rs:\n   a. Setup: create temp dir with git repo\n   b. Test jin init in new project\n   c. Test jin add with various flags\n   d. Test jin commit with atomic verify\n   e. Test jin status shows correct state\n   f. Verify file system state after each\n4. OUTPUT: Integration tests in tests/integration/."
+                },
+                {
+                  "type": "Subtask",
+                  "id": "P6.M2.T1.S2",
+                  "title": "Mode/Scope Workflow Tests",
+                  "status": "Planned",
+                  "story_points": 2,
+                  "dependencies": [
+                    "P6.M2.T1.S1"
+                  ],
+                  "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: Test full mode/scope lifecycle.\n2. INPUT: Mode and scope commands.\n3. LOGIC: Create tests/integration/mode_scope.rs:\n   a. Test mode create/use/list/delete\n   b. Test scope create with --mode\n   c. Test context switching\n   d. Verify layer routing for each combination\n   e. Test precedence: mode-scope > scope > mode\n4. OUTPUT: Mode/scope integration tests."
+                },
+                {
+                  "type": "Subtask",
+                  "id": "P6.M2.T1.S3",
+                  "title": "Sync Workflow Tests",
+                  "status": "Planned",
+                  "story_points": 2,
+                  "dependencies": [
+                    "P6.M2.T1.S2"
+                  ],
+                  "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: Test remote operations.\n2. INPUT: Sync commands, local remote setup.\n3. LOGIC: Create tests/integration/sync.rs:\n   a. Setup: two Jin repos (local + remote)\n   b. Test fetch downloads refs\n   c. Test push uploads refs\n   d. Test pull merges changes\n   e. Test sync full cycle\n   f. Test conflict detection\n4. OUTPUT: Sync integration tests."
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "Milestone",
+          "id": "P6.M3",
+          "title": "Documentation",
+          "status": "Planned",
+          "description": "User documentation and README.",
+          "tasks": [
+            {
+              "type": "Task",
+              "id": "P6.M3.T1",
+              "title": "User Documentation",
+              "status": "Planned",
+              "description": "Write comprehensive user guide.",
+              "subtasks": [
+                {
+                  "type": "Subtask",
+                  "id": "P6.M3.T1.S1",
+                  "title": "Write README",
+                  "status": "Planned",
+                  "story_points": 2,
+                  "dependencies": [
+                    "P6.M2.T1.S3"
+                  ],
+                  "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: Based on completed implementation.\n2. INPUT: All implemented commands.\n3. LOGIC: Create README.md:\n   a. Project overview\n   b. Installation instructions\n   c. Quick start guide\n   d. Key concepts (layers, modes, scopes)\n   e. Command reference\n   f. Configuration guide\n   g. Examples\n   h. Contributing guide\n4. OUTPUT: README.md in project root."
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "Milestone",
+          "id": "P6.M4",
+          "title": "Release Preparation",
+          "status": "Planned",
+          "description": "Build configuration and CI/CD.",
+          "tasks": [
+            {
+              "type": "Task",
+              "id": "P6.M4.T1",
+              "title": "Release Configuration",
+              "status": "Planned",
+              "description": "Configure CI and release builds.",
+              "subtasks": [
+                {
+                  "type": "Subtask",
+                  "id": "P6.M4.T1.S1",
+                  "title": "Configure CI/CD",
+                  "status": "Planned",
+                  "story_points": 2,
+                  "dependencies": [
+                    "P6.M3.T1.S1"
+                  ],
+                  "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: Standard Rust CI practices.\n2. INPUT: Complete test suite.\n3. LOGIC: Create GitHub Actions:\n   a. .github/workflows/ci.yml: test, clippy, fmt\n   b. .github/workflows/release.yml: build on tag\n   c. Targets: linux-x64, macos-x64, macos-arm64, windows\n   d. Generate SHA256 checksums\n   e. Create GitHub release with binaries\n4. OUTPUT: CI/CD configuration files."
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

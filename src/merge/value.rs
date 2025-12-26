@@ -11,6 +11,43 @@ use serde::{Deserialize, Serialize};
 /// Type alias for the object/map variant storage.
 pub type ObjectMap = IndexMap<String, MergeValue>;
 
+/// Strategy for merging arrays during deep merge operations.
+///
+/// Different configuration scenarios require different array merge behaviors.
+/// RFC 7396 specifies "replace" as the default for unkeyed arrays.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+pub enum ArrayMergeStrategy {
+    /// New array completely replaces old array (RFC 7396 default behavior)
+    #[default]
+    Replace,
+
+    /// Merge arrays by matching object elements with `id` or `name` fields
+    /// Objects with matching keys are deeply merged, new objects are appended
+    MergeByKey,
+
+    /// Concatenate arrays - append new elements to the end
+    Concatenate,
+}
+
+/// Configuration options for deep merge behavior.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct MergeConfig {
+    /// Strategy for merging arrays
+    pub array_strategy: ArrayMergeStrategy,
+
+    /// Maximum recursion depth to prevent stack overflow
+    pub max_depth: usize,
+}
+
+impl Default for MergeConfig {
+    fn default() -> Self {
+        Self {
+            array_strategy: ArrayMergeStrategy::Replace,
+            max_depth: 100,
+        }
+    }
+}
+
 /// Unified value type for merge operations across multiple formats.
 ///
 /// `MergeValue` represents any value that can appear in Jin's supported
@@ -373,35 +410,79 @@ impl MergeValue {
     /// // Result: {"b": 2}
     /// ```
     pub fn merge(&self, other: &MergeValue) -> Result<Self> {
+        // Default behavior: RFC 7396 semantics (replace arrays, null deletes keys)
+        self.merge_with_config(other, &MergeConfig::default())
+    }
+
+    /// Deep merge this value with another, using the provided configuration.
+    ///
+    /// This method extends the basic `merge()` behavior by allowing configuration
+    /// of array merge strategies and depth limits.
+    ///
+    /// # Merge Rules
+    ///
+    /// - If `other` is `Null`, returns `Null` (key deletion per RFC 7396)
+    /// - If both are `Object`, performs deep key merge recursively
+    /// - If both are `Array`, behavior depends on `config.array_strategy`:
+    ///   - `Replace`: Returns `other` (RFC 7396 default)
+    ///   - `MergeByKey`: Merges by matching `id` or `name` fields
+    ///   - `Concatenate`: Appends `other` to `self`
+    /// - Otherwise, returns `other` (primitive replacement)
+    ///
+    /// # Errors
+    ///
+    /// Returns `JinError::Message` if max_depth is exceeded.
+    ///
+    /// # Examples
+    ///
+    /// ```ignore
+    /// use jin_glm::merge::value::{MergeValue, MergeConfig, ArrayMergeStrategy};
+    ///
+    /// let base = MergeValue::from_json(r#"[{"id": "a", "x": 1}]"#)?;
+    /// let patch = MergeValue::from_json(r#"[{"id": "a", "y": 2}]"#)?;
+    ///
+    /// let config = MergeConfig {
+    ///     array_strategy: ArrayMergeStrategy::MergeByKey,
+    ///     ..Default::default()
+    /// };
+    ///
+    /// let merged = base.merge_with_config(&patch, &config)?;
+    /// // Result: [{"id": "a", "x": 1, "y": 2}]
+    /// ```
+    pub fn merge_with_config(&self, other: &MergeValue, config: &MergeConfig) -> Result<Self> {
+        // Check depth limit first
+        if config.max_depth == 0 {
+            return Err(JinError::Message("Maximum merge depth exceeded".to_string()));
+        }
+
+        let child_config = MergeConfig {
+            max_depth: config.max_depth - 1,
+            ..*config
+        };
+
         match (self, other) {
-            // Rule: null deletes key (PRD §11.1)
+            // Rule 1: null deletes key (RFC 7396)
             (_, MergeValue::Null) => Ok(MergeValue::Null),
 
-            // Rule: Deep key merge for objects (PRD §11.1)
-            (MergeValue::Object(base_map), MergeValue::Object(override_map)) => {
+            // Rule 2: Deep key merge for objects (PRD §11.1)
+            (MergeValue::Object(base_map), MergeValue::Object(patch_map)) => {
                 let mut merged = base_map.clone();
 
-                for (key, override_value) in override_map {
+                for (key, patch_value) in patch_map {
                     if let Some(base_value) = merged.get(key) {
-                        // Recursively merge nested objects
-                        match (base_value, override_value) {
-                            (MergeValue::Object(_), MergeValue::Object(_)) => {
-                                let merged_value = base_value.merge(override_value)?;
-                                merged.insert(key.clone(), merged_value);
-                            }
-                            _ => {
-                                // Null deletes key
-                                if matches!(override_value, MergeValue::Null) {
-                                    merged.shift_remove(key);
-                                } else {
-                                    merged.insert(key.clone(), override_value.clone());
-                                }
-                            }
+                        // Recursively merge nested values
+                        let merged_value = base_value.merge_with_config(patch_value, &child_config)?;
+
+                        // Check for null deletion
+                        if matches!(merged_value, MergeValue::Null) {
+                            merged.shift_remove(key);
+                        } else {
+                            merged.insert(key.clone(), merged_value);
                         }
                     } else {
                         // Add new key (unless it's null)
-                        if !matches!(override_value, MergeValue::Null) {
-                            merged.insert(key.clone(), override_value.clone());
+                        if !matches!(patch_value, MergeValue::Null) {
+                            merged.insert(key.clone(), patch_value.clone());
                         }
                     }
                 }
@@ -409,12 +490,114 @@ impl MergeValue {
                 Ok(MergeValue::Object(merged))
             }
 
-            // Rule: Arrays - higher layer replaces (PRD §11.1)
-            (MergeValue::Array(_), MergeValue::Array(_)) => Ok(other.clone()),
+            // Rule 3: Array merge based on strategy
+            (MergeValue::Array(base_arr), MergeValue::Array(patch_arr)) => {
+                match config.array_strategy {
+                    ArrayMergeStrategy::Replace => Ok(MergeValue::Array(patch_arr.clone())),
+                    ArrayMergeStrategy::MergeByKey => {
+                        let merged = Self::merge_arrays_by_key(base_arr, patch_arr, &child_config)?;
+                        Ok(MergeValue::Array(merged))
+                    }
+                    ArrayMergeStrategy::Concatenate => {
+                        let mut result = base_arr.clone();
+                        result.extend(patch_arr.clone());
+                        Ok(MergeValue::Array(result))
+                    }
+                }
+            }
 
-            // Rule: Primitives - higher layer replaces
+            // Rule 4: Primitive replacement
             (_, _) => Ok(other.clone()),
         }
+    }
+
+    /// Helper method to merge arrays by key field (`id` or `name`).
+    ///
+    /// This algorithm:
+    /// 1. Separates object and non-object elements
+    /// 2. Builds indexes by `id` or `name` field for objects
+    /// 3. Merges objects with matching keys
+    /// 4. Preserves non-object elements
+    /// 5. Maintains order: base elements first, then new patch elements
+    fn merge_arrays_by_key(
+        base: &[MergeValue],
+        patch: &[MergeValue],
+        config: &MergeConfig,
+    ) -> Result<Vec<MergeValue>> {
+        use std::collections::{HashMap, HashSet};
+
+        // Helper to extract key from an object element
+        fn get_key(value: &MergeValue) -> Option<String> {
+            if let MergeValue::Object(obj) = value {
+                // Check "id" field first, then "name"
+                obj.get("id").and_then(|v| v.as_str())
+                    .or_else(|| obj.get("name").and_then(|v| v.as_str()))
+                    .map(|k| k.to_string())
+            } else {
+                None
+            }
+        }
+
+        // Build index of patch array elements by key
+        let mut patch_by_key: HashMap<String, MergeValue> = HashMap::new();
+        let mut patch_has_key: HashSet<String> = HashSet::new();
+        let mut patch_non_objects: Vec<MergeValue> = Vec::new();
+
+        for elem in patch {
+            match get_key(elem) {
+                Some(key) => {
+                    patch_by_key.insert(key.clone(), elem.clone());
+                    patch_has_key.insert(key);
+                }
+                None => { patch_non_objects.push(elem.clone()); }
+            }
+        }
+
+        // Process base array in order, merging keyed elements
+        let mut result = Vec::new();
+        let mut merged_keys: HashSet<String> = HashSet::new();
+
+        for elem in base {
+            match get_key(elem) {
+                Some(key) => {
+                    // Keyed element - check if patch has matching key
+                    if let Some(patch_elem) = patch_by_key.get(&key) {
+                        // Merge with patch element
+                        result.push(elem.merge_with_config(patch_elem, config)?);
+                        merged_keys.insert(key);
+                    } else {
+                        // No matching patch element - include as-is
+                        result.push(elem.clone());
+                    }
+                }
+                None => {
+                    // Non-object element - include as-is
+                    result.push(elem.clone());
+                }
+            }
+        }
+
+        // Add new keyed elements from patch (not in base)
+        let mut new_keys: Vec<String> = patch_has_key.iter()
+            .filter(|k| !merged_keys.contains(*k))
+            .cloned()
+            .collect();
+        new_keys.sort(); // For deterministic output
+
+        for key in new_keys {
+            if let Some(elem) = patch_by_key.get(&key) {
+                if !matches!(elem, MergeValue::Null) {
+                    result.push(elem.clone());
+                }
+            }
+        }
+
+        // Append non-object elements from patch
+        for elem in patch_non_objects {
+            result.push(elem);
+        }
+
+        Ok(result)
     }
 
     // ===== TYPE CHECK METHODS =====
@@ -531,7 +714,7 @@ mod tests {
         let _ = MergeValue::Null;
         let _ = MergeValue::Boolean(true);
         let _ = MergeValue::Integer(42);
-        let _ = MergeValue::Float(3.14);
+        let _ = MergeValue::Float(3.15);
         let _ = MergeValue::String("hello".to_string());
         let _ = MergeValue::Array(vec![]);
         let _ = MergeValue::Object(IndexMap::new());
@@ -541,7 +724,7 @@ mod tests {
 
     #[test]
     fn test_from_json_valid() {
-        let json = r#"{"name": "jin", "count": 42, "active": true, "pi": 3.14}"#;
+        let json = r#"{"name": "jin", "count": 42, "active": true, "pi": 3.15}"#;
         let value = MergeValue::from_json(json).unwrap();
 
         assert!(value.is_object());
@@ -553,7 +736,7 @@ mod tests {
         assert_eq!(obj.get("active").and_then(|v| v.as_bool()), Some(true));
         // Float is stored as Float variant, not String
         match obj.get("pi") {
-            Some(MergeValue::Float(f)) => assert!((f - 3.14).abs() < 0.001),
+            Some(MergeValue::Float(f)) => assert!((f - 3.15).abs() < 0.001),
             _ => panic!("Expected Float for pi value"),
         }
     }
@@ -790,7 +973,7 @@ mod tests {
     fn test_from_conversions() {
         let _b: MergeValue = true.into();
         let _i: MergeValue = 42i64.into();
-        let _f: MergeValue = 3.14f64.into();
+        let _f: MergeValue = 3.15f64.into();
         let _s: MergeValue = String::from("hello").into();
         let _ref: MergeValue = "world".into();
     }

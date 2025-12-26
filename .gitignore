@@ -6,3 +6,7 @@ Cargo.lock
 # Jin workspace
 .jin/
 .jinmap
+
+# BEGIN JIN MANAGED
+.jin/
+# END JIN MANAGED

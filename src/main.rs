@@ -100,35 +100,57 @@ fn main() -> ExitCode {
 
                 // Scope Management
                 Commands::Scope(ScopeCommand::Create { name, mode }) => {
-                    let mode_info = mode
-                        .as_ref()
-                        .map(|m| format!(" (bound to mode: {m})"))
-                        .unwrap_or_default();
-                    println!(
-                        "jin scope create {name}{mode_info} - command handler to be implemented"
-                    );
-                    ExitCode::SUCCESS
+                    match commands::scope_execute(&ScopeCommand::Create { name, mode }) {
+                        Ok(()) => ExitCode::SUCCESS,
+                        Err(e) => {
+                            eprintln!("Error: {}", e);
+                            ExitCode::FAILURE
+                        }
+                    }
                 }
                 Commands::Scope(ScopeCommand::Use { name }) => {
-                    println!("jin scope use {name} - command handler to be implemented");
-                    ExitCode::SUCCESS
+                    match commands::scope_execute(&ScopeCommand::Use { name }) {
+                        Ok(()) => ExitCode::SUCCESS,
+                        Err(e) => {
+                            eprintln!("Error: {}", e);
+                            ExitCode::FAILURE
+                        }
+                    }
                 }
                 Commands::Scope(ScopeCommand::Unset) => {
-                    println!("jin scope unset - command handler to be implemented");
-                    ExitCode::SUCCESS
+                    match commands::scope_execute(&ScopeCommand::Unset) {
+                        Ok(()) => ExitCode::SUCCESS,
+                        Err(e) => {
+                            eprintln!("Error: {}", e);
+                            ExitCode::FAILURE
+                        }
+                    }
                 }
                 Commands::Scope(ScopeCommand::Delete { name }) => {
-                    println!("jin scope delete {name} - command handler to be implemented");
-                    ExitCode::SUCCESS
+                    match commands::scope_execute(&ScopeCommand::Delete { name }) {
+                        Ok(()) => ExitCode::SUCCESS,
+                        Err(e) => {
+                            eprintln!("Error: {}", e);
+                            ExitCode::FAILURE
+                        }
+                    }
                 }
                 Commands::Scope(ScopeCommand::Show) => {
-                    println!("jin scope show - command handler to be implemented");
-                    ExitCode::SUCCESS
+                    match commands::scope_execute(&ScopeCommand::Show) {
+                        Ok(()) => ExitCode::SUCCESS,
+                        Err(e) => {
+                            eprintln!("Error: {}", e);
+                            ExitCode::FAILURE
+                        }
+                    }
                 }
-                Commands::Scopes => {
-                    println!("jin scopes - command handler to be implemented");
-                    ExitCode::SUCCESS
-                }
+                Commands::Scopes => match commands::scope_list_execute() {
+                    Ok(()) => ExitCode::SUCCESS,
+                    Err(e) => {
+                        eprintln!("Error: {}", e);
+                        ExitCode::FAILURE
+                    }
+                },
 
                 // Workspace Operations
                 Commands::Apply(_) => {

@@ -193,9 +193,12 @@ fn main() -> ExitCode {
                         ExitCode::FAILURE
                     }
                 }
-                Commands::List => {
-                    println!("jin list - command handler to be implemented");
-                    ExitCode::SUCCESS
+                Commands::List(cmd) => match commands::list_execute(&cmd) {
+                    Ok(()) => ExitCode::SUCCESS,
+                    Err(e) => {
+                        eprintln!("Error: {}", e);
+                        ExitCode::FAILURE
+                    }
                 }
 
                 // Import/Export

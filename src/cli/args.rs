@@ -92,7 +92,7 @@ pub enum Commands {
     Layers,
 
     /// List available modes/scopes/projects
-    List,
+    List(ListCommand),
 
     // ===== Import/Export =====
     /// Import Git-tracked files into Jin
@@ -274,6 +274,10 @@ pub struct ResetCommand {
 /// Arguments for 'jin status'
 #[derive(clap::Args)]
 pub struct StatusCommand;
+
+/// Arguments for 'jin list'
+#[derive(clap::Args)]
+pub struct ListCommand;
 
 /// Arguments for 'jin apply'
 #[derive(clap::Args)]
@@ -887,7 +891,7 @@ mod tests {
     #[test]
     fn test_list_command() {
         let cli = Cli::try_parse_from(["jin", "list"]).unwrap();
-        assert!(matches!(cli.command, Commands::List));
+        assert!(matches!(cli.command, Commands::List(_)));
     }
 
     // File operation tests

@@ -404,7 +404,7 @@ fn is_valid_scope_name(name: &str) -> bool {
 /// # Returns
 ///
 /// The escaped scope name safe for Git refs.
-fn escape_for_ref(name: &str) -> String {
+pub fn escape_for_ref(name: &str) -> String {
     name.replace(':', "%3A")
 }
 
@@ -419,7 +419,7 @@ fn escape_for_ref(name: &str) -> String {
 /// # Returns
 ///
 /// The original scope name.
-fn unescape_from_ref(escaped: &str) -> String {
+pub fn unescape_from_ref(escaped: &str) -> String {
     escaped.replace("%3A", ":")
 }
 

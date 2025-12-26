@@ -770,6 +770,148 @@ impl JinRepo {
     }
 }
 
+// ===== Tree Walking Methods =====
+
+impl JinRepo {
+    /// Walks a tree recursively, calling a callback for each file entry.
+    ///
+    /// Uses an iterative stack-based approach to avoid recursion depth issues
+    /// with deeply nested directory structures.
+    ///
+    /// # Arguments
+    ///
+    /// * `tree_id` - The object ID of the tree to walk
+    /// * `callback` - Function called for each blob entry with (full_path, entry)
+    ///
+    /// # Returns
+    ///
+    /// * `Ok(())` - All entries processed successfully
+    /// * `Err(JinError)` - Walking failed or callback returned an error
+    ///
+    /// # Examples
+    ///
+    /// ```ignore
+    /// // List all file paths in a tree
+    /// let mut paths = Vec::new();
+    /// repo.walk_tree(tree_id, |path, entry| {
+    ///     paths.push(path.to_string());
+    ///     Ok(())
+    /// })?;
+    /// ```
+    pub fn walk_tree<F>(&self, tree_id: git2::Oid, mut callback: F) -> Result<()>
+    where
+        F: FnMut(&str, &git2::TreeEntry) -> Result<()>,
+    {
+        // Use iterative stack to avoid recursion depth issues
+        let mut stack = vec![(tree_id, String::new())];
+
+        while let Some((current_id, base_path)) = stack.pop() {
+            let tree = self.find_tree(current_id)?;
+
+            // Walk in reverse order to maintain natural processing order
+            // (because stack is LIFO, reversing ensures correct order)
+            for entry in tree.iter().rev() {
+                let name = entry.name().unwrap_or("<unnamed>");
+                let full_path = if base_path.is_empty() {
+                    name.to_string()
+                } else {
+                    format!("{}/{}", base_path, name)
+                };
+
+                match entry.kind() {
+                    Some(git2::ObjectType::Blob) => {
+                        // File entry - invoke callback
+                        callback(&full_path, &entry)?;
+                    }
+                    Some(git2::ObjectType::Tree) => {
+                        // Directory entry - push to stack for further traversal
+                        stack.push((entry.id(), full_path));
+                    }
+                    _ => {
+                        // Ignore other object types (links, commits, etc.)
+                    }
+                }
+            }
+        }
+
+        Ok(())
+    }
+
+    /// Collects all files in a tree as a map of path -> content.
+    ///
+    /// Uses `walk_tree()` internally and reads blob content for each file entry.
+    ///
+    /// # Arguments
+    ///
+    /// * `tree_id` - The object ID of the tree
+    ///
+    /// # Returns
+    ///
+    /// A HashMap mapping file paths to their content as bytes.
+    ///
+    /// # Examples
+    ///
+    /// ```ignore
+    /// let files = repo.list_tree_files(tree_id)?;
+    /// for (path, content) in files {
+    ///     println!("{}: {} bytes", path, content.len());
+    /// }
+    /// ```
+    pub fn list_tree_files(
+        &self,
+        tree_id: git2::Oid,
+    ) -> Result<std::collections::HashMap<String, Vec<u8>>> {
+        let mut files = std::collections::HashMap::new();
+
+        self.walk_tree(tree_id, |path, entry| {
+            if entry.kind() == Some(git2::ObjectType::Blob) {
+                let blob = self.find_blob(entry.id())?;
+                files.insert(path.to_string(), blob.content().to_vec());
+            }
+            Ok(())
+        })?;
+
+        Ok(files)
+    }
+
+    /// Finds a specific file path in a tree.
+    ///
+    /// Searches recursively through the tree for the given path.
+    /// Returns the blob object ID if found, None if not found.
+    ///
+    /// # Arguments
+    ///
+    /// * `tree_id` - The object ID of the tree to search
+    /// * `path` - The file path to find (e.g., "subdir/file.txt")
+    ///
+    /// # Returns
+    ///
+    /// * `Ok(Some(oid))` - File found, returns blob object ID
+    /// * `Ok(None)` - File not found
+    /// * `Err(JinError)` - Tree walking failed
+    ///
+    /// # Examples
+    ///
+    /// ```ignore
+    /// if let Some(blob_oid) = repo.find_in_tree(tree_id, "config.json")? {
+    ///     let blob = repo.find_blob(blob_oid)?;
+    ///     let content = blob.content();
+    /// }
+    /// ```
+    pub fn find_in_tree(&self, tree_id: git2::Oid, target_path: &str) -> Result<Option<git2::Oid>> {
+        let result = std::cell::RefCell::new(None);
+
+        self.walk_tree(tree_id, |path, entry| {
+            if path == target_path && entry.kind() == Some(git2::ObjectType::Blob) {
+                *result.borrow_mut() = Some(entry.id());
+            }
+            Ok(())
+        })?;
+
+        Ok(result.into_inner())
+    }
+}
+
 // ===== Helper Methods =====
 
 impl JinRepo {
@@ -1664,5 +1806,295 @@ mod tests {
         // Delete staging ref should not affect layer ref
         fixture.repo.delete_staging_ref("txn-abc123").unwrap();
         assert!(fixture.repo.layer_ref_exists(&Layer::GlobalBase));
+    }
+
+    // ===== Tree Walking Tests =====
+
+    #[test]
+    fn test_jinrepo_walk_empty_tree() {
+        let fixture = TestFixture::new();
+        let tree_oid = fixture.repo.treebuilder().unwrap().write().unwrap();
+
+        // Walk empty tree should complete without error
+        let mut count = 0;
+        fixture
+            .repo
+            .walk_tree(tree_oid, |_path, _entry| {
+                count += 1;
+                Ok(())
+            })
+            .unwrap();
+
+        assert_eq!(count, 0);
+    }
+
+    #[test]
+    fn test_jinrepo_walk_single_file_tree() {
+        let fixture = TestFixture::new();
+        let mut builder = fixture.repo.treebuilder().unwrap();
+        let blob_oid = fixture.repo.create_blob(b"content").unwrap();
+        builder
+            .insert("file.txt", blob_oid, git2::FileMode::Blob.into())
+            .unwrap();
+        let tree_oid = builder.write().unwrap();
+
+        let mut entries = Vec::new();
+        fixture
+            .repo
+            .walk_tree(tree_oid, |path, entry| {
+                entries.push((path.to_string(), entry.id()));
+                Ok(())
+            })
+            .unwrap();
+
+        assert_eq!(entries.len(), 1);
+        assert_eq!(entries[0].0, "file.txt");
+        assert_eq!(entries[0].1, blob_oid);
+    }
+
+    #[test]
+    fn test_jinrepo_walk_nested_tree() {
+        let fixture = TestFixture::new();
+
+        // Create nested tree structure
+        let mut subdir_builder = fixture.repo.treebuilder().unwrap();
+        let sub_blob = fixture.repo.create_blob(b"sub content").unwrap();
+        subdir_builder
+            .insert("sub.txt", sub_blob, git2::FileMode::Blob.into())
+            .unwrap();
+        let subdir_oid = subdir_builder.write().unwrap();
+
+        let mut root_builder = fixture.repo.treebuilder().unwrap();
+        let root_blob = fixture.repo.create_blob(b"root content").unwrap();
+        root_builder
+            .insert("root.txt", root_blob, git2::FileMode::Blob.into())
+            .unwrap();
+        root_builder
+            .insert("subdir", subdir_oid, git2::FileMode::Tree.into())
+            .unwrap();
+        let tree_oid = root_builder.write().unwrap();
+
+        let mut paths = Vec::new();
+        fixture
+            .repo
+            .walk_tree(tree_oid, |path, _entry| {
+                paths.push(path.to_string());
+                Ok(())
+            })
+            .unwrap();
+
+        paths.sort();
+        assert_eq!(paths, &["root.txt", "subdir/sub.txt"]);
+    }
+
+    #[test]
+    fn test_jinrepo_list_tree_files() {
+        let fixture = TestFixture::new();
+        let mut builder = fixture.repo.treebuilder().unwrap();
+        let blob1 = fixture.repo.create_blob(b"content 1").unwrap();
+        let blob2 = fixture.repo.create_blob(b"content 2").unwrap();
+        builder
+            .insert("a.txt", blob1, git2::FileMode::Blob.into())
+            .unwrap();
+        builder
+            .insert("b.txt", blob2, git2::FileMode::Blob.into())
+            .unwrap();
+        let tree_oid = builder.write().unwrap();
+
+        let files = fixture.repo.list_tree_files(tree_oid).unwrap();
+
+        assert_eq!(files.len(), 2);
+        assert_eq!(files.get("a.txt"), Some(&b"content 1".to_vec()));
+        assert_eq!(files.get("b.txt"), Some(&b"content 2".to_vec()));
+    }
+
+    #[test]
+    fn test_jinrepo_list_nested_tree_files() {
+        let fixture = TestFixture::new();
+
+        // Create nested tree structure
+        let mut subdir_builder = fixture.repo.treebuilder().unwrap();
+        let sub_blob = fixture.repo.create_blob(b"sub file content").unwrap();
+        subdir_builder
+            .insert("sub.txt", sub_blob, git2::FileMode::Blob.into())
+            .unwrap();
+        let subdir_oid = subdir_builder.write().unwrap();
+
+        let mut root_builder = fixture.repo.treebuilder().unwrap();
+        let root_blob = fixture.repo.create_blob(b"root file content").unwrap();
+        root_builder
+            .insert("root.txt", root_blob, git2::FileMode::Blob.into())
+            .unwrap();
+        root_builder
+            .insert("subdir", subdir_oid, git2::FileMode::Tree.into())
+            .unwrap();
+        let tree_oid = root_builder.write().unwrap();
+
+        let files = fixture.repo.list_tree_files(tree_oid).unwrap();
+
+        assert_eq!(files.len(), 2);
+        assert_eq!(
+            files.get("root.txt"),
+            Some(&b"root file content".to_vec())
+        );
+        assert_eq!(
+            files.get("subdir/sub.txt"),
+            Some(&b"sub file content".to_vec())
+        );
+    }
+
+    #[test]
+    fn test_jinrepo_find_in_tree() {
+        let fixture = TestFixture::new();
+
+        // Create nested tree
+        let mut subdir_builder = fixture.repo.treebuilder().unwrap();
+        let sub_blob = fixture.repo.create_blob(b"sub content").unwrap();
+        subdir_builder
+            .insert("sub.txt", sub_blob, git2::FileMode::Blob.into())
+            .unwrap();
+        let subdir_oid = subdir_builder.write().unwrap();
+
+        let mut root_builder = fixture.repo.treebuilder().unwrap();
+        let root_blob = fixture.repo.create_blob(b"root content").unwrap();
+        root_builder
+            .insert("root.txt", root_blob, git2::FileMode::Blob.into())
+            .unwrap();
+        root_builder
+            .insert("subdir", subdir_oid, git2::FileMode::Tree.into())
+            .unwrap();
+        let tree_oid = root_builder.write().unwrap();
+
+        // Find root file
+        let found = fixture.repo.find_in_tree(tree_oid, "root.txt").unwrap();
+        assert_eq!(found, Some(root_blob));
+
+        // Find nested file
+        let found = fixture
+            .repo
+            .find_in_tree(tree_oid, "subdir/sub.txt")
+            .unwrap();
+        assert_eq!(found, Some(sub_blob));
+
+        // Not found
+        let found = fixture.repo.find_in_tree(tree_oid, "missing.txt").unwrap();
+        assert!(found.is_none());
+    }
+
+    #[test]
+    fn test_jinrepo_walk_tree_deeply_nested() {
+        let fixture = TestFixture::new();
+
+        // Create deeply nested structure: a/b/c/d/file.txt
+        let mut d_builder = fixture.repo.treebuilder().unwrap();
+        let file_blob = fixture.repo.create_blob(b"deep file").unwrap();
+        d_builder
+            .insert("file.txt", file_blob, git2::FileMode::Blob.into())
+            .unwrap();
+        let d_oid = d_builder.write().unwrap();
+
+        let mut c_builder = fixture.repo.treebuilder().unwrap();
+        c_builder
+            .insert("d", d_oid, git2::FileMode::Tree.into())
+            .unwrap();
+        let c_oid = c_builder.write().unwrap();
+
+        let mut b_builder = fixture.repo.treebuilder().unwrap();
+        b_builder
+            .insert("c", c_oid, git2::FileMode::Tree.into())
+            .unwrap();
+        let b_oid = b_builder.write().unwrap();
+
+        let mut a_builder = fixture.repo.treebuilder().unwrap();
+        a_builder
+            .insert("b", b_oid, git2::FileMode::Tree.into())
+            .unwrap();
+        let a_oid = a_builder.write().unwrap();
+
+        // Walk the deeply nested tree
+        let mut paths = Vec::new();
+        fixture
+            .repo
+            .walk_tree(a_oid, |path, _entry| {
+                paths.push(path.to_string());
+                Ok(())
+            })
+            .unwrap();
+
+        assert_eq!(paths, &["b/c/d/file.txt"]);
+    }
+
+    #[test]
+    fn test_jinrepo_walk_tree_multiple_files_same_level() {
+        let fixture = TestFixture::new();
+
+        // Create tree with multiple files at same level
+        let mut builder = fixture.repo.treebuilder().unwrap();
+        let blob1 = fixture.repo.create_blob(b"content 1").unwrap();
+        let blob2 = fixture.repo.create_blob(b"content 2").unwrap();
+        let blob3 = fixture.repo.create_blob(b"content 3").unwrap();
+        builder
+            .insert("a.txt", blob1, git2::FileMode::Blob.into())
+            .unwrap();
+        builder
+            .insert("b.txt", blob2, git2::FileMode::Blob.into())
+            .unwrap();
+        builder
+            .insert("c.txt", blob3, git2::FileMode::Blob.into())
+            .unwrap();
+        let tree_oid = builder.write().unwrap();
+
+        let mut paths = Vec::new();
+        fixture
+            .repo
+            .walk_tree(tree_oid, |path, _entry| {
+                paths.push(path.to_string());
+                Ok(())
+            })
+            .unwrap();
+
+        paths.sort();
+        assert_eq!(paths, &["a.txt", "b.txt", "c.txt"]);
+    }
+
+    #[test]
+    fn test_jinrepo_walk_tree_empty_subdirectory() {
+        let fixture = TestFixture::new();
+
+        // Create tree with an empty subdirectory
+        let empty_builder = fixture.repo.treebuilder().unwrap();
+        let empty_oid = empty_builder.write().unwrap();
+
+        let mut root_builder = fixture.repo.treebuilder().unwrap();
+        let root_blob = fixture.repo.create_blob(b"root content").unwrap();
+        root_builder
+            .insert("root.txt", root_blob, git2::FileMode::Blob.into())
+            .unwrap();
+        root_builder
+            .insert("empty", empty_oid, git2::FileMode::Tree.into())
+            .unwrap();
+        let tree_oid = root_builder.write().unwrap();
+
+        // Walk should only find root.txt, empty dir has no files
+        let mut paths = Vec::new();
+        fixture
+            .repo
+            .walk_tree(tree_oid, |path, _entry| {
+                paths.push(path.to_string());
+                Ok(())
+            })
+            .unwrap();
+
+        assert_eq!(paths, &["root.txt"]);
+    }
+
+    #[test]
+    fn test_jinrepo_find_in_tree_empty_tree() {
+        let fixture = TestFixture::new();
+        let tree_oid = fixture.repo.treebuilder().unwrap().write().unwrap();
+
+        // Finding in empty tree should return None
+        let found = fixture.repo.find_in_tree(tree_oid, "anything").unwrap();
+        assert!(found.is_none());
     }
 }

@@ -86,6 +86,11 @@ impl StagingIndex {
         self.entries.values()
     }
 
+    /// Get all staged paths
+    pub fn paths(&self) -> impl Iterator<Item = &PathBuf> {
+        self.entries.keys()
+    }
+
     /// Get entries for a specific layer
     pub fn entries_for_layer(&self, layer: Layer) -> Vec<&StagedEntry> {
         self.entries

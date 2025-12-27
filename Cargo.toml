@@ -39,6 +39,9 @@ rust-ini = "0.21"
 # Data structures
 indexmap = { version = "2.0", features = ["serde"] }
 
+# Text merging
+diffy = "0.4"
+
 # Utilities
 dirs = "5.0"
 chrono = { version = "0.4", features = ["serde"] }

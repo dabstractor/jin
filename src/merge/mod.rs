@@ -35,7 +35,10 @@ pub use layer::{
 };
 
 // Text merge
-pub use text::text_merge;
+pub use text::{
+    has_conflict_markers, parse_conflicts, text_merge, text_merge_with_config, ConflictRegion,
+    TextMergeConfig, TextMergeResult,
+};
 
 // Value type
 pub use value::MergeValue;

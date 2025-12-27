@@ -141,12 +141,19 @@ pub fn assert_layer_ref_exists(ref_path: &str) {
         jin_repo_path
     );
 
-    let repo = git2::Repository::open(&jin_repo_path)
-        .unwrap_or_else(|e| panic!("Failed to open Jin repository at {:?}: {}", jin_repo_path, e));
+    let repo = git2::Repository::open(&jin_repo_path).unwrap_or_else(|e| {
+        panic!(
+            "Failed to open Jin repository at {:?}: {}",
+            jin_repo_path, e
+        )
+    });
 
     match repo.find_reference(ref_path) {
         Ok(_) => {} // Success
-        Err(e) => panic!("Layer ref '{}' should exist in Jin repository: {}", ref_path, e),
+        Err(e) => panic!(
+            "Layer ref '{}' should exist in Jin repository: {}",
+            ref_path, e
+        ),
     };
 }
 

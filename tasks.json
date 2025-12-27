@@ -1001,7 +1001,7 @@
       "type": "Phase",
       "id": "P6",
       "title": "Polish & Production Readiness",
-      "status": "Planned",
+      "status": "Complete",
       "description": "Shell completion, comprehensive testing, documentation, and release preparation.",
       "milestones": [
         {
@@ -1117,21 +1117,21 @@
           "type": "Milestone",
           "id": "P6.M4",
           "title": "Release Preparation",
-          "status": "Planned",
+          "status": "Complete",
           "description": "Build configuration and CI/CD.",
           "tasks": [
             {
               "type": "Task",
               "id": "P6.M4.T1",
               "title": "Release Configuration",
-              "status": "Planned",
+              "status": "Complete",
               "description": "Configure CI and release builds.",
               "subtasks": [
                 {
                   "type": "Subtask",
                   "id": "P6.M4.T1.S1",
                   "title": "Configure CI/CD",
-                  "status": "Planned",
+                  "status": "Complete",
                   "story_points": 2,
                   "dependencies": [
                     "P6.M3.T1.S1"

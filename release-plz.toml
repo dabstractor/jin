@@ -1,0 +1,21 @@
+[workspace]
+# Update CHANGELOG.md automatically
+changelog_update = true
+
+# Create git tags for releases
+git_tag_enable = true
+
+# PATTERN: Conventional commit mapping
+# feat: minor version bump (0.1.0 -> 0.2.0)
+# fix: patch version bump (0.1.0 -> 0.1.1)
+# BREAKING CHANGE: major version bump (0.1.0 -> 1.0.0)
+
+[[package]]
+name = "jin"
+
+# Include these commit types in changelog
+changelog_include = ["feat", "fix", "perf", "refactor", "docs"]
+
+# GOTCHA: Requires conventional commit format
+# Good: "feat: add remote sync command"
+# Bad: "added remote sync" (won't trigger version bump)

@@ -108,10 +108,7 @@ fn test_fetch_updates_refs() -> Result<(), Box<dyn std::error::Error>> {
 
     // Now test fetch in main local repo
     jin()
-        .args([
-            "link",
-            remote_fixture.remote_path.to_str().unwrap(),
-        ])
+        .args(["link", remote_fixture.remote_path.to_str().unwrap()])
         .current_dir(&remote_fixture.local_path)
         .assert()
         .success();
@@ -178,10 +175,7 @@ fn test_pull_merges_changes() -> Result<(), Box<dyn std::error::Error>> {
 
     // Now pull in main local repo
     jin()
-        .args([
-            "link",
-            remote_fixture.remote_path.to_str().unwrap(),
-        ])
+        .args(["link", remote_fixture.remote_path.to_str().unwrap()])
         .current_dir(&remote_fixture.local_path)
         .assert()
         .success();
@@ -219,10 +213,7 @@ fn test_push_uploads_commits() -> Result<(), Box<dyn std::error::Error>> {
 
     // Link to remote
     jin()
-        .args([
-            "link",
-            remote_fixture.remote_path.to_str().unwrap(),
-        ])
+        .args(["link", remote_fixture.remote_path.to_str().unwrap()])
         .current_dir(&remote_fixture.local_path)
         .assert()
         .success();
@@ -328,10 +319,7 @@ fn test_sync_complete_workflow() -> Result<(), Box<dyn std::error::Error>> {
 
     // Test sync in main repo
     jin()
-        .args([
-            "link",
-            remote_fixture.remote_path.to_str().unwrap(),
-        ])
+        .args(["link", remote_fixture.remote_path.to_str().unwrap()])
         .current_dir(&remote_fixture.local_path)
         .assert()
         .success();
@@ -375,10 +363,7 @@ fn test_link_invalid_url_error() -> Result<(), Box<dyn std::error::Error>> {
 fn test_fetch_no_remote_error() -> Result<(), Box<dyn std::error::Error>> {
     let fixture = setup_test_repo()?;
 
-    let result = jin()
-        .arg("fetch")
-        .current_dir(fixture.path())
-        .assert();
+    let result = jin().arg("fetch").current_dir(fixture.path()).assert();
 
     // Should fail or warn about no remote
     let output = result.get_output();
@@ -401,10 +386,7 @@ fn test_fetch_no_remote_error() -> Result<(), Box<dyn std::error::Error>> {
 fn test_push_no_remote_error() -> Result<(), Box<dyn std::error::Error>> {
     let fixture = setup_test_repo()?;
 
-    let result = jin()
-        .arg("push")
-        .current_dir(fixture.path())
-        .assert();
+    let result = jin().arg("push").current_dir(fixture.path()).assert();
 
     // Should fail or warn about no remote
     let output = result.get_output();
@@ -429,10 +411,7 @@ fn test_link_force_replaces_existing() -> Result<(), Box<dyn std::error::Error>>
 
     // Link to first remote
     jin()
-        .args([
-            "link",
-            remote_fixture.remote_path.to_str().unwrap(),
-        ])
+        .args(["link", remote_fixture.remote_path.to_str().unwrap()])
         .current_dir(&remote_fixture.local_path)
         .assert()
         .success();
@@ -444,11 +423,7 @@ fn test_link_force_replaces_existing() -> Result<(), Box<dyn std::error::Error>>
 
     // Link to second remote with --force
     jin()
-        .args([
-            "link",
-            second_remote.to_str().unwrap(),
-            "--force",
-        ])
+        .args(["link", second_remote.to_str().unwrap(), "--force"])
         .current_dir(&remote_fixture.local_path)
         .assert()
         .success();
@@ -463,10 +438,7 @@ fn test_sync_empty_remote() -> Result<(), Box<dyn std::error::Error>> {
 
     // Link to empty remote
     jin()
-        .args([
-            "link",
-            remote_fixture.remote_path.to_str().unwrap(),
-        ])
+        .args(["link", remote_fixture.remote_path.to_str().unwrap()])
         .current_dir(&remote_fixture.local_path)
         .assert()
         .success();

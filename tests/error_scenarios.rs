@@ -362,10 +362,7 @@ fn test_apply_dirty_workspace_error() -> Result<(), Box<dyn std::error::Error>> 
     fs::write(project_path.join("config.txt"), "modified")?;
 
     // Try to apply with dirty workspace
-    let result = jin()
-        .arg("apply")
-        .current_dir(project_path)
-        .assert();
+    let result = jin().arg("apply").current_dir(project_path).assert();
 
     let output = result.get_output();
     let stderr_str = String::from_utf8_lossy(&output.stderr);
@@ -456,9 +453,7 @@ fn test_scope_create_duplicate_error() -> Result<(), Box<dyn std::error::Error>>
 #[test]
 fn test_scope_invalid_format_error() -> Result<(), Box<dyn std::error::Error>> {
     // Try to create scope without colon
-    let result = jin()
-        .args(["scope", "create", "invalid_scope"])
-        .assert();
+    let result = jin().args(["scope", "create", "invalid_scope"]).assert();
 
     let output = result.get_output();
     let stderr_str = String::from_utf8_lossy(&output.stderr);
@@ -547,9 +542,7 @@ fn test_commit_empty_message_error() -> Result<(), Box<dyn std::error::Error>> {
 
     // Should fail or warn about empty message
     assert!(
-        !output.status.success()
-            || stderr_str.contains("message")
-            || stderr_str.contains("empty"),
+        !output.status.success() || stderr_str.contains("message") || stderr_str.contains("empty"),
         "Empty commit message should fail or warn"
     );
 

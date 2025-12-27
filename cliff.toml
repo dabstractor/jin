@@ -1,0 +1,39 @@
+[changelog]
+header = """
+# Changelog
+
+All notable changes to Jin will be documented in this file.
+
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
+and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+"""
+
+# PATTERN: Group commits by type with emoji and description
+body = """
+{% for group, commits in commits | group_by(attribute="group") %}
+### {{ group | upper_first }}
+{% for commit in commits %}
+  - {{ commit.message | upper_first }}{% if commit.breaking %} [**BREAKING**]{% endif %}
+{% endfor %}
+{% endfor %}
+"""
+
+[git]
+# Parse conventional commits
+conventional_commits = true
+filter_unconventional = false
+
+# Commit grouping
+commit_parsers = [
+  { message = "^feat", group = "Features" },
+  { message = "^fix", group = "Bug Fixes" },
+  { message = "^perf", group = "Performance" },
+  { message = "^refactor", group = "Refactoring" },
+  { message = "^docs", group = "Documentation" },
+  { message = "^test", group = "Tests" },
+  { message = "^chore", group = "Chore" },
+]
+
+# GOTCHA: git-cliff is optional - release-plz can generate changelogs too
+# Use cliff.toml if you want more control over changelog formatting

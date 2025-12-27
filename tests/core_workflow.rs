@@ -241,11 +241,7 @@ fn test_complete_workflow_init_to_apply() -> Result<(), Box<dyn std::error::Erro
 
     // Step 4: Add file to mode
     jin()
-        .args([
-            "add",
-            &format!(".{}/settings.yaml", mode_name),
-            "--mode",
-        ])
+        .args(["add", &format!(".{}/settings.yaml", mode_name), "--mode"])
         .current_dir(project_path)
         .assert()
         .success();
@@ -272,7 +268,11 @@ fn test_complete_workflow_init_to_apply() -> Result<(), Box<dyn std::error::Erro
         .success();
 
     // Step 7: Verify file restored with correct content
-    assert_workspace_file(project_path, &format!(".{}/settings.yaml", mode_name), config_content);
+    assert_workspace_file(
+        project_path,
+        &format!(".{}/settings.yaml", mode_name),
+        config_content,
+    );
 
     // Step 8: Verify status shows clean state
     jin()
@@ -324,7 +324,9 @@ fn test_add_nonexistent_file_error() -> Result<(), Box<dyn std::error::Error>> {
         .current_dir(project_path)
         .assert()
         .failure()
-        .stderr(predicate::str::contains("not found").or(predicate::str::contains("does not exist")));
+        .stderr(
+            predicate::str::contains("not found").or(predicate::str::contains("does not exist")),
+        );
 
     Ok(())
 }
@@ -346,7 +348,9 @@ fn test_commit_no_staged_changes_error() -> Result<(), Box<dyn std::error::Error
 
     // Should either fail or warn about no changes
     assert!(
-        !output.status.success() || stderr_str.contains("no changes") || stderr_str.contains("nothing"),
+        !output.status.success()
+            || stderr_str.contains("no changes")
+            || stderr_str.contains("nothing"),
         "Expected error or warning about no staged changes"
     );
 
@@ -377,10 +381,7 @@ fn test_init_already_initialized() -> Result<(), Box<dyn std::error::Error>> {
     let project_path = fixture.path();
 
     // Try to init again
-    let result = jin()
-        .arg("init")
-        .current_dir(project_path)
-        .assert();
+    let result = jin().arg("init").current_dir(project_path).assert();
 
     // Should either succeed (idempotent) or warn about existing init
     let output = result.get_output();

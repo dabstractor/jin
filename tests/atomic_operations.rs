@@ -83,10 +83,7 @@ fn test_failed_commit_rolls_back() -> Result<(), Box<dyn std::error::Error>> {
     let _staging_before = fs::read_to_string(project_path.join(".jin/staging/index.json"))?;
 
     // Corrupt staging to cause commit failure
-    fs::write(
-        project_path.join(".jin/staging/index.json"),
-        "corrupted",
-    )?;
+    fs::write(project_path.join(".jin/staging/index.json"), "corrupted")?;
 
     // Try to commit (should fail)
     jin()
@@ -153,7 +150,10 @@ fn test_multi_layer_commit_atomic() -> Result<(), Box<dyn std::error::Error>> {
         .file_name()
         .and_then(|n| n.to_str())
         .expect("Failed to get project name");
-    let project_ref = format!("refs/jin/layers/mode/{}/project/{}", mode_name, project_name);
+    let project_ref = format!(
+        "refs/jin/layers/mode/{}/project/{}",
+        mode_name, project_name
+    );
     assert_layer_ref_exists(&project_ref);
 
     // Verify staging cleared for both
@@ -182,10 +182,7 @@ fn test_state_consistent_after_failure() -> Result<(), Box<dyn std::error::Error
     let _staging_valid = fs::read_to_string(project_path.join(".jin/staging/index.json"))?;
 
     // Cause operation failure by corrupting state
-    fs::write(
-        project_path.join(".jin/staging/index.json"),
-        "corrupted",
-    )?;
+    fs::write(project_path.join(".jin/staging/index.json"), "corrupted")?;
 
     // Try operations (should fail)
     jin()

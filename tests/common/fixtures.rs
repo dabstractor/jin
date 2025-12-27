@@ -158,14 +158,7 @@ pub fn create_commit_in_repo(
 
     // Create the commit
     if let Some(parent) = parent_commit {
-        repo.commit(
-            Some("HEAD"),
-            &signature,
-            &signature,
-            msg,
-            &tree,
-            &[&parent],
-        )?;
+        repo.commit(Some("HEAD"), &signature, &signature, msg, &tree, &[&parent])?;
     } else {
         repo.commit(Some("HEAD"), &signature, &signature, msg, &tree, &[])?;
     }
@@ -182,9 +175,7 @@ pub fn jin() -> Command {
 ///
 /// This is a helper for tests that need modes to exist.
 pub fn create_mode(mode_name: &str) -> Result<(), Box<dyn std::error::Error>> {
-    let result = jin()
-        .args(["mode", "create", mode_name])
-        .assert();
+    let result = jin().args(["mode", "create", mode_name]).assert();
 
     // Accept either success (new mode) or error (already exists)
     let output = result.get_output();
@@ -206,9 +197,7 @@ pub fn create_mode(mode_name: &str) -> Result<(), Box<dyn std::error::Error>> {
 ///
 /// This is a helper for tests that need scopes to exist.
 pub fn create_scope(scope_name: &str) -> Result<(), Box<dyn std::error::Error>> {
-    let result = jin()
-        .args(["scope", "create", scope_name])
-        .assert();
+    let result = jin().args(["scope", "create", scope_name]).assert();
 
     // Accept either success (new scope) or error (already exists)
     let output = result.get_output();

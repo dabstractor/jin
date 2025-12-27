@@ -6,6 +6,7 @@ authors = ["Jin Team"]
 description = "Phantom Git layer system for developer configuration"
 license = "MIT"
 repository = "https://github.com/jin/jin"
+homepage = "https://github.com/jin/jin"
 readme = "README.md"
 keywords = ["git", "configuration", "developer-tools"]
 categories = ["command-line-utilities", "development-tools"]
@@ -56,3 +57,9 @@ tempfile = "3.0"
 [profile.release]
 lto = true
 opt-level = 3
+strip = true
+
+# The profile that 'dist' will build with
+[profile.dist]
+inherits = "release"
+lto = "thin"

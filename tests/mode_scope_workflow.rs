@@ -33,7 +33,10 @@ fn test_layer_routing_mode_base() -> Result<(), Box<dyn std::error::Error>> {
         .success();
 
     // Create and add file with --mode flag (mode base layer)
-    fs::write(project_path.join("config.json"), r#"{"layer": "mode-base"}"#)?;
+    fs::write(
+        project_path.join("config.json"),
+        r#"{"layer": "mode-base"}"#,
+    )?;
 
     jin()
         .args(["add", "config.json", "--mode"])
@@ -70,7 +73,10 @@ fn test_layer_routing_mode_project() -> Result<(), Box<dyn std::error::Error>> {
         .success();
 
     // Add file with --mode --project flags (mode project layer)
-    fs::write(project_path.join("project.json"), r#"{"layer": "mode-project"}"#)?;
+    fs::write(
+        project_path.join("project.json"),
+        r#"{"layer": "mode-project"}"#,
+    )?;
 
     jin()
         .args(["add", "project.json", "--mode", "--project"])
@@ -90,7 +96,10 @@ fn test_layer_routing_mode_project() -> Result<(), Box<dyn std::error::Error>> {
         .file_name()
         .and_then(|n| n.to_str())
         .expect("Failed to get project name");
-    let ref_path = format!("refs/jin/layers/mode/{}/project/{}", mode_name, project_name);
+    let ref_path = format!(
+        "refs/jin/layers/mode/{}/project/{}",
+        mode_name, project_name
+    );
     assert_layer_ref_exists(&ref_path);
 
     Ok(())
@@ -121,10 +130,18 @@ fn test_layer_routing_mode_scope() -> Result<(), Box<dyn std::error::Error>> {
         .success();
 
     // Add file with --mode --scope flags
-    fs::write(project_path.join("scope.json"), r#"{"layer": "mode-scope"}"#)?;
+    fs::write(
+        project_path.join("scope.json"),
+        r#"{"layer": "mode-scope"}"#,
+    )?;
 
     jin()
-        .args(["add", "scope.json", "--mode", &format!("--scope={}", scope_name)])
+        .args([
+            "add",
+            "scope.json",
+            "--mode",
+            &format!("--scope={}", scope_name),
+        ])
         .current_dir(project_path)
         .assert()
         .success();
@@ -373,10 +390,7 @@ fn test_layer_routing_global_base() -> Result<(), Box<dyn std::error::Error>> {
     let project_path = fixture.path();
 
     // Add file to global layer
-    fs::write(
-        project_path.join("global.json"),
-        r#"{"layer": "global"}"#,
-    )?;
+    fs::write(project_path.join("global.json"), r#"{"layer": "global"}"#)?;
 
     jin()
         .args(["add", "global.json", "--global"])
@@ -403,10 +417,7 @@ fn test_layer_routing_project_base() -> Result<(), Box<dyn std::error::Error>> {
     let project_path = fixture.path();
 
     // Add file to project layer (no flags)
-    fs::write(
-        project_path.join("project.json"),
-        r#"{"layer": "project"}"#,
-    )?;
+    fs::write(project_path.join("project.json"), r#"{"layer": "project"}"#)?;
 
     jin()
         .args(["add", "project.json"])
@@ -444,7 +455,12 @@ fn test_scope_requires_mode_error() -> Result<(), Box<dyn std::error::Error>> {
     create_mode(&mode_name)?;
 
     jin()
-        .args(["scope", "create", &scope_name, &format!("--mode={}", mode_name)])
+        .args([
+            "scope",
+            "create",
+            &scope_name,
+            &format!("--mode={}", mode_name),
+        ])
         .assert()
         .success();
 

@@ -18,7 +18,7 @@ pub trait RefOps {
     /// # Errors
     ///
     /// Returns `JinError::Git` if the reference is not found.
-    fn find_ref(&self, name: &str) -> Result<Reference>;
+    fn find_ref(&self, name: &str) -> Result<Reference<'_>>;
 
     /// Creates or updates a reference to point to an OID.
     ///
@@ -63,7 +63,7 @@ pub trait RefOps {
 }
 
 impl RefOps for JinRepo {
-    fn find_ref(&self, name: &str) -> Result<Reference> {
+    fn find_ref(&self, name: &str) -> Result<Reference<'_>> {
         Ok(self.inner().find_reference(name)?)
     }
 

@@ -288,21 +288,21 @@
           "type": "Milestone",
           "id": "P2.M2",
           "title": "Format Parsers",
-          "status": "Planned",
+          "status": "Complete",
           "description": "Implement parsers for JSON, YAML, TOML, and INI formats.",
           "tasks": [
             {
               "type": "Task",
               "id": "P2.M2.T1",
               "title": "All Format Parsers",
-              "status": "Planned",
+              "status": "Complete",
               "description": "Implement JSON, YAML, TOML, INI parsers.",
               "subtasks": [
                 {
                   "type": "Subtask",
                   "id": "P2.M2.T1.S1",
                   "title": "Implement Format Parsers",
-                  "status": "Planned",
+                  "status": "Complete",
                   "story_points": 2,
                   "dependencies": [
                     "P2.M1.T1.S1"

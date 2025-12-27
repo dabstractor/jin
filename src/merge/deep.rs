@@ -54,10 +54,8 @@ fn merge_arrays(base: Vec<MergeValue>, overlay: Vec<MergeValue>) -> Result<Vec<M
     let base_keyed = extract_array_keys(&base);
     let overlay_keyed = extract_array_keys(&overlay);
 
-    if base_keyed.is_some() && overlay_keyed.is_some() {
+    if let (Some(base_map), Some(overlay_map)) = (base_keyed, overlay_keyed) {
         // Merge by key
-        let base_map = base_keyed.unwrap();
-        let overlay_map = overlay_keyed.unwrap();
 
         let mut result: IndexMap<String, MergeValue> = IndexMap::new();
 

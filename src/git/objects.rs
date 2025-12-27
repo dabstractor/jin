@@ -156,13 +156,13 @@ pub trait ObjectOps {
     ) -> Result<Oid>;
 
     /// Finds a blob by OID.
-    fn find_blob(&self, oid: Oid) -> Result<Blob>;
+    fn find_blob(&self, oid: Oid) -> Result<Blob<'_>>;
 
     /// Finds a tree by OID.
-    fn find_tree(&self, oid: Oid) -> Result<Tree>;
+    fn find_tree(&self, oid: Oid) -> Result<Tree<'_>>;
 
     /// Finds a commit by OID.
-    fn find_commit(&self, oid: Oid) -> Result<Commit>;
+    fn find_commit(&self, oid: Oid) -> Result<Commit<'_>>;
 }
 
 impl ObjectOps for JinRepo {
@@ -262,15 +262,15 @@ impl ObjectOps for JinRepo {
         Ok(oid)
     }
 
-    fn find_blob(&self, oid: Oid) -> Result<Blob> {
+    fn find_blob(&self, oid: Oid) -> Result<Blob<'_>> {
         Ok(self.inner().find_blob(oid)?)
     }
 
-    fn find_tree(&self, oid: Oid) -> Result<Tree> {
+    fn find_tree(&self, oid: Oid) -> Result<Tree<'_>> {
         Ok(self.inner().find_tree(oid)?)
     }
 
-    fn find_commit(&self, oid: Oid) -> Result<Commit> {
+    fn find_commit(&self, oid: Oid) -> Result<Commit<'_>> {
         Ok(self.inner().find_commit(oid)?)
     }
 }

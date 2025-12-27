@@ -1088,21 +1088,21 @@
           "type": "Milestone",
           "id": "P6.M3",
           "title": "Documentation",
-          "status": "Planned",
+          "status": "Complete",
           "description": "User documentation and README.",
           "tasks": [
             {
               "type": "Task",
               "id": "P6.M3.T1",
               "title": "User Documentation",
-              "status": "Planned",
+              "status": "Complete",
               "description": "Write comprehensive user guide.",
               "subtasks": [
                 {
                   "type": "Subtask",
                   "id": "P6.M3.T1.S1",
                   "title": "Write README",
-                  "status": "Planned",
+                  "status": "Complete",
                   "story_points": 2,
                   "dependencies": [
                     "P6.M2.T1.S3"

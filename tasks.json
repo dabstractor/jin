@@ -444,21 +444,21 @@
           "type": "Milestone",
           "id": "P3.M2",
           "title": "Commit Pipeline",
-          "status": "Planned",
+          "status": "Complete",
           "description": "Implement the orchestrated commit flow.",
           "tasks": [
             {
               "type": "Task",
               "id": "P3.M2.T1",
               "title": "Pipeline Implementation",
-              "status": "Planned",
+              "status": "Complete",
               "description": "Implement CommitPipeline with validation and jinmap.",
               "subtasks": [
                 {
                   "type": "Subtask",
                   "id": "P3.M2.T1.S1",
                   "title": "Implement Commit Pipeline",
-                  "status": "Planned",
+                  "status": "Complete",
                   "story_points": 2,
                   "dependencies": [
                     "P3.M1.T1.S1",

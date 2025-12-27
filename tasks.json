@@ -604,21 +604,21 @@
           "type": "Milestone",
           "id": "P4.M3",
           "title": "Mode & Scope Commands",
-          "status": "Planned",
+          "status": "Complete",
           "description": "Implement mode and scope lifecycle commands.",
           "tasks": [
             {
               "type": "Task",
               "id": "P4.M3.T1",
               "title": "Mode Commands",
-              "status": "Planned",
+              "status": "Complete",
               "description": "Implement mode create/use/list/delete subcommands.",
               "subtasks": [
                 {
                   "type": "Subtask",
                   "id": "P4.M3.T1.S1",
                   "title": "Wire Mode Subcommands to CLI",
-                  "status": "Planned",
+                  "status": "Complete",
                   "story_points": 2,
                   "dependencies": [
                     "P4.M2.T4.S1"
@@ -631,14 +631,14 @@
               "type": "Task",
               "id": "P4.M3.T2",
               "title": "Scope Commands",
-              "status": "Planned",
+              "status": "Complete",
               "description": "Implement scope create/use/list/delete subcommands.",
               "subtasks": [
                 {
                   "type": "Subtask",
                   "id": "P4.M3.T2.S1",
                   "title": "Wire Scope Subcommands to CLI",
-                  "status": "Planned",
+                  "status": "Complete",
                   "story_points": 2,
                   "dependencies": [
                     "P4.M3.T1.S1"

@@ -377,21 +377,21 @@
           "type": "Milestone",
           "id": "P2.M4",
           "title": "Text Merge",
-          "status": "Planned",
+          "status": "Complete",
           "description": "Implement 3-way text merge with conflict detection.",
           "tasks": [
             {
               "type": "Task",
               "id": "P2.M4.T1",
               "title": "3-Way Text Merge",
-              "status": "Planned",
+              "status": "Complete",
               "description": "Implement text merge with conflict markers.",
               "subtasks": [
                 {
                   "type": "Subtask",
                   "id": "P2.M4.T1.S1",
                   "title": "Implement Text Merge",
-                  "status": "Planned",
+                  "status": "Complete",
                   "story_points": 2,
                   "dependencies": [
                     "P2.M1.T1.S1"

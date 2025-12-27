@@ -1037,21 +1037,21 @@
           "type": "Milestone",
           "id": "P6.M2",
           "title": "Integration Testing",
-          "status": "Planned",
+          "status": "Complete",
           "description": "Comprehensive end-to-end test suite.",
           "tasks": [
             {
               "type": "Task",
               "id": "P6.M2.T1",
               "title": "CLI Integration Tests",
-              "status": "Planned",
+              "status": "Complete",
               "description": "End-to-end tests for all CLI commands.",
               "subtasks": [
                 {
                   "type": "Subtask",
                   "id": "P6.M2.T1.S1",
                   "title": "Core Workflow Tests",
-                  "status": "Planned",
+                  "status": "Complete",
                   "story_points": 2,
                   "dependencies": [
                     "P6.M1.T1.S1"
@@ -1062,7 +1062,7 @@
                   "type": "Subtask",
                   "id": "P6.M2.T1.S2",
                   "title": "Mode/Scope Workflow Tests",
-                  "status": "Planned",
+                  "status": "Complete",
                   "story_points": 2,
                   "dependencies": [
                     "P6.M2.T1.S1"
@@ -1073,7 +1073,7 @@
                   "type": "Subtask",
                   "id": "P6.M2.T1.S3",
                   "title": "Sync Workflow Tests",
-                  "status": "Planned",
+                  "status": "Complete",
                   "story_points": 2,
                   "dependencies": [
                     "P6.M2.T1.S2"

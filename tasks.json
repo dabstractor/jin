@@ -512,21 +512,21 @@
           "type": "Milestone",
           "id": "P4.M2",
           "title": "Core Commands",
-          "status": "Planned",
+          "status": "Complete",
           "description": "Implement init, add, commit, and status commands.",
           "tasks": [
             {
               "type": "Task",
               "id": "P4.M2.T1",
               "title": "Init Command",
-              "status": "Planned",
+              "status": "Complete",
               "description": "Initialize Jin in a project directory.",
               "subtasks": [
                 {
                   "type": "Subtask",
                   "id": "P4.M2.T1.S1",
                   "title": "Implement jin init",
-                  "status": "Planned",
+                  "status": "Complete",
                   "story_points": 2,
                   "dependencies": [
                     "P4.M1.T1.S1",
@@ -540,14 +540,14 @@
               "type": "Task",
               "id": "P4.M2.T2",
               "title": "Add Command",
-              "status": "Planned",
+              "status": "Complete",
               "description": "Stage files to the appropriate layer.",
               "subtasks": [
                 {
                   "type": "Subtask",
                   "id": "P4.M2.T2.S1",
                   "title": "Implement jin add",
-                  "status": "Planned",
+                  "status": "Complete",
                   "story_points": 2,
                   "dependencies": [
                     "P4.M2.T1.S1",
@@ -561,14 +561,14 @@
               "type": "Task",
               "id": "P4.M2.T3",
               "title": "Commit Command",
-              "status": "Planned",
+              "status": "Complete",
               "description": "Commit staged files atomically.",
               "subtasks": [
                 {
                   "type": "Subtask",
                   "id": "P4.M2.T3.S1",
                   "title": "Implement jin commit",
-                  "status": "Planned",
+                  "status": "Complete",
                   "story_points": 2,
                   "dependencies": [
                     "P4.M2.T2.S1",
@@ -582,14 +582,14 @@
               "type": "Task",
               "id": "P4.M2.T4",
               "title": "Status Command",
-              "status": "Planned",
+              "status": "Complete",
               "description": "Show workspace and staging state.",
               "subtasks": [
                 {
                   "type": "Subtask",
                   "id": "P4.M2.T4.S1",
                   "title": "Implement jin status",
-                  "status": "Planned",
+                  "status": "Complete",
                   "story_points": 1,
                   "dependencies": [
                     "P4.M2.T1.S1"

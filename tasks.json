@@ -902,28 +902,28 @@
       "type": "Phase",
       "id": "P5",
       "title": "Synchronization",
-      "status": "Planned",
+      "status": "Complete",
       "description": "Implement remote synchronization: fetch, pull, push, and sync commands.",
       "milestones": [
         {
           "type": "Milestone",
           "id": "P5.M1",
           "title": "Remote Operations",
-          "status": "Planned",
+          "status": "Complete",
           "description": "Implement fetch, pull, push, and sync commands.",
           "tasks": [
             {
               "type": "Task",
               "id": "P5.M1.T1",
               "title": "Fetch Command",
-              "status": "Planned",
+              "status": "Complete",
               "description": "Fetch updates from remote Jin repo.",
               "subtasks": [
                 {
                   "type": "Subtask",
                   "id": "P5.M1.T1.S1",
                   "title": "Implement jin fetch",
-                  "status": "Planned",
+                  "status": "Complete",
                   "story_points": 2,
                   "dependencies": [
                     "P4.M6.T1.S1"
@@ -936,14 +936,14 @@
               "type": "Task",
               "id": "P5.M1.T2",
               "title": "Pull Command",
-              "status": "Planned",
+              "status": "Complete",
               "description": "Merge remote changes into local.",
               "subtasks": [
                 {
                   "type": "Subtask",
                   "id": "P5.M1.T2.S1",
                   "title": "Implement jin pull",
-                  "status": "Planned",
+                  "status": "Complete",
                   "story_points": 2,
                   "dependencies": [
                     "P5.M1.T1.S1"
@@ -956,14 +956,14 @@
               "type": "Task",
               "id": "P5.M1.T3",
               "title": "Push Command",
-              "status": "Planned",
+              "status": "Complete",
               "description": "Push local changes to remote.",
               "subtasks": [
                 {
                   "type": "Subtask",
                   "id": "P5.M1.T3.S1",
                   "title": "Implement jin push",
-                  "status": "Planned",
+                  "status": "Complete",
                   "story_points": 2,
                   "dependencies": [
                     "P5.M1.T1.S1"
@@ -976,14 +976,14 @@
               "type": "Task",
               "id": "P5.M1.T4",
               "title": "Sync Command",
-              "status": "Planned",
+              "status": "Complete",
               "description": "Convenience wrapper for fetch+pull+push.",
               "subtasks": [
                 {
                   "type": "Subtask",
                   "id": "P5.M1.T4.S1",
                   "title": "Implement jin sync",
-                  "status": "Planned",
+                  "status": "Complete",
                   "story_points": 1,
                   "dependencies": [
                     "P5.M1.T2.S1",

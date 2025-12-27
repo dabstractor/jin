@@ -6,9 +6,11 @@
 //! - [`ObjectOps`]: Object creation (blobs, trees, commits)
 //! - [`TreeOps`]: Tree walking utilities
 //! - [`JinTransaction`]: Transaction wrapper for atomic reference updates
+//! - [`remote`]: Remote operation utilities for fetch, pull, push
 
 pub mod objects;
 pub mod refs;
+pub mod remote;
 pub mod repo;
 pub mod transaction;
 pub mod tree;

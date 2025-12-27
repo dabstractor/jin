@@ -127,29 +127,32 @@ fn test_scope_list_subcommand() {
 
 #[test]
 fn test_add_subcommand() {
+    // Add is implemented and checks for initialization
     jin()
         .args(["add", ".claude/config.json"])
         .assert()
-        .success()
-        .stdout(predicate::str::contains("not yet implemented"));
+        .failure()
+        .stderr(predicate::str::contains("Jin not initialized"));
 }
 
 #[test]
 fn test_add_with_mode_flag() {
+    // Add is implemented and checks for initialization
     jin()
         .args(["add", ".claude/config.json", "--mode"])
         .assert()
-        .success()
-        .stdout(predicate::str::contains("not yet implemented"));
+        .failure()
+        .stderr(predicate::str::contains("Jin not initialized"));
 }
 
 #[test]
 fn test_add_with_scope_flag() {
+    // Add is implemented and checks for initialization
     jin()
         .args(["add", ".claude/config.json", "--scope=language:javascript"])
         .assert()
-        .success()
-        .stdout(predicate::str::contains("not yet implemented"));
+        .failure()
+        .stderr(predicate::str::contains("Jin not initialized"));
 }
 
 #[test]

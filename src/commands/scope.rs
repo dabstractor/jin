@@ -239,7 +239,7 @@ fn list() -> Result<()> {
             if let Some(mode_end) = rest.find("/scopes/") {
                 let mode_name = &rest[..mode_end];
                 let ref_safe_scope = &rest[mode_end + 8..]; // Skip "/scopes/"
-                // Convert back from ref-safe format (slashes to colons)
+                                                            // Convert back from ref-safe format (slashes to colons)
                 let display_name = ref_safe_scope.replace('/', ":");
 
                 if Some(display_name.as_str()) == context.scope.as_deref() {

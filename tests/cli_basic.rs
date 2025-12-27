@@ -99,7 +99,9 @@ fn test_mode_unset_subcommand() {
 fn test_scope_create_subcommand() {
     // Scope create doesn't require Jin init, it creates the scope in global Jin repo
     // May fail if scope already exists from previous test run
-    let result = jin().args(["scope", "create", "language:javascript"]).assert();
+    let result = jin()
+        .args(["scope", "create", "language:javascript"])
+        .assert();
     // Accept either success (new scope) or error (already exists)
     let output = result.get_output();
     let stdout_str = String::from_utf8_lossy(&output.stdout);
@@ -126,7 +128,10 @@ fn test_scope_use_subcommand() {
         .args(["scope", "use", "language:javascript"])
         .assert()
         .failure()
-        .stderr(predicate::str::contains("Jin not initialized").or(predicate::str::contains("not found")));
+        .stderr(
+            predicate::str::contains("Jin not initialized")
+                .or(predicate::str::contains("not found")),
+        );
 }
 
 #[test]
@@ -179,29 +184,32 @@ fn test_commit_subcommand() {
 
 #[test]
 fn test_apply_subcommand() {
+    // Apply requires Jin initialization
     jin()
         .arg("apply")
         .assert()
-        .success()
-        .stdout(predicate::str::contains("not yet implemented"));
+        .failure()
+        .stderr(predicate::str::contains("Jin not initialized"));
 }
 
 #[test]
 fn test_apply_dry_run() {
+    // Apply --dry-run also requires Jin initialization
     jin()
         .args(["apply", "--dry-run"])
         .assert()
-        .success()
-        .stdout(predicate::str::contains("not yet implemented"));
+        .failure()
+        .stderr(predicate::str::contains("Jin not initialized"));
 }
 
 #[test]
 fn test_reset_subcommand() {
+    // Reset requires Jin initialization
     jin()
         .arg("reset")
         .assert()
-        .success()
-        .stdout(predicate::str::contains("not yet implemented"));
+        .failure()
+        .stderr(predicate::str::contains("Jin not initialized"));
 }
 
 #[test]

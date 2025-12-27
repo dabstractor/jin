@@ -653,21 +653,21 @@
           "type": "Milestone",
           "id": "P4.M4",
           "title": "Workspace Commands",
-          "status": "Planned",
+          "status": "Complete",
           "description": "Implement apply and workspace management.",
           "tasks": [
             {
               "type": "Task",
               "id": "P4.M4.T1",
               "title": "Apply Command",
-              "status": "Planned",
+              "status": "Complete",
               "description": "Implement jin apply to merge layers into workspace.",
               "subtasks": [
                 {
                   "type": "Subtask",
                   "id": "P4.M4.T1.S1",
                   "title": "Complete Apply Command Wiring",
-                  "status": "Planned",
+                  "status": "Complete",
                   "story_points": 1,
                   "dependencies": [
                     "P4.M3.T2.S1"
@@ -680,14 +680,14 @@
               "type": "Task",
               "id": "P4.M4.T2",
               "title": "Reset Command",
-              "status": "Planned",
+              "status": "Complete",
               "description": "Implement jin reset for undoing changes.",
               "subtasks": [
                 {
                   "type": "Subtask",
                   "id": "P4.M4.T2.S1",
                   "title": "Implement jin reset",
-                  "status": "Planned",
+                  "status": "Complete",
                   "story_points": 2,
                   "dependencies": [
                     "P4.M4.T1.S1"

@@ -54,8 +54,8 @@ pub struct LayerMergeConfig {
 /// Result of a layer merge operation
 #[derive(Debug)]
 pub struct LayerMergeResult {
-    /// Files that were merged successfully
-    pub merged_files: Vec<PathBuf>,
+    /// Files that were merged successfully with their content
+    pub merged_files: std::collections::HashMap<PathBuf, MergedFile>,
     /// Files that have conflicts
     pub conflict_files: Vec<PathBuf>,
     /// Files that were added (only in higher layer)
@@ -74,7 +74,7 @@ impl LayerMergeResult {
     /// Create a new empty merge result
     pub fn new() -> Self {
         Self {
-            merged_files: Vec::new(),
+            merged_files: std::collections::HashMap::new(),
             conflict_files: Vec::new(),
             added_files: Vec::new(),
             removed_files: Vec::new(),
@@ -99,7 +99,7 @@ impl LayerMergeResult {
 ///
 /// # Returns
 ///
-/// * `LayerMergeResult` with lists of merged, conflicting, added, and removed files
+/// * `LayerMergeResult` with merged files and their content, plus conflict/added/removed files
 pub fn merge_layers(config: &LayerMergeConfig, repo: &JinRepo) -> Result<LayerMergeResult> {
     let mut result = LayerMergeResult::new();
 
@@ -109,8 +109,8 @@ pub fn merge_layers(config: &LayerMergeConfig, repo: &JinRepo) -> Result<LayerMe
     // Merge each file path
     for path in all_paths {
         match merge_file_across_layers(&path, &config.layers, config, repo) {
-            Ok(_merged) => {
-                result.merged_files.push(path);
+            Ok(merged) => {
+                result.merged_files.insert(path, merged);
             }
             Err(JinError::MergeConflict { .. }) => {
                 result.conflict_files.push(path);

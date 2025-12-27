@@ -1008,21 +1008,21 @@
           "type": "Milestone",
           "id": "P6.M1",
           "title": "Shell Completion",
-          "status": "Planned",
+          "status": "Complete",
           "description": "Implement shell completion for bash, zsh, fish, powershell.",
           "tasks": [
             {
               "type": "Task",
               "id": "P6.M1.T1",
               "title": "Completion Generator",
-              "status": "Planned",
+              "status": "Complete",
               "description": "Implement jin completion subcommand.",
               "subtasks": [
                 {
                   "type": "Subtask",
                   "id": "P6.M1.T1.S1",
                   "title": "Implement Shell Completions",
-                  "status": "Planned",
+                  "status": "Complete",
                   "story_points": 1,
                   "dependencies": [
                     "P5.M1.T4.S1"

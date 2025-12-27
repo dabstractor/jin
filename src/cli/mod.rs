@@ -5,6 +5,7 @@
 pub mod args;
 
 use clap::{Parser, Subcommand};
+use clap_complete::Shell;
 
 pub use args::*;
 
@@ -90,6 +91,22 @@ pub enum Commands {
 
     /// Fetch + merge + apply
     Sync,
+
+    /// Generate shell completion scripts
+    ///
+    /// Outputs completion script to stdout. Redirect to a file and source it
+    /// to enable tab completion in your shell.
+    ///
+    /// Installation:
+    ///   Bash:       jin completion bash > /usr/local/share/bash-completion/completions/jin
+    ///   Zsh:        jin completion zsh > ~/.zsh/completions/_jin
+    ///   Fish:       jin completion fish > ~/.config/fish/completions/jin.fish
+    ///   PowerShell: jin completion powershell > $PROFILE\..\Completions\jin_completion.ps1
+    Completion {
+        /// Shell type to generate completions for
+        #[arg(value_enum)]
+        shell: Shell,
+    },
 }
 
 /// Mode subcommands

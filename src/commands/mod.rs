@@ -8,6 +8,7 @@ use crate::core::Result;
 pub mod add;
 pub mod apply;
 pub mod commit_cmd;
+pub mod completion;
 pub mod context;
 pub mod diff;
 pub mod export;
@@ -51,5 +52,6 @@ pub fn execute(cli: Cli) -> Result<()> {
         Commands::Pull => pull::execute(),
         Commands::Push(args) => push::execute(args),
         Commands::Sync => sync::execute(),
+        Commands::Completion { shell } => completion::execute(shell),
     }
 }

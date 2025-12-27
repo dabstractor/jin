@@ -21,6 +21,7 @@ path = "src/main.rs"
 [dependencies]
 # CLI
 clap = { version = "4.5", features = ["derive", "cargo"] }
+clap_complete = "4.5"
 
 # Git operations
 git2 = { version = "0.19", default-features = false, features = ["vendored-libgit2"] }

@@ -474,3 +474,82 @@ fn test_link_help() {
         .stdout(predicate::str::contains("Remote repository URL"))
         .stdout(predicate::str::contains("--force"));
 }
+
+// ============================================================
+// Completion Command Integration Tests
+// ============================================================
+
+#[test]
+fn test_completion_bash() {
+    jin()
+        .args(["completion", "bash"])
+        .assert()
+        .success()
+        .stdout(predicate::str::contains("_jin")) // Bash functions start with _
+        .stdout(predicate::str::contains("complete")); // Bash uses 'complete' builtin
+}
+
+#[test]
+fn test_completion_zsh() {
+    jin()
+        .args(["completion", "zsh"])
+        .assert()
+        .success()
+        .stdout(predicate::str::contains("#compdef")); // Zsh completions start with #compdef
+}
+
+#[test]
+fn test_completion_fish() {
+    jin()
+        .args(["completion", "fish"])
+        .assert()
+        .success()
+        .stdout(predicate::str::contains("complete")) // Fish uses 'complete' command
+        .stdout(predicate::str::contains("-c jin")); // Fish completion for command 'jin'
+}
+
+#[test]
+fn test_completion_powershell() {
+    jin()
+        .args(["completion", "powershell"])
+        .assert()
+        .success()
+        .stdout(predicate::str::contains("Register-ArgumentCompleter"));
+}
+
+#[test]
+fn test_completion_invalid_shell() {
+    jin()
+        .args(["completion", "invalid"])
+        .assert()
+        .failure()
+        .stderr(predicate::str::contains("invalid value"))
+        .stderr(predicate::str::contains("possible values"));
+}
+
+#[test]
+fn test_completion_no_shell() {
+    jin()
+        .args(["completion"])
+        .assert()
+        .failure()
+        .stderr(predicate::str::contains(
+            "required arguments were not provided",
+        ))
+        .stderr(predicate::str::contains("<SHELL>"));
+}
+
+#[test]
+fn test_completion_help() {
+    jin()
+        .args(["completion", "--help"])
+        .assert()
+        .success()
+        .stdout(predicate::str::contains(
+            "Generate shell completion scripts",
+        ))
+        .stdout(predicate::str::contains("bash"))
+        .stdout(predicate::str::contains("zsh"))
+        .stdout(predicate::str::contains("fish"))
+        .stdout(predicate::str::contains("powershell"));
+}

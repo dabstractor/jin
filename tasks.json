@@ -408,28 +408,28 @@
       "type": "Phase",
       "id": "P3",
       "title": "Staging & Commit Pipeline",
-      "status": "Planned",
+      "status": "Complete",
       "description": "Implement the staging system for layer routing and the commit pipeline for atomic multi-layer commits.",
       "milestones": [
         {
           "type": "Milestone",
           "id": "P3.M1",
           "title": "Staging System",
-          "status": "Planned",
+          "status": "Complete",
           "description": "Implement file staging with layer routing.",
           "tasks": [
             {
               "type": "Task",
               "id": "P3.M1.T1",
               "title": "Staging Implementation",
-              "status": "Planned",
+              "status": "Complete",
               "description": "Implement StagedEntry, StagingIndex, and router.",
               "subtasks": [
                 {
                   "type": "Subtask",
                   "id": "P3.M1.T1.S1",
                   "title": "Implement Staging Types",
-                  "status": "Planned",
+                  "status": "Complete",
                   "story_points": 2,
                   "dependencies": [
                     "P1.M1.T3.S1"

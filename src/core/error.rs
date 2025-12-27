@@ -46,6 +46,18 @@ pub enum JinError {
     #[error("Already exists: {0}")]
     AlreadyExists(String),
 
+    /// File is tracked by Git
+    #[error("File is tracked by Git: {path}. Use `jin import` instead.")]
+    GitTracked { path: String },
+
+    /// Path is a symlink
+    #[error("Symlinks are not supported: {path}")]
+    Symlink { path: String },
+
+    /// Staging operation failed
+    #[error("Staging failed for {path}: {reason}")]
+    StagingFailed { path: String, reason: String },
+
     /// Not initialized
     #[error("Jin not initialized in this project")]
     NotInitialized,
@@ -97,5 +109,36 @@ mod tests {
             context_type: "mode".to_string(),
         };
         assert_eq!(err.to_string(), "No active mode");
+    }
+
+    #[test]
+    fn test_git_tracked_error() {
+        let err = JinError::GitTracked {
+            path: ".claude/config.json".to_string(),
+        };
+        assert_eq!(
+            err.to_string(),
+            "File is tracked by Git: .claude/config.json. Use `jin import` instead."
+        );
+    }
+
+    #[test]
+    fn test_symlink_error() {
+        let err = JinError::Symlink {
+            path: "link.txt".to_string(),
+        };
+        assert_eq!(err.to_string(), "Symlinks are not supported: link.txt");
+    }
+
+    #[test]
+    fn test_staging_failed_error() {
+        let err = JinError::StagingFailed {
+            path: "file.json".to_string(),
+            reason: "cannot read file".to_string(),
+        };
+        assert_eq!(
+            err.to_string(),
+            "Staging failed for file.json: cannot read file"
+        );
     }
 }

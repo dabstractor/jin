@@ -476,7 +476,7 @@
       "type": "Phase",
       "id": "P4",
       "title": "CLI Commands",
-      "status": "Researching",
+      "status": "Complete",
       "description": "Implement all CLI commands by wiring them to existing infrastructure.",
       "milestones": [
         {
@@ -871,21 +871,21 @@
           "type": "Milestone",
           "id": "P4.M6",
           "title": "Link Command",
-          "status": "Planned",
+          "status": "Complete",
           "description": "Implement jin link for remote config repos.",
           "tasks": [
             {
               "type": "Task",
               "id": "P4.M6.T1",
               "title": "Link Command",
-              "status": "Planned",
+              "status": "Complete",
               "description": "Link to shared Jin config repository.",
               "subtasks": [
                 {
                   "type": "Subtask",
                   "id": "P4.M6.T1.S1",
                   "title": "Implement jin link",
-                  "status": "Planned",
+                  "status": "Complete",
                   "story_points": 2,
                   "dependencies": [
                     "P4.M5.T8.S1"

@@ -263,11 +263,23 @@ fn test_list_subcommand() {
 
 #[test]
 fn test_link_subcommand() {
-    jin()
-        .args(["link", "git@github.com:org/config"])
+    // Link command may fail for different reasons:
+    // - Remote already exists (if run after other tests)
+    // - Cannot access repository (network/auth issues)
+    let result = jin()
+        .args(["link", "git@github.com:org/config.git"])
         .assert()
-        .success()
-        .stdout(predicate::str::contains("not yet implemented"));
+        .failure();
+
+    let output = result.get_output();
+    let stderr_str = String::from_utf8_lossy(&output.stderr);
+
+    // Accept either "already exists" or "cannot access" errors
+    assert!(
+        stderr_str.contains("Already exists") || stderr_str.contains("Cannot access remote"),
+        "Expected 'Already exists' or 'Cannot access' error, got: {}",
+        stderr_str
+    );
 }
 
 #[test]
@@ -323,7 +335,9 @@ fn test_export_subcommand() {
         .args(["export", ".claude/config.json"])
         .assert()
         .failure()
-        .stderr(predicate::str::contains("not found").or(predicate::str::contains("not Jin-tracked")));
+        .stderr(
+            predicate::str::contains("not found").or(predicate::str::contains("not Jin-tracked")),
+        );
 }
 
 #[test]
@@ -333,7 +347,9 @@ fn test_repair_subcommand() {
         .arg("repair")
         .assert()
         .success()
-        .stdout(predicate::str::contains("Checking Jin repository integrity"));
+        .stdout(predicate::str::contains(
+            "Checking Jin repository integrity",
+        ));
 }
 
 #[test]
@@ -343,4 +359,118 @@ fn test_invalid_subcommand() {
         .assert()
         .failure()
         .stderr(predicate::str::contains("error"));
+}
+
+// ============================================================
+// Link Command Integration Tests
+// ============================================================
+
+#[test]
+fn test_link_invalid_url_empty() {
+    jin()
+        .args(["link", ""])
+        .assert()
+        .failure()
+        .stderr(predicate::str::contains("URL cannot be empty"));
+}
+
+#[test]
+fn test_link_invalid_url_format() {
+    jin()
+        .args(["link", "invalid-url"])
+        .assert()
+        .failure()
+        .stderr(predicate::str::contains("Invalid remote URL format"))
+        .stderr(predicate::str::contains("Supported formats"));
+}
+
+#[test]
+fn test_link_invalid_url_relative_path() {
+    jin()
+        .args(["link", "relative/path"])
+        .assert()
+        .failure()
+        .stderr(predicate::str::contains("Invalid remote URL format"));
+}
+
+#[test]
+fn test_link_invalid_url_unsupported_protocol() {
+    jin()
+        .args(["link", "ftp://example.com/repo.git"])
+        .assert()
+        .failure()
+        .stderr(predicate::str::contains("Invalid remote URL format"));
+}
+
+#[test]
+fn test_link_valid_https_url() {
+    // Valid HTTPS URL should pass validation but may fail on connectivity
+    let result = jin()
+        .args(["link", "https://github.com/nonexistent/repo.git"])
+        .assert();
+
+    let output = result.get_output();
+    let stdout_str = String::from_utf8_lossy(&output.stdout);
+    let stderr_str = String::from_utf8_lossy(&output.stderr);
+
+    // Should either succeed, fail on connectivity, or fail if remote already exists
+    assert!(
+        stdout_str.contains("Testing connection")
+            || stderr_str.contains("Cannot access remote repository")
+            || stderr_str.contains("Repository not found")
+            || stderr_str.contains("Already exists"),
+        "Expected connectivity test, error, or already exists: stdout={}, stderr={}",
+        stdout_str,
+        stderr_str
+    );
+}
+
+#[test]
+fn test_link_valid_ssh_url() {
+    // Valid SSH URL should pass validation but may fail on connectivity
+    let result = jin()
+        .args(["link", "git@github.com:nonexistent/repo.git"])
+        .assert();
+
+    let output = result.get_output();
+    let stdout_str = String::from_utf8_lossy(&output.stdout);
+    let stderr_str = String::from_utf8_lossy(&output.stderr);
+
+    // Should either succeed, fail on connectivity, or fail if remote already exists
+    assert!(
+        stdout_str.contains("Testing connection")
+            || stderr_str.contains("Cannot access remote repository")
+            || stderr_str.contains("Repository not found")
+            || stderr_str.contains("Already exists"),
+        "Expected connectivity test, error, or already exists: stdout={}, stderr={}",
+        stdout_str,
+        stderr_str
+    );
+}
+
+#[test]
+fn test_link_force_flag() {
+    // Test that --force flag is recognized (actual functionality requires setup)
+    let result = jin()
+        .args(["link", "https://github.com/example/repo.git", "--force"])
+        .assert();
+
+    let output = result.get_output();
+    let stderr_str = String::from_utf8_lossy(&output.stderr);
+
+    // Should not complain about unknown flag
+    assert!(
+        !stderr_str.contains("unexpected argument '--force'"),
+        "Force flag should be recognized"
+    );
+}
+
+#[test]
+fn test_link_help() {
+    jin()
+        .args(["link", "--help"])
+        .assert()
+        .success()
+        .stdout(predicate::str::contains("Remote repository URL"))
+        .stdout(predicate::str::contains("--force"));
 }

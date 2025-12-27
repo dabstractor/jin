@@ -134,6 +134,10 @@ pub struct RepairArgs {
 pub struct LinkArgs {
     /// Remote repository URL
     pub url: String,
+
+    /// Force update existing remote
+    #[arg(long)]
+    pub force: bool,
 }
 
 /// Arguments for the `push` command

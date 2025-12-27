@@ -45,6 +45,7 @@ diffy = "0.4"
 # Utilities
 dirs = "5.0"
 chrono = { version = "0.4", features = ["serde"] }
+regex = "1.10"
 
 [dev-dependencies]
 assert_cmd = "2.0"

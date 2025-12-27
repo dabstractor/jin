@@ -317,21 +317,21 @@
           "type": "Milestone",
           "id": "P2.M3",
           "title": "Deep Merge Algorithm",
-          "status": "Planned",
+          "status": "Complete",
           "description": "Implement the core deep merge algorithm with null-deletion and array strategies.",
           "tasks": [
             {
               "type": "Task",
               "id": "P2.M3.T1",
               "title": "Deep Merge Implementation",
-              "status": "Planned",
+              "status": "Complete",
               "description": "Implement recursive deep merge with RFC 7396 semantics.",
               "subtasks": [
                 {
                   "type": "Subtask",
                   "id": "P2.M3.T1.S1",
                   "title": "Implement Deep Merge",
-                  "status": "Planned",
+                  "status": "Complete",
                   "story_points": 2,
                   "dependencies": [
                     "P2.M1.T1.S1"
@@ -342,7 +342,7 @@
                   "type": "Subtask",
                   "id": "P2.M3.T1.S2",
                   "title": "Implement Array Strategies",
-                  "status": "Planned",
+                  "status": "Complete",
                   "story_points": 2,
                   "dependencies": [
                     "P2.M3.T1.S1"
@@ -355,14 +355,14 @@
               "type": "Task",
               "id": "P2.M3.T2",
               "title": "Layer Merge Orchestration",
-              "status": "Planned",
+              "status": "Complete",
               "description": "Merge multiple layers in precedence order.",
               "subtasks": [
                 {
                   "type": "Subtask",
                   "id": "P2.M3.T2.S1",
                   "title": "Implement Layer Merge",
-                  "status": "Planned",
+                  "status": "Complete",
                   "story_points": 2,
                   "dependencies": [
                     "P2.M3.T1.S2"

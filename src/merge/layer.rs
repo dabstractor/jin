@@ -1,7 +1,42 @@
 //! Layer merge orchestration
+//!
+//! This module handles merging configuration files across Jin's 9-layer
+//! hierarchy. Files at higher precedence layers override lower layers,
+//! with structured files (JSON, YAML, TOML, INI) being deep-merged
+//! according to RFC 7396 semantics.
 
-use crate::core::{Layer, Result};
+use crate::core::{JinError, Layer, Result};
+use crate::git::{JinRepo, RefOps, TreeOps};
+use std::collections::HashSet;
 use std::path::PathBuf;
+
+use super::{deep_merge, MergeValue};
+
+/// File format for parsing and serialization
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum FileFormat {
+    /// JSON format (.json)
+    Json,
+    /// YAML format (.yaml, .yml)
+    Yaml,
+    /// TOML format (.toml)
+    Toml,
+    /// INI format (.ini, .cfg, .conf)
+    Ini,
+    /// Plain text (any other extension)
+    Text,
+}
+
+/// Represents a merged file across multiple layers
+#[derive(Debug)]
+pub struct MergedFile {
+    /// Final merged content
+    pub content: MergeValue,
+    /// Layers that contributed to this file
+    pub source_layers: Vec<Layer>,
+    /// Original format (for serialization)
+    pub format: FileFormat,
+}
 
 /// Configuration for a layer merge operation
 #[derive(Debug)]
@@ -52,24 +87,160 @@ impl LayerMergeResult {
     }
 }
 
-/// Merge multiple layers into the workspace
+/// Merge all applicable layers for the given configuration.
 ///
-/// TODO: Implement proper layer merging in later milestone
+/// This function collects all unique file paths across all layers,
+/// then merges each file according to layer precedence (lowest first).
 ///
 /// # Arguments
-/// * `config` - The merge configuration
+///
+/// * `config` - The merge configuration containing layers and context
+/// * `repo` - The Jin repository to read layer contents from
 ///
 /// # Returns
-/// * `LayerMergeResult` with the merge outcome
-pub fn merge_layers(_config: &LayerMergeConfig) -> Result<LayerMergeResult> {
-    // TODO: Implement layer merging
-    // 1. For each layer in precedence order:
-    //    a. Get the tree of files for that layer
-    //    b. For each file, merge with the accumulated result
-    // 2. Write merged files to workspace
-    // 3. Return merge result
+///
+/// * `LayerMergeResult` with lists of merged, conflicting, added, and removed files
+pub fn merge_layers(config: &LayerMergeConfig, repo: &JinRepo) -> Result<LayerMergeResult> {
+    let mut result = LayerMergeResult::new();
 
-    Ok(LayerMergeResult::new())
+    // Collect all unique file paths across all layers
+    let all_paths = collect_all_file_paths(&config.layers, config, repo)?;
+
+    // Merge each file path
+    for path in all_paths {
+        match merge_file_across_layers(&path, &config.layers, config, repo) {
+            Ok(_merged) => {
+                result.merged_files.push(path);
+            }
+            Err(JinError::MergeConflict { .. }) => {
+                result.conflict_files.push(path);
+            }
+            Err(e) => return Err(e),
+        }
+    }
+
+    Ok(result)
+}
+
+/// Collect all unique file paths across all applicable layers.
+///
+/// Iterates through each layer, resolves its Git ref, and lists all files
+/// in its tree. Returns a set of unique paths.
+fn collect_all_file_paths(
+    layers: &[Layer],
+    config: &LayerMergeConfig,
+    repo: &JinRepo,
+) -> Result<HashSet<PathBuf>> {
+    let mut paths = HashSet::new();
+
+    for layer in layers {
+        let ref_path = layer.ref_path(
+            config.mode.as_deref(),
+            config.scope.as_deref(),
+            config.project.as_deref(),
+        );
+
+        // CRITICAL: Check ref_exists() before resolve_ref()
+        if repo.ref_exists(&ref_path) {
+            if let Ok(commit_oid) = repo.resolve_ref(&ref_path) {
+                let commit = repo.inner().find_commit(commit_oid)?;
+                let tree_oid = commit.tree_id();
+
+                for file_path in repo.list_tree_files(tree_oid)? {
+                    paths.insert(PathBuf::from(file_path));
+                }
+            }
+        }
+        // Layer ref doesn't exist = no files in this layer (skip gracefully)
+    }
+
+    Ok(paths)
+}
+
+/// Merge a single file across multiple layers.
+///
+/// Reads the file content from each layer that contains it,
+/// parses according to file format, and deep-merges in precedence order.
+fn merge_file_across_layers(
+    path: &std::path::Path,
+    layers: &[Layer],
+    config: &LayerMergeConfig,
+    repo: &JinRepo,
+) -> Result<MergedFile> {
+    let mut accumulated: Option<MergeValue> = None;
+    let mut source_layers = Vec::new();
+    let mut format = FileFormat::Text;
+
+    // Process layers in precedence order (lowest first)
+    for layer in layers {
+        let ref_path = layer.ref_path(
+            config.mode.as_deref(),
+            config.scope.as_deref(),
+            config.project.as_deref(),
+        );
+
+        // CRITICAL: Check ref_exists() before resolve_ref()
+        if !repo.ref_exists(&ref_path) {
+            continue;
+        }
+
+        if let Ok(commit_oid) = repo.resolve_ref(&ref_path) {
+            let commit = repo.inner().find_commit(commit_oid)?;
+            let tree_oid = commit.tree_id();
+
+            if let Ok(content) = repo.read_file_from_tree(tree_oid, path) {
+                let content_str = String::from_utf8_lossy(&content);
+
+                format = detect_format(path);
+                let layer_value = parse_content(&content_str, format)?;
+
+                source_layers.push(*layer);
+
+                accumulated = Some(match accumulated {
+                    Some(base) => deep_merge(base, layer_value)?,
+                    None => layer_value,
+                });
+            }
+        }
+    }
+
+    match accumulated {
+        Some(content) => Ok(MergedFile {
+            content,
+            source_layers,
+            format,
+        }),
+        None => Err(JinError::NotFound(path.display().to_string())),
+    }
+}
+
+/// Detect file format from path extension.
+///
+/// Returns the appropriate FileFormat based on the file extension.
+/// Unknown extensions default to Text.
+pub fn detect_format(path: &std::path::Path) -> FileFormat {
+    let ext = path.extension().and_then(|e| e.to_str()).unwrap_or("");
+    match ext.to_lowercase().as_str() {
+        "json" => FileFormat::Json,
+        "yaml" | "yml" => FileFormat::Yaml,
+        "toml" => FileFormat::Toml,
+        "ini" | "cfg" | "conf" => FileFormat::Ini,
+        _ => FileFormat::Text,
+    }
+}
+
+/// Parse content string according to file format.
+///
+/// Returns a MergeValue representation of the content.
+/// Text files are wrapped as MergeValue::String.
+pub fn parse_content(content: &str, format: FileFormat) -> Result<MergeValue> {
+    match format {
+        FileFormat::Json => MergeValue::from_json(content),
+        FileFormat::Yaml => MergeValue::from_yaml(content),
+        FileFormat::Toml => MergeValue::from_toml(content),
+        FileFormat::Ini => MergeValue::from_ini(content),
+        FileFormat::Text => Ok(MergeValue::String(content.to_string())),
+    }
 }
 
 /// Get the list of layers that apply given the current context
@@ -106,12 +277,176 @@ pub fn get_applicable_layers(
 mod tests {
     use super::*;
 
+    // ========== FileFormat & MergedFile Tests ==========
+
+    #[test]
+    fn test_file_format_equality() {
+        assert_eq!(FileFormat::Json, FileFormat::Json);
+        assert_ne!(FileFormat::Json, FileFormat::Yaml);
+    }
+
+    #[test]
+    fn test_file_format_clone() {
+        let format = FileFormat::Toml;
+        let cloned = format;
+        assert_eq!(format, cloned);
+    }
+
+    // ========== LayerMergeResult Tests ==========
+
     #[test]
     fn test_merge_result_new() {
         let result = LayerMergeResult::new();
         assert!(result.is_clean());
         assert!(result.merged_files.is_empty());
+        assert!(result.conflict_files.is_empty());
+        assert!(result.added_files.is_empty());
+        assert!(result.removed_files.is_empty());
     }
+
+    #[test]
+    fn test_merge_result_default() {
+        let result = LayerMergeResult::default();
+        assert!(result.is_clean());
+    }
+
+    #[test]
+    fn test_merge_result_is_clean_with_conflicts() {
+        let mut result = LayerMergeResult::new();
+        result.conflict_files.push(PathBuf::from("conflict.json"));
+        assert!(!result.is_clean());
+    }
+
+    // ========== detect_format Tests ==========
+
+    #[test]
+    fn test_detect_format_json() {
+        assert_eq!(
+            detect_format(&PathBuf::from("config.json")),
+            FileFormat::Json
+        );
+        assert_eq!(
+            detect_format(&PathBuf::from("path/to/config.json")),
+            FileFormat::Json
+        );
+        assert_eq!(
+            detect_format(&PathBuf::from("CONFIG.JSON")),
+            FileFormat::Json
+        );
+    }
+
+    #[test]
+    fn test_detect_format_yaml() {
+        assert_eq!(
+            detect_format(&PathBuf::from("config.yaml")),
+            FileFormat::Yaml
+        );
+        assert_eq!(
+            detect_format(&PathBuf::from("config.yml")),
+            FileFormat::Yaml
+        );
+        assert_eq!(
+            detect_format(&PathBuf::from("CONFIG.YML")),
+            FileFormat::Yaml
+        );
+    }
+
+    #[test]
+    fn test_detect_format_toml() {
+        assert_eq!(
+            detect_format(&PathBuf::from("config.toml")),
+            FileFormat::Toml
+        );
+        assert_eq!(
+            detect_format(&PathBuf::from("Cargo.toml")),
+            FileFormat::Toml
+        );
+    }
+
+    #[test]
+    fn test_detect_format_ini() {
+        assert_eq!(detect_format(&PathBuf::from("config.ini")), FileFormat::Ini);
+        assert_eq!(
+            detect_format(&PathBuf::from("settings.cfg")),
+            FileFormat::Ini
+        );
+        assert_eq!(detect_format(&PathBuf::from("app.conf")), FileFormat::Ini);
+    }
+
+    #[test]
+    fn test_detect_format_text() {
+        assert_eq!(detect_format(&PathBuf::from("README.md")), FileFormat::Text);
+        assert_eq!(detect_format(&PathBuf::from("script.sh")), FileFormat::Text);
+        assert_eq!(detect_format(&PathBuf::from("notes.txt")), FileFormat::Text);
+        assert_eq!(
+            detect_format(&PathBuf::from("noextension")),
+            FileFormat::Text
+        );
+    }
+
+    // ========== parse_content Tests ==========
+
+    #[test]
+    fn test_parse_content_json() {
+        let json = r#"{"key": "value", "num": 42}"#;
+        let result = parse_content(json, FileFormat::Json).unwrap();
+        let obj = result.as_object().unwrap();
+        assert_eq!(obj.get("key").unwrap().as_str(), Some("value"));
+        assert_eq!(obj.get("num").unwrap().as_i64(), Some(42));
+    }
+
+    #[test]
+    fn test_parse_content_yaml() {
+        let yaml = "key: value\nnum: 42";
+        let result = parse_content(yaml, FileFormat::Yaml).unwrap();
+        let obj = result.as_object().unwrap();
+        assert_eq!(obj.get("key").unwrap().as_str(), Some("value"));
+        assert_eq!(obj.get("num").unwrap().as_i64(), Some(42));
+    }
+
+    #[test]
+    fn test_parse_content_toml() {
+        let toml = "key = \"value\"\nnum = 42";
+        let result = parse_content(toml, FileFormat::Toml).unwrap();
+        let obj = result.as_object().unwrap();
+        assert_eq!(obj.get("key").unwrap().as_str(), Some("value"));
+        assert_eq!(obj.get("num").unwrap().as_i64(), Some(42));
+    }
+
+    #[test]
+    fn test_parse_content_ini() {
+        let ini = "[section]\nkey=value";
+        let result = parse_content(ini, FileFormat::Ini).unwrap();
+        let section = result.as_object().unwrap().get("section").unwrap();
+        assert_eq!(
+            section.as_object().unwrap().get("key").unwrap().as_str(),
+            Some("value")
+        );
+    }
+
+    #[test]
+    fn test_parse_content_text() {
+        let text = "Hello, World!\nThis is plain text.";
+        let result = parse_content(text, FileFormat::Text).unwrap();
+        assert_eq!(result.as_str(), Some(text));
+    }
+
+    #[test]
+    fn test_parse_content_json_invalid() {
+        let invalid = "{not valid json";
+        let result = parse_content(invalid, FileFormat::Json);
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_parse_content_yaml_with_null() {
+        let yaml = "key: null";
+        let result = parse_content(yaml, FileFormat::Yaml).unwrap();
+        let obj = result.as_object().unwrap();
+        assert!(obj.get("key").unwrap().is_null());
+    }
+
+    // ========== get_applicable_layers Tests ==========
 
     #[test]
     fn test_applicable_layers_no_context() {
@@ -119,6 +454,7 @@ mod tests {
         assert!(layers.contains(&Layer::GlobalBase));
         assert!(layers.contains(&Layer::ProjectBase));
         assert!(layers.contains(&Layer::UserLocal));
+        assert!(layers.contains(&Layer::WorkspaceActive));
         assert!(!layers.contains(&Layer::ModeBase));
     }
 
@@ -139,5 +475,39 @@ mod tests {
         assert!(layers.contains(&Layer::ModeScope));
         assert!(layers.contains(&Layer::ModeScopeProject));
         assert!(layers.contains(&Layer::ScopeBase));
+    }
+
+    #[test]
+    fn test_applicable_layers_scope_without_mode() {
+        let layers = get_applicable_layers(None, Some("language:rust"), None);
+        assert!(layers.contains(&Layer::ScopeBase));
+        assert!(!layers.contains(&Layer::ModeBase));
+        assert!(!layers.contains(&Layer::ModeScope));
+    }
+
+    // ========== Layer Precedence Tests ==========
+
+    #[test]
+    fn test_layer_precedence_order() {
+        let layers = Layer::all_in_precedence_order();
+        assert_eq!(layers[0], Layer::GlobalBase);
+        assert_eq!(layers[8], Layer::WorkspaceActive);
+
+        for i in 0..layers.len() - 1 {
+            assert!(layers[i].precedence() < layers[i + 1].precedence());
+        }
+    }
+
+    #[test]
+    fn test_layer_precedence_values() {
+        assert_eq!(Layer::GlobalBase.precedence(), 1);
+        assert_eq!(Layer::ModeBase.precedence(), 2);
+        assert_eq!(Layer::ModeScope.precedence(), 3);
+        assert_eq!(Layer::ModeScopeProject.precedence(), 4);
+        assert_eq!(Layer::ModeProject.precedence(), 5);
+        assert_eq!(Layer::ScopeBase.precedence(), 6);
+        assert_eq!(Layer::ProjectBase.precedence(), 7);
+        assert_eq!(Layer::UserLocal.precedence(), 8);
+        assert_eq!(Layer::WorkspaceActive.precedence(), 9);
     }
 }

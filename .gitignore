@@ -1,3 +1,24 @@
-target
+# Build artifacts
+target/
+
+# Jin local state
 .jin/
+
+# Research documentation (kept local)
 plan/*/research/
+
+# OS-specific files
+.DS_Store
+Thumbs.db
+
+# Editor files
+*.swp
+*.swo
+*~
+.vscode/
+.idea/
+
+# Temporary files
+*.tmp
+*.bak
+test.json

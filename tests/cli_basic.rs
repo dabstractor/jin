@@ -214,20 +214,22 @@ fn test_reset_subcommand() {
 
 #[test]
 fn test_diff_subcommand() {
+    // Diff requires Jin initialization
     jin()
         .arg("diff")
         .assert()
-        .success()
-        .stdout(predicate::str::contains("not yet implemented"));
+        .failure()
+        .stderr(predicate::str::contains("Jin not initialized"));
 }
 
 #[test]
 fn test_log_subcommand() {
+    // Log requires Jin initialization
     jin()
         .arg("log")
         .assert()
-        .success()
-        .stdout(predicate::str::contains("not yet implemented"));
+        .failure()
+        .stderr(predicate::str::contains("Jin not initialized"));
 }
 
 #[test]
@@ -241,20 +243,22 @@ fn test_context_subcommand() {
 
 #[test]
 fn test_layers_subcommand() {
+    // Layers requires Jin initialization
     jin()
         .arg("layers")
         .assert()
-        .success()
-        .stdout(predicate::str::contains("not yet implemented"));
+        .failure()
+        .stderr(predicate::str::contains("Jin not initialized"));
 }
 
 #[test]
 fn test_list_subcommand() {
+    // List requires Jin initialization
     jin()
         .arg("list")
         .assert()
-        .success()
-        .stdout(predicate::str::contains("not yet implemented"));
+        .failure()
+        .stderr(predicate::str::contains("Jin not initialized"));
 }
 
 #[test]
@@ -304,29 +308,32 @@ fn test_sync_subcommand() {
 
 #[test]
 fn test_import_subcommand() {
+    // Import requires Jin initialization
     jin()
         .args(["import", ".vscode/settings.json"])
         .assert()
-        .success()
-        .stdout(predicate::str::contains("not yet implemented"));
+        .failure()
+        .stderr(predicate::str::contains("Jin not initialized"));
 }
 
 #[test]
 fn test_export_subcommand() {
+    // Export requires Jin initialization (or at least checks staging)
     jin()
         .args(["export", ".claude/config.json"])
         .assert()
-        .success()
-        .stdout(predicate::str::contains("not yet implemented"));
+        .failure()
+        .stderr(predicate::str::contains("not found").or(predicate::str::contains("not Jin-tracked")));
 }
 
 #[test]
 fn test_repair_subcommand() {
+    // Repair can run even without initialization
     jin()
         .arg("repair")
         .assert()
         .success()
-        .stdout(predicate::str::contains("not yet implemented"));
+        .stdout(predicate::str::contains("Checking Jin repository integrity"));
 }
 
 #[test]

@@ -702,21 +702,21 @@
           "type": "Milestone",
           "id": "P4.M5",
           "title": "Utility Commands",
-          "status": "Planned",
+          "status": "Complete",
           "description": "Implement diff, log, context, import, export, repair, layers, list.",
           "tasks": [
             {
               "type": "Task",
               "id": "P4.M5.T1",
               "title": "Diff Command",
-              "status": "Planned",
+              "status": "Complete",
               "description": "Show differences between layers or workspace.",
               "subtasks": [
                 {
                   "type": "Subtask",
                   "id": "P4.M5.T1.S1",
                   "title": "Wire DiffCommand",
-                  "status": "Planned",
+                  "status": "Complete",
                   "story_points": 2,
                   "dependencies": [
                     "P4.M4.T1.S1"
@@ -729,14 +729,14 @@
               "type": "Task",
               "id": "P4.M5.T2",
               "title": "Log Command",
-              "status": "Planned",
+              "status": "Complete",
               "description": "Show commit history for layers.",
               "subtasks": [
                 {
                   "type": "Subtask",
                   "id": "P4.M5.T2.S1",
                   "title": "Wire LogCommand",
-                  "status": "Planned",
+                  "status": "Complete",
                   "story_points": 1,
                   "dependencies": [
                     "P4.M5.T1.S1"
@@ -749,14 +749,14 @@
               "type": "Task",
               "id": "P4.M5.T3",
               "title": "Context Command",
-              "status": "Planned",
+              "status": "Complete",
               "description": "Show/set active context.",
               "subtasks": [
                 {
                   "type": "Subtask",
                   "id": "P4.M5.T3.S1",
                   "title": "Wire ContextCommand",
-                  "status": "Planned",
+                  "status": "Complete",
                   "story_points": 1,
                   "dependencies": [
                     "P4.M5.T2.S1"
@@ -769,14 +769,14 @@
               "type": "Task",
               "id": "P4.M5.T4",
               "title": "Import Command",
-              "status": "Planned",
+              "status": "Complete",
               "description": "Import Git-tracked files into Jin.",
               "subtasks": [
                 {
                   "type": "Subtask",
                   "id": "P4.M5.T4.S1",
                   "title": "Wire ImportCommand",
-                  "status": "Planned",
+                  "status": "Complete",
                   "story_points": 2,
                   "dependencies": [
                     "P4.M5.T3.S1"
@@ -789,14 +789,14 @@
               "type": "Task",
               "id": "P4.M5.T5",
               "title": "Export Command",
-              "status": "Planned",
+              "status": "Complete",
               "description": "Export Jin files back to Git.",
               "subtasks": [
                 {
                   "type": "Subtask",
                   "id": "P4.M5.T5.S1",
                   "title": "Wire ExportCommand",
-                  "status": "Planned",
+                  "status": "Complete",
                   "story_points": 1,
                   "dependencies": [
                     "P4.M5.T4.S1"
@@ -809,14 +809,14 @@
               "type": "Task",
               "id": "P4.M5.T6",
               "title": "Repair Command",
-              "status": "Planned",
+              "status": "Complete",
               "description": "Repair Jin state.",
               "subtasks": [
                 {
                   "type": "Subtask",
                   "id": "P4.M5.T6.S1",
                   "title": "Wire RepairCommand",
-                  "status": "Planned",
+                  "status": "Complete",
                   "story_points": 2,
                   "dependencies": [
                     "P4.M5.T5.S1"
@@ -829,14 +829,14 @@
               "type": "Task",
               "id": "P4.M5.T7",
               "title": "Layers Command",
-              "status": "Planned",
+              "status": "Complete",
               "description": "Show current layer composition.",
               "subtasks": [
                 {
                   "type": "Subtask",
                   "id": "P4.M5.T7.S1",
                   "title": "Implement jin layers",
-                  "status": "Planned",
+                  "status": "Complete",
                   "story_points": 1,
                   "dependencies": [
                     "P4.M5.T6.S1"
@@ -849,14 +849,14 @@
               "type": "Task",
               "id": "P4.M5.T8",
               "title": "List Command",
-              "status": "Planned",
+              "status": "Complete",
               "description": "List available modes/scopes/projects.",
               "subtasks": [
                 {
                   "type": "Subtask",
                   "id": "P4.M5.T8.S1",
                   "title": "Implement jin list",
-                  "status": "Planned",
+                  "status": "Complete",
                   "story_points": 1,
                   "dependencies": [
                     "P4.M5.T7.S1"

@@ -252,28 +252,28 @@
       "type": "Phase",
       "id": "P2",
       "title": "Merge Engine",
-      "status": "Planned",
+      "status": "Complete",
       "description": "Implement the deterministic merge system for structured data formats and text files. This is the algorithmic core of Jin.",
       "milestones": [
         {
           "type": "Milestone",
           "id": "P2.M1",
           "title": "Merge Value System",
-          "status": "Planned",
+          "status": "Complete",
           "description": "Create the unified value representation for all parseable formats.",
           "tasks": [
             {
               "type": "Task",
               "id": "P2.M1.T1",
               "title": "MergeValue Type",
-              "status": "Planned",
+              "status": "Complete",
               "description": "Define the unified value type for merge operations.",
               "subtasks": [
                 {
                   "type": "Subtask",
                   "id": "P2.M1.T1.S1",
                   "title": "Define MergeValue Enum",
-                  "status": "Planned",
+                  "status": "Complete",
                   "story_points": 2,
                   "dependencies": [
                     "P1.M1.T2.S1"

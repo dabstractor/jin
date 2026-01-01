@@ -83,8 +83,8 @@ fn create(name: &str, mode: Option<&str>) -> Result<()> {
         // Mode-bound scope
         validate_mode_name(mode_name)?;
 
-        // Check if mode exists
-        let mode_ref = format!("refs/jin/modes/{}", mode_name);
+        // Check if mode exists (using _mode suffix)
+        let mode_ref = format!("refs/jin/modes/{}/_mode", mode_name);
         if !repo.ref_exists(&mode_ref) {
             return Err(JinError::NotFound(format!(
                 "Mode '{}' not found. Create it with: jin mode create {}",
@@ -405,8 +405,9 @@ mod tests {
         let commit_oid = repo
             .create_commit(None, &format!("Initialize mode: {}", name), empty_tree, &[])
             .unwrap();
+        // Use _mode suffix to make the mode name a directory (allows nested scopes)
         repo.set_ref(
-            &format!("refs/jin/modes/{}", name),
+            &format!("refs/jin/modes/{}/_mode", name),
             commit_oid,
             &format!("create mode {}", name),
         )
@@ -470,8 +471,9 @@ mod tests {
         let result = create("language:javascript", None);
         assert!(result.is_ok());
 
+        // Colons are replaced with slashes in ref names
         let repo = JinRepo::open_or_create().unwrap();
-        assert!(repo.ref_exists("refs/jin/scopes/language:javascript"));
+        assert!(repo.ref_exists("refs/jin/scopes/language/javascript"));
     }
 
     #[test]

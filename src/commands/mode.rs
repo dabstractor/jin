@@ -56,8 +56,9 @@ fn create(name: &str) -> Result<()> {
     // Open Jin repository
     let repo = JinRepo::open_or_create()?;
 
-    // Check if mode already exists
-    let ref_path = format!("refs/jin/modes/{}", name);
+    // Use _mode suffix to make the mode name a directory (allows nested scopes)
+    // The underscore prefix ensures Git ref name validity
+    let ref_path = format!("refs/jin/modes/{}/_mode", name);
     if repo.ref_exists(&ref_path) {
         return Err(JinError::AlreadyExists(format!(
             "Mode '{}' already exists",
@@ -89,8 +90,8 @@ fn use_mode(name: &str) -> Result<()> {
     // Open Jin repository
     let repo = JinRepo::open_or_create()?;
 
-    // Check if mode exists
-    let ref_path = format!("refs/jin/modes/{}", name);
+    // Check if mode exists (using _mode suffix)
+    let ref_path = format!("refs/jin/modes/{}/_mode", name);
     if !repo.ref_exists(&ref_path) {
         return Err(JinError::NotFound(format!(
             "Mode '{}' not found. Create it with: jin mode create {}",
@@ -133,8 +134,8 @@ fn list() -> Result<()> {
         Err(_) => ProjectContext::default(),
     };
 
-    // Find all mode refs
-    let mode_refs = repo.list_refs("refs/jin/modes/*")?;
+    // Find all mode refs (using _mode suffix pattern)
+    let mode_refs = repo.list_refs("refs/jin/modes/*/_mode")?;
 
     if mode_refs.is_empty() {
         println!("No modes found.");
@@ -144,10 +145,11 @@ fn list() -> Result<()> {
 
     println!("Available modes:");
 
-    // Extract names and display with active indicator
+    // Extract names (strip both prefix and _mode suffix)
     for ref_path in mode_refs {
         let name = ref_path
             .strip_prefix("refs/jin/modes/")
+            .and_then(|s| s.strip_suffix("/_mode"))
             .unwrap_or(&ref_path);
 
         if Some(name) == context.mode.as_deref() {
@@ -168,8 +170,8 @@ fn delete(name: &str) -> Result<()> {
     // Open Jin repository
     let repo = JinRepo::open_or_create()?;
 
-    // Check if mode exists
-    let ref_path = format!("refs/jin/modes/{}", name);
+    // Use _mode suffix for the mode ref
+    let ref_path = format!("refs/jin/modes/{}/_mode", name);
     if !repo.ref_exists(&ref_path) {
         return Err(JinError::NotFound(format!("Mode '{}' not found", name)));
     }
@@ -193,7 +195,7 @@ fn delete(name: &str) -> Result<()> {
     // Delete main mode ref
     repo.delete_ref(&ref_path)?;
 
-    // Delete associated layer refs (may not exist if no files committed)
+    // Delete associated layer refs and scopes (may not exist if no files committed)
     // Silently ignore errors as these refs may not exist yet
     let layer_patterns = [
         format!("refs/jin/layers/mode/{}", name),
@@ -329,9 +331,9 @@ mod tests {
         let result = create("testmode");
         assert!(result.is_ok());
 
-        // Verify ref was created
+        // Verify ref was created (using _mode suffix)
         let repo = JinRepo::open_or_create().unwrap();
-        assert!(repo.ref_exists("refs/jin/modes/testmode"));
+        assert!(repo.ref_exists("refs/jin/modes/testmode/_mode"));
     }
 
     #[test]
@@ -428,9 +430,9 @@ mod tests {
         let result = delete("testmode");
         assert!(result.is_ok());
 
-        // Verify ref was deleted
+        // Verify ref was deleted (using _mode suffix)
         let repo = JinRepo::open_or_create().unwrap();
-        assert!(!repo.ref_exists("refs/jin/modes/testmode"));
+        assert!(!repo.ref_exists("refs/jin/modes/testmode/_mode"));
     }
 
     #[test]

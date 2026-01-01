@@ -168,31 +168,23 @@ fn test_add_git_tracked_file_error() -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
-/// Test handling directory add error
+/// Test handling directory add - directories are expanded recursively
 #[test]
 fn test_add_directory_error() -> Result<(), Box<dyn std::error::Error>> {
     let fixture = setup_test_repo()?;
     let project_path = fixture.path();
 
-    // Create directory
+    // Create directory with a file inside
     fs::create_dir_all(project_path.join("testdir"))?;
+    fs::write(project_path.join("testdir/file.txt"), "content")?;
 
-    // Try to add directory (should fail or warn)
-    let result = jin()
+    // Add directory - should expand and add files inside
+    jin()
         .args(["add", "testdir"])
         .current_dir(project_path)
-        .assert();
-
-    let output = result.get_output();
-    let stderr_str = String::from_utf8_lossy(&output.stderr);
-
-    // Should fail or warn about directory
-    assert!(
-        !output.status.success()
-            || stderr_str.contains("directory")
-            || stderr_str.contains("not supported"),
-        "Adding directory should fail or warn"
-    );
+        .assert()
+        .success()
+        .stdout(predicate::str::contains("Staged 1 file(s)"));
 
     Ok(())
 }

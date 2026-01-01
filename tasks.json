@@ -540,14 +540,14 @@
               "type": "Task",
               "id": "P4.M2.T2",
               "title": "Add Command",
-              "status": "Ready",
+              "status": "Complete",
               "description": "Stage files to the appropriate layer.",
               "subtasks": [
                 {
                   "type": "Subtask",
                   "id": "P4.M2.T2.S1",
                   "title": "Implement jin add",
-                  "status": "Ready",
+                  "status": "Complete",
                   "story_points": 2,
                   "dependencies": [
                     "P4.M2.T1.S1",

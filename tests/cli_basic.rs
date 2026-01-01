@@ -59,6 +59,189 @@ fn test_status_subcommand() {
 }
 
 #[test]
+fn test_status_with_active_mode() {
+    use tempfile::TempDir;
+    let temp = TempDir::new().unwrap();
+
+    // Use temp path for unique JIN_DIR
+    let jin_dir = temp.path().join(".jin_global");
+
+    // Initialize Jin
+    jin()
+        .arg("init")
+        .current_dir(temp.path())
+        .env("JIN_DIR", &jin_dir)
+        .assert()
+        .success();
+
+    // Create a unique mode name
+    let mode_name = format!("test_mode_{}", std::process::id());
+
+    // Create mode
+    jin()
+        .args(["mode", "create", &mode_name])
+        .env("JIN_DIR", &jin_dir)
+        .assert()
+        .success();
+
+    // Use mode
+    jin()
+        .args(["mode", "use", &mode_name])
+        .current_dir(temp.path())
+        .env("JIN_DIR", &jin_dir)
+        .assert()
+        .success();
+
+    // Check status shows active mode
+    jin()
+        .arg("status")
+        .current_dir(temp.path())
+        .env("JIN_DIR", &jin_dir)
+        .assert()
+        .success()
+        .stdout(predicate::str::contains("Mode:"))
+        .stdout(predicate::str::contains(&mode_name))
+        .stdout(predicate::str::contains("(active)"))
+        .stdout(predicate::str::contains("Workspace state: Clean"));
+}
+
+#[test]
+fn test_status_dirty_workspace() {
+    use std::fs;
+    use tempfile::TempDir;
+    let temp = TempDir::new().unwrap();
+
+    // Use temp path for unique JIN_DIR
+    let jin_dir = temp.path().join(".jin_global");
+
+    // Initialize Jin
+    jin()
+        .arg("init")
+        .current_dir(temp.path())
+        .env("JIN_DIR", &jin_dir)
+        .assert()
+        .success();
+
+    // Create a unique mode name
+    let mode_name = format!("test_mode_{}", std::process::id());
+
+    // Create mode
+    jin()
+        .args(["mode", "create", &mode_name])
+        .env("JIN_DIR", &jin_dir)
+        .assert()
+        .success();
+
+    // Use mode
+    jin()
+        .args(["mode", "use", &mode_name])
+        .current_dir(temp.path())
+        .env("JIN_DIR", &jin_dir)
+        .assert()
+        .success();
+
+    // Create and add a file
+    let test_file = temp.path().join("config.json");
+    fs::write(&test_file, r#"{"test": true}"#).unwrap();
+
+    jin()
+        .args(["add", "config.json", "--mode"])
+        .current_dir(temp.path())
+        .env("JIN_DIR", &jin_dir)
+        .assert()
+        .success();
+
+    // Commit the file
+    jin()
+        .args(["commit", "-m", "Add config"])
+        .current_dir(temp.path())
+        .env("JIN_DIR", &jin_dir)
+        .assert()
+        .success();
+
+    // Apply to create workspace metadata
+    jin()
+        .arg("apply")
+        .current_dir(temp.path())
+        .env("JIN_DIR", &jin_dir)
+        .assert()
+        .success();
+
+    // Modify the file to make workspace dirty
+    fs::write(&test_file, r#"{"test": false}"#).unwrap();
+
+    // Check status shows dirty workspace
+    jin()
+        .arg("status")
+        .current_dir(temp.path())
+        .env("JIN_DIR", &jin_dir)
+        .assert()
+        .success()
+        .stdout(predicate::str::contains("Workspace state: Dirty"))
+        .stdout(predicate::str::contains("config.json (modified)"))
+        .stdout(predicate::str::contains("jin diff"));
+}
+
+#[test]
+fn test_status_with_staged_files() {
+    use std::fs;
+    use tempfile::TempDir;
+    let temp = TempDir::new().unwrap();
+
+    // Use temp path for unique JIN_DIR
+    let jin_dir = temp.path().join(".jin_global");
+
+    // Initialize Jin
+    jin()
+        .arg("init")
+        .current_dir(temp.path())
+        .env("JIN_DIR", &jin_dir)
+        .assert()
+        .success();
+
+    // Create a unique mode name
+    let mode_name = format!("test_mode_{}", std::process::id());
+
+    // Create mode
+    jin()
+        .args(["mode", "create", &mode_name])
+        .env("JIN_DIR", &jin_dir)
+        .assert()
+        .success();
+
+    // Use mode
+    jin()
+        .args(["mode", "use", &mode_name])
+        .current_dir(temp.path())
+        .env("JIN_DIR", &jin_dir)
+        .assert()
+        .success();
+
+    // Create and add a file
+    let test_file = temp.path().join("settings.yaml");
+    fs::write(&test_file, "key: value").unwrap();
+
+    jin()
+        .args(["add", "settings.yaml", "--mode"])
+        .current_dir(temp.path())
+        .env("JIN_DIR", &jin_dir)
+        .assert()
+        .success();
+
+    // Check status shows staged changes
+    jin()
+        .arg("status")
+        .current_dir(temp.path())
+        .env("JIN_DIR", &jin_dir)
+        .assert()
+        .success()
+        .stdout(predicate::str::contains("Staged changes"))
+        .stdout(predicate::str::contains("settings.yaml"))
+        .stdout(predicate::str::contains("mode-base"))
+        .stdout(predicate::str::contains("jin commit"));
+}
+
+#[test]
 fn test_mode_create_subcommand() {
     // Mode create doesn't require Jin init, it creates the mode in global Jin repo
     // May fail if mode already exists from previous test run

@@ -45,6 +45,12 @@ mod tests {
 
     fn setup_test_env() -> TempDir {
         let temp = TempDir::new().unwrap();
+
+        // Set JIN_DIR to an isolated directory for this test
+        let jin_dir = temp.path().join(".jin_global");
+        std::env::set_var("JIN_DIR", &jin_dir);
+
+        // Change to temp directory for project context
         std::env::set_current_dir(temp.path()).unwrap();
 
         // Initialize .jin directory and context

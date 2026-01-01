@@ -255,7 +255,11 @@ mod tests {
     #[test]
     fn test_stage_file_creates_blob() {
         let temp = TempDir::new().unwrap();
+
+        // Set JIN_DIR to an isolated directory for this test
         let jin_repo_path = temp.path().join(".jin-repo");
+        std::env::set_var("JIN_DIR", &jin_repo_path);
+
         let repo = JinRepo::create_at(&jin_repo_path).unwrap();
 
         let file = temp.path().join("test.json");

@@ -5,7 +5,7 @@ use predicates::prelude::*;
 
 /// Get a Command for the jin binary
 fn jin() -> Command {
-    Command::cargo_bin("jin").unwrap()
+    Command::new(env!("CARGO_BIN_EXE_jin"))
 }
 
 #[test]
@@ -28,20 +28,34 @@ fn test_version() {
 
 #[test]
 fn test_init_subcommand() {
+    use tempfile::TempDir;
+    let temp = TempDir::new().unwrap();
+
+    // Set JIN_DIR to isolated directory
+    let jin_dir = temp.path().join(".jin_global");
+    std::env::set_var("JIN_DIR", &jin_dir);
+
     jin()
         .arg("init")
+        .current_dir(temp.path())
         .assert()
         .success()
-        .stdout(predicate::str::contains("not yet implemented"));
+        .stdout(predicate::str::contains("Initialized Jin"));
 }
 
 #[test]
 fn test_status_subcommand() {
+    use tempfile::TempDir;
+    let temp = TempDir::new().unwrap();
+
+    // Run in isolated environment
     jin()
         .arg("status")
+        .current_dir(temp.path())
+        .env("JIN_DIR", temp.path().join(".jin_global"))
         .assert()
-        .success()
-        .stdout(predicate::str::contains("not yet implemented"));
+        .failure()
+        .stderr(predicate::str::contains("Jin not initialized"));
 }
 
 #[test]
@@ -175,6 +189,7 @@ fn test_add_with_scope_flag() {
 
 #[test]
 fn test_commit_subcommand() {
+    // Commit is a stub - will be implemented later
     jin()
         .args(["commit", "-m", "Test commit"])
         .assert()
@@ -284,38 +299,42 @@ fn test_link_subcommand() {
 
 #[test]
 fn test_fetch_subcommand() {
+    // Fetch fails without remote configured
     jin()
         .arg("fetch")
         .assert()
-        .success()
-        .stdout(predicate::str::contains("not yet implemented"));
+        .failure()
+        .stderr(predicate::str::contains("No remote configured"));
 }
 
 #[test]
 fn test_pull_subcommand() {
+    // Pull fails without remote configured
     jin()
         .arg("pull")
         .assert()
-        .success()
-        .stdout(predicate::str::contains("not yet implemented"));
+        .failure()
+        .stderr(predicate::str::contains("not found").or(predicate::str::contains("Remote")));
 }
 
 #[test]
 fn test_push_subcommand() {
+    // Push fails without remote configured
     jin()
         .arg("push")
         .assert()
-        .success()
-        .stdout(predicate::str::contains("not yet implemented"));
+        .failure()
+        .stderr(predicate::str::contains("No remote configured"));
 }
 
 #[test]
 fn test_sync_subcommand() {
+    // Sync fails without remote configured
     jin()
         .arg("sync")
         .assert()
-        .success()
-        .stdout(predicate::str::contains("not yet implemented"));
+        .failure()
+        .stderr(predicate::str::contains("not found").or(predicate::str::contains("Remote")));
 }
 
 #[test]

@@ -144,10 +144,17 @@ impl JinRepo {
 
     /// Returns the default Jin repository path (`~/.jin/`).
     ///
+    /// Can be overridden with the `JIN_DIR` environment variable for testing.
+    ///
     /// # Errors
     ///
     /// Returns `JinError::Config` if the home directory cannot be determined.
     pub fn default_path() -> Result<PathBuf> {
+        // Check for JIN_DIR environment variable first (for testing)
+        if let Ok(jin_dir) = std::env::var("JIN_DIR") {
+            return Ok(PathBuf::from(jin_dir));
+        }
+
         dirs::home_dir()
             .map(|h| h.join(".jin"))
             .ok_or_else(|| JinError::Config("Cannot determine home directory".into()))

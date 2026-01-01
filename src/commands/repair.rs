@@ -660,10 +660,17 @@ mod tests {
     use super::*;
     use tempfile::TempDir;
 
+    fn setup_isolated_test() -> TempDir {
+        let temp = TempDir::new().unwrap();
+        let jin_dir = temp.path().join(".jin_global");
+        std::env::set_var("JIN_DIR", &jin_dir);
+        std::env::set_current_dir(temp.path()).unwrap();
+        temp
+    }
+
     #[test]
     fn test_execute_dry_run() {
-        let temp = TempDir::new().unwrap();
-        std::env::set_current_dir(temp.path()).unwrap();
+        let _temp = setup_isolated_test();
 
         let args = RepairArgs { dry_run: true };
         let result = execute(args);
@@ -672,8 +679,7 @@ mod tests {
 
     #[test]
     fn test_execute_no_issues() {
-        let temp = TempDir::new().unwrap();
-        std::env::set_current_dir(temp.path()).unwrap();
+        let _temp = setup_isolated_test();
 
         let args = RepairArgs { dry_run: false };
         let result = execute(args);
@@ -682,9 +688,8 @@ mod tests {
 
     #[test]
     fn test_check_staging_index_missing() {
-        let temp = TempDir::new().unwrap();
+        let _temp = setup_isolated_test();
         let original_dir = std::env::current_dir().unwrap();
-        std::env::set_current_dir(temp.path()).unwrap();
 
         let args = RepairArgs { dry_run: true };
         let mut issues_found = Vec::new();
@@ -786,9 +791,8 @@ mod tests {
 
     #[test]
     fn test_check_jinmap_invalid_yaml() {
-        let temp = TempDir::new().unwrap();
+        let _temp = setup_isolated_test();
         let original_dir = std::env::current_dir().unwrap();
-        std::env::set_current_dir(temp.path()).unwrap();
 
         // Create .jin directory and invalid .jinmap in current directory
         std::fs::create_dir_all(".jin").unwrap();
@@ -828,8 +832,7 @@ mod tests {
 
     #[test]
     fn test_rebuild_workspace_metadata() {
-        let temp = TempDir::new().unwrap();
-        std::env::set_current_dir(temp.path()).unwrap();
+        let _temp = setup_isolated_test();
 
         // Create corrupted metadata
         let metadata_path = WorkspaceMetadata::default_path();
@@ -855,9 +858,8 @@ mod tests {
 
     #[test]
     fn test_create_default_context() {
-        let temp = TempDir::new().unwrap();
+        let _temp = setup_isolated_test();
         let original_dir = std::env::current_dir().unwrap();
-        std::env::set_current_dir(temp.path()).unwrap();
 
         // Create .jin directory first - this is required for context to be saved
         let jin_dir = std::path::PathBuf::from(".jin");

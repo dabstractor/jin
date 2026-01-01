@@ -68,11 +68,7 @@ impl RemoteFixture {
 ///
 /// Runs `jin init` and verifies success.
 pub fn jin_init(path: &Path) -> Result<(), Box<dyn std::error::Error>> {
-    Command::cargo_bin("jin")?
-        .arg("init")
-        .current_dir(path)
-        .assert()
-        .success();
+    jin().arg("init").current_dir(path).assert().success();
     Ok(())
 }
 
@@ -168,7 +164,8 @@ pub fn create_commit_in_repo(
 
 /// Get the jin binary command for testing
 pub fn jin() -> Command {
-    Command::cargo_bin("jin").expect("Failed to find jin binary")
+    let mut cmd = Command::new(env!("CARGO_BIN_EXE_jin"));
+    cmd
 }
 
 /// Create a mode in the global Jin repository

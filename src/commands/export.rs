@@ -265,6 +265,10 @@ mod tests {
     fn test_execute_file_not_jin_tracked() {
         let temp = TempDir::new().unwrap();
 
+        // Set JIN_DIR to an isolated directory for this test
+        let jin_dir = temp.path().join(".jin_global");
+        std::env::set_var("JIN_DIR", &jin_dir);
+
         // Change to temp directory
         let original_dir = std::env::current_dir().unwrap();
         std::env::set_current_dir(temp.path()).unwrap();
@@ -293,6 +297,11 @@ mod tests {
     #[test]
     fn test_add_to_git_no_git_repo() {
         let temp = TempDir::new().unwrap();
+
+        // Set JIN_DIR to an isolated directory for this test
+        let jin_dir = temp.path().join(".jin_global");
+        std::env::set_var("JIN_DIR", &jin_dir);
+
         let file = temp.path().join("test.json");
         std::fs::write(&file, b"{}").unwrap();
 
@@ -312,6 +321,10 @@ mod tests {
     fn test_add_to_git_success() {
         let temp = TempDir::new().unwrap();
         let temp_path = temp.path().to_path_buf();
+
+        // Set JIN_DIR to an isolated directory for this test
+        let jin_dir = temp.path().join(".jin_global");
+        std::env::set_var("JIN_DIR", &jin_dir);
 
         // Change to temp directory and initialize Git repo
         let original_dir = std::env::current_dir().unwrap();

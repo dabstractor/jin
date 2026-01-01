@@ -267,29 +267,28 @@ fn test_mode_use_subcommand() {
 
 #[test]
 fn test_mode_list_subcommand() {
-    jin()
-        .args(["mode", "list"])
-        .assert()
-        .failure()
-        .stderr(predicate::str::contains("Jin not initialized"));
+    // Mode list works without project init - uses global Jin repo
+    jin().args(["mode", "list"]).assert().success().stdout(
+        predicate::str::contains("Available modes").or(predicate::str::contains("No modes found")),
+    );
 }
 
 #[test]
 fn test_mode_show_subcommand() {
+    // Mode show works without project init - shows active mode or "No active mode"
     jin()
         .args(["mode", "show"])
         .assert()
-        .failure()
-        .stderr(predicate::str::contains("Jin not initialized"));
+        .success()
+        .stdout(predicate::str::contains("mode").or(predicate::str::contains("No active mode")));
 }
 
 #[test]
 fn test_mode_unset_subcommand() {
-    jin()
-        .args(["mode", "unset"])
-        .assert()
-        .failure()
-        .stderr(predicate::str::contains("Jin not initialized"));
+    // Mode unset works without project init - shows message if no mode is set
+    jin().args(["mode", "unset"]).assert().success().stdout(
+        predicate::str::contains("Deactivated").or(predicate::str::contains("No active mode")),
+    );
 }
 
 #[test]

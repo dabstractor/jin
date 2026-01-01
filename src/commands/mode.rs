@@ -270,6 +270,11 @@ mod tests {
     use super::*;
     use tempfile::TempDir;
 
+    /// Setup isolated test environment
+    ///
+    /// NOTE: These tests require single-threaded execution due to
+    /// shared environment variables (JIN_DIR, current directory).
+    /// Run with: cargo test --package jin --lib commands::mode::tests -- --test-threads=1
     fn setup_test_env() -> TempDir {
         let temp = TempDir::new().unwrap();
 
@@ -280,8 +285,11 @@ mod tests {
         // Change to temp directory for project context
         std::env::set_current_dir(temp.path()).unwrap();
 
+        // Initialize the bare Jin repo first
+        let _ = JinRepo::open_or_create();
+
         // Initialize .jin directory and context
-        std::fs::create_dir(".jin").unwrap();
+        let _ = std::fs::create_dir(".jin");
         let context = ProjectContext::default();
         context.save().unwrap();
 

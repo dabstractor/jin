@@ -381,7 +381,7 @@ fn test_jin_directory_integrity() -> Result<(), Box<dyn std::error::Error>> {
     // Verify .jin structure exists
     assert_jin_initialized(project_path);
 
-    let context_path = project_path.join(".jin/context.json");
+    let context_path = project_path.join(".jin/context");
     let staging_dir = project_path.join(".jin/staging");
 
     assert!(context_path.exists(), "Context file should exist");

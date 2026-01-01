@@ -166,7 +166,7 @@ pub fn assert_layer_ref_exists(ref_path: &str) {
 /// # Panics
 /// Panics if context doesn't exist or doesn't contain the mode
 pub fn assert_context_mode(project_path: &Path, expected_mode: &str) {
-    let context_path = project_path.join(".jin/context.json");
+    let context_path = project_path.join(".jin/context");
     assert!(
         context_path.exists(),
         "Context file should exist at {:?}",
@@ -194,7 +194,7 @@ pub fn assert_context_mode(project_path: &Path, expected_mode: &str) {
 /// # Panics
 /// Panics if context doesn't exist or doesn't contain the scope
 pub fn assert_context_scope(project_path: &Path, expected_scope: &str) {
-    let context_path = project_path.join(".jin/context.json");
+    let context_path = project_path.join(".jin/context");
     assert!(
         context_path.exists(),
         "Context file should exist at {:?}",

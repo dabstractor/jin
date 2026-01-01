@@ -519,14 +519,14 @@
               "type": "Task",
               "id": "P4.M2.T1",
               "title": "Init Command",
-              "status": "Ready",
+              "status": "Complete",
               "description": "Initialize Jin in a project directory.",
               "subtasks": [
                 {
                   "type": "Subtask",
                   "id": "P4.M2.T1.S1",
                   "title": "Implement jin init",
-                  "status": "Ready",
+                  "status": "Complete",
                   "story_points": 2,
                   "dependencies": [
                     "P4.M1.T1.S1",

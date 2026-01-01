@@ -26,8 +26,8 @@ fn test_init_creates_context_and_repo() -> Result<(), Box<dyn std::error::Error>
     // Verify .jin directory created
     assert_jin_initialized(project_path);
 
-    // Verify context.json created
-    let context_path = project_path.join(".jin/context.json");
+    // Verify context file created
+    let context_path = project_path.join(".jin/context");
     assert!(
         context_path.exists(),
         "Context file should exist at {:?}",

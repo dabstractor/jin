@@ -476,28 +476,28 @@
       "type": "Phase",
       "id": "P4",
       "title": "CLI Commands",
-      "status": "Complete",
+      "status": "Researching",
       "description": "Implement all CLI commands by wiring them to existing infrastructure.",
       "milestones": [
         {
           "type": "Milestone",
           "id": "P4.M1",
           "title": "CLI Framework",
-          "status": "Complete",
+          "status": "Researching",
           "description": "Set up clap-based CLI with all command definitions.",
           "tasks": [
             {
               "type": "Task",
               "id": "P4.M1.T1",
               "title": "CLI Structure",
-              "status": "Complete",
+              "status": "Researching",
               "description": "Define all commands and subcommands with clap.",
               "subtasks": [
                 {
                   "type": "Subtask",
                   "id": "P4.M1.T1.S1",
                   "title": "Define CLI Structure",
-                  "status": "Complete",
+                  "status": "Ready",
                   "story_points": 2,
                   "dependencies": [
                     "P1.M1.T1.S2"
@@ -512,21 +512,21 @@
           "type": "Milestone",
           "id": "P4.M2",
           "title": "Core Commands",
-          "status": "Complete",
+          "status": "Ready",
           "description": "Implement init, add, commit, and status commands.",
           "tasks": [
             {
               "type": "Task",
               "id": "P4.M2.T1",
               "title": "Init Command",
-              "status": "Complete",
+              "status": "Ready",
               "description": "Initialize Jin in a project directory.",
               "subtasks": [
                 {
                   "type": "Subtask",
                   "id": "P4.M2.T1.S1",
                   "title": "Implement jin init",
-                  "status": "Complete",
+                  "status": "Ready",
                   "story_points": 2,
                   "dependencies": [
                     "P4.M1.T1.S1",
@@ -540,14 +540,14 @@
               "type": "Task",
               "id": "P4.M2.T2",
               "title": "Add Command",
-              "status": "Complete",
+              "status": "Ready",
               "description": "Stage files to the appropriate layer.",
               "subtasks": [
                 {
                   "type": "Subtask",
                   "id": "P4.M2.T2.S1",
                   "title": "Implement jin add",
-                  "status": "Complete",
+                  "status": "Ready",
                   "story_points": 2,
                   "dependencies": [
                     "P4.M2.T1.S1",
@@ -561,14 +561,14 @@
               "type": "Task",
               "id": "P4.M2.T3",
               "title": "Commit Command",
-              "status": "Complete",
+              "status": "Ready",
               "description": "Commit staged files atomically.",
               "subtasks": [
                 {
                   "type": "Subtask",
                   "id": "P4.M2.T3.S1",
                   "title": "Implement jin commit",
-                  "status": "Complete",
+                  "status": "Ready",
                   "story_points": 2,
                   "dependencies": [
                     "P4.M2.T2.S1",
@@ -1137,6 +1137,256 @@
                     "P6.M3.T1.S1"
                   ],
                   "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: Standard Rust CI practices.\n2. INPUT: Complete test suite.\n3. LOGIC: Create GitHub Actions:\n   a. .github/workflows/ci.yml: test, clippy, fmt\n   b. .github/workflows/release.yml: build on tag\n   c. Targets: linux-x64, macos-x64, macos-arm64, windows\n   d. Generate SHA256 checksums\n   e. Create GitHub release with binaries\n4. OUTPUT: CI/CD configuration files."
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "Phase",
+      "id": "P7",
+      "title": "Critical Gap Remediation",
+      "status": "Ready",
+      "description": "Address critical implementation gaps discovered during PRD validation. The commit CLI is a stub (pipeline exists), rm/mv commands are missing, audit logging was never implemented, and .jinmap is not integrated into the commit workflow.",
+      "milestones": [
+        {
+          "type": "Milestone",
+          "id": "P7.M1",
+          "title": "Commit Command Wiring",
+          "status": "Ready",
+          "description": "Wire the existing CommitPipeline to the jin commit CLI command. Infrastructure exists in src/commit/pipeline.rs but commit_cmd.rs is a stub.",
+          "tasks": [
+            {
+              "type": "Task",
+              "id": "P7.M1.T1",
+              "title": "Wire jin commit to CommitPipeline",
+              "status": "Ready",
+              "description": "Connect the stub in commit_cmd.rs to the working CommitPipeline.",
+              "subtasks": [
+                {
+                  "type": "Subtask",
+                  "id": "P7.M1.T1.S1",
+                  "title": "Implement commit CLI wiring",
+                  "status": "Ready",
+                  "story_points": 2,
+                  "dependencies": [],
+                  "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: CommitPipeline at src/commit/pipeline.rs is fully implemented with execute(), dry_run support, and LayerTransaction integration. CLI stub at src/commands/commit_cmd.rs:10-12 just prints 'not yet implemented'.\n2. INPUT: CommitArgs from src/cli/args.rs (message: String, dry_run: bool). StagingIndex::load() from src/staging/index.rs.\n3. LOGIC: Replace stub in commit_cmd::execute():\n   a. Load StagingIndex via StagingIndex::load()\n   b. Validate staging not empty (return error if empty)\n   c. Create CommitPipeline::new(staging)\n   d. Build CommitConfig::new(args.message).dry_run(args.dry_run)\n   e. Call pipeline.execute(&config)\n   f. Match on Result: print commit_hashes, file_count, layers touched\n   g. Handle JinError variants with user-friendly messages\n4. OUTPUT: Functional `jin commit -m \"message\"` command. Exposes no new interfaces - completes the add→commit workflow."
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "Milestone",
+          "id": "P7.M2",
+          "title": "File Operation Commands",
+          "status": "Planned",
+          "description": "Implement jin rm and jin mv commands as specified in PRD Section 18.8 and 21.",
+          "tasks": [
+            {
+              "type": "Task",
+              "id": "P7.M2.T1",
+              "title": "Implement jin rm Command",
+              "status": "Planned",
+              "description": "Add command to remove files from Jin layers with proper staging integration.",
+              "subtasks": [
+                {
+                  "type": "Subtask",
+                  "id": "P7.M2.T1.S1",
+                  "title": "Define rm CLI structure",
+                  "status": "Planned",
+                  "story_points": 1,
+                  "dependencies": [
+                    "P7.M1.T1.S1"
+                  ],
+                  "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: PRD Section 18.8 specifies `jin rm <file>`. Section 21.1 details removal semantics. Existing pattern: AddArgs in src/cli/args.rs has file paths + layer targeting flags.\n2. INPUT: None - this defines new CLI structure.\n3. LOGIC: In src/cli/mod.rs:\n   a. Add `Rm(RmArgs)` variant to Commands enum\n   b. In src/cli/args.rs, define RmArgs struct:\n      - files: Vec<PathBuf> (required, positional)\n      - mode: bool flag for --mode targeting\n      - scope: Option<String> for --scope=X\n      - project: bool flag for --project\n      - force: bool for --force (skip confirmation)\n4. OUTPUT: RmArgs struct and Rm command variant. Consumed by P7.M2.T1.S2."
+                },
+                {
+                  "type": "Subtask",
+                  "id": "P7.M2.T1.S2",
+                  "title": "Implement rm command logic",
+                  "status": "Planned",
+                  "story_points": 2,
+                  "dependencies": [
+                    "P7.M2.T1.S1"
+                  ],
+                  "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: StagedEntry::delete() exists in src/staging/entry.rs. Router in src/staging/router.rs handles layer targeting. Gitignore managed block in src/staging/gitignore.rs.\n2. INPUT: RmArgs from P7.M2.T1.S1. StagingIndex, ProjectContext, route_to_layer().\n3. LOGIC: Create src/commands/rm.rs:\n   a. Load ProjectContext for active mode/scope\n   b. Build RouteOptions from flags, call route_to_layer()\n   c. For each file path:\n      - Verify file exists in target layer (check workspace or layer ref)\n      - Create StagedEntry::delete(path, layer)\n      - Add to StagingIndex\n   d. Save StagingIndex\n   e. Print summary: 'Staged N files for removal from layer X'\n   f. Wire execute() in main.rs Commands::Rm match arm\n4. OUTPUT: Functional `jin rm <files>` command. Removal completes on next commit."
+                }
+              ]
+            },
+            {
+              "type": "Task",
+              "id": "P7.M2.T2",
+              "title": "Implement jin mv Command",
+              "status": "Planned",
+              "description": "Add command to rename/move files within Jin layers.",
+              "subtasks": [
+                {
+                  "type": "Subtask",
+                  "id": "P7.M2.T2.S1",
+                  "title": "Define mv CLI structure",
+                  "status": "Planned",
+                  "story_points": 1,
+                  "dependencies": [
+                    "P7.M2.T1.S2"
+                  ],
+                  "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: PRD Section 18.8 specifies `jin mv <old-path> <new-path>`. Section 21.2 details rename semantics with history preservation.\n2. INPUT: Pattern from RmArgs (P7.M2.T1.S1).\n3. LOGIC: In src/cli/mod.rs and args.rs:\n   a. Add `Mv(MvArgs)` variant to Commands enum\n   b. Define MvArgs struct:\n      - source: PathBuf (required, positional)\n      - dest: PathBuf (required, positional)\n      - mode: bool, scope: Option<String>, project: bool (layer targeting)\n4. OUTPUT: MvArgs struct and Mv command variant. Consumed by P7.M2.T2.S2."
+                },
+                {
+                  "type": "Subtask",
+                  "id": "P7.M2.T2.S2",
+                  "title": "Implement mv command logic",
+                  "status": "Planned",
+                  "story_points": 2,
+                  "dependencies": [
+                    "P7.M2.T2.S1"
+                  ],
+                  "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: Git rename detection works via delete+add with same content hash. Gitignore module has ensure_in_managed_block() and remove_from_managed_block().\n2. INPUT: MvArgs from P7.M2.T2.S1. StagingIndex, route_to_layer(), gitignore functions.\n3. LOGIC: Create src/commands/mv.rs:\n   a. Load ProjectContext, determine target layer\n   b. Verify source exists in layer\n   c. Read source content, compute hash\n   d. Create StagedEntry::delete(source, layer)\n   e. Create StagedEntry::new(dest, layer, hash)\n   f. Add both to StagingIndex\n   g. Update .gitignore: remove old path, add new path\n   h. Save StagingIndex\n   i. Wire in main.rs\n4. OUTPUT: Functional `jin mv <old> <new>`. Rename completes on commit with history preserved via Git detection."
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "Milestone",
+          "id": "P7.M3",
+          "title": "Command Aliases",
+          "status": "Planned",
+          "description": "Add jin modes and jin scopes shorthand commands as specified in PRD Section 13.",
+          "tasks": [
+            {
+              "type": "Task",
+              "id": "P7.M3.T1",
+              "title": "Add modes and scopes Aliases",
+              "status": "Planned",
+              "description": "Add top-level aliases that map to mode list and scope list subcommands.",
+              "subtasks": [
+                {
+                  "type": "Subtask",
+                  "id": "P7.M3.T1.S1",
+                  "title": "Implement modes and scopes commands",
+                  "status": "Planned",
+                  "story_points": 1,
+                  "dependencies": [],
+                  "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: PRD Section 13.1 shows `jin modes`, Section 13.2 shows `jin scopes`. Existing list_modes() in src/commands/mode.rs:199, list_scopes() in src/commands/scope.rs.\n2. INPUT: None - simple aliases.\n3. LOGIC: In src/cli/mod.rs:\n   a. Add `Modes` variant to Commands enum (no args)\n   b. Add `Scopes` variant to Commands enum (no args)\n   c. In main.rs match:\n      - Commands::Modes => mode::list_modes()\n      - Commands::Scopes => scope::list_scopes()\n4. OUTPUT: `jin modes` and `jin scopes` work as shortcuts for `jin mode list` and `jin scope list`."
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "Milestone",
+          "id": "P7.M4",
+          "title": "Audit Logging System",
+          "status": "Planned",
+          "description": "Implement the audit logging system specified in PRD Section 17. Append-only logs in jin/.audit/ tracking all commits.",
+          "tasks": [
+            {
+              "type": "Task",
+              "id": "P7.M4.T1",
+              "title": "Create Audit Module",
+              "status": "Planned",
+              "description": "Implement audit logging infrastructure with PRD-compliant format.",
+              "subtasks": [
+                {
+                  "type": "Subtask",
+                  "id": "P7.M4.T1.S1",
+                  "title": "Define AuditEntry types",
+                  "status": "Planned",
+                  "story_points": 1,
+                  "dependencies": [],
+                  "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: PRD Section 17 specifies audit log format with timestamp, user, project, mode, scope, layer, files, base_commit, merge_commit, and context fields.\n2. INPUT: None - defines new types.\n3. LOGIC: Create src/audit/mod.rs and src/audit/entry.rs:\n   a. Define AuditEntry struct with all PRD fields\n   b. Use chrono for RFC3339 timestamps\n   c. Derive Serialize/Deserialize\n   d. Define AuditContext sub-struct for active_mode, active_scope\n   e. Add to lib.rs: pub mod audit\n4. OUTPUT: AuditEntry struct with new() constructor. Consumed by P7.M4.T1.S2."
+                },
+                {
+                  "type": "Subtask",
+                  "id": "P7.M4.T1.S2",
+                  "title": "Implement audit file operations",
+                  "status": "Planned",
+                  "story_points": 1,
+                  "dependencies": [
+                    "P7.M4.T1.S1"
+                  ],
+                  "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: Audit logs live in ~/.jin/.audit/ (global Jin dir). Must be append-only per PRD.\n2. INPUT: AuditEntry from P7.M4.T1.S1. JinConfig for paths.\n3. LOGIC: In src/audit/writer.rs:\n   a. append_entry(entry: &AuditEntry) -> Result<()>\n   b. Determine file path: ~/.jin/.audit/{date}.jsonl\n   c. Create directory if not exists\n   d. Open file in append mode\n   e. Serialize entry to JSON line\n   f. Write with newline\n   g. Flush to ensure durability\n4. OUTPUT: append_entry() function. Consumed by P7.M4.T1.S3."
+                },
+                {
+                  "type": "Subtask",
+                  "id": "P7.M4.T1.S3",
+                  "title": "Integrate audit with CommitPipeline",
+                  "status": "Planned",
+                  "story_points": 1,
+                  "dependencies": [
+                    "P7.M4.T1.S2",
+                    "P7.M1.T1.S1"
+                  ],
+                  "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: CommitPipeline::execute() returns CommitResult with committed_layers, file_count, commit_hashes. Integration point is after successful commit.\n2. INPUT: CommitResult from pipeline, ProjectContext, append_entry() from P7.M4.T1.S2.\n3. LOGIC: In src/commit/pipeline.rs or commit_cmd.rs after successful commit:\n   a. Build AuditEntry from CommitResult and context\n   b. Call audit::append_entry(&entry)\n   c. Log warning if audit fails but don't fail commit (audit is informational)\n4. OUTPUT: All commits automatically logged to ~/.jin/.audit/. No interface change."
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "Milestone",
+          "id": "P7.M5",
+          "title": "JinMap Workflow Integration",
+          "status": "Planned",
+          "description": "Integrate .jinmap updates into commit workflow as specified in PRD Section 16. Currently only used in repair command.",
+          "tasks": [
+            {
+              "type": "Task",
+              "id": "P7.M5.T1",
+              "title": "Implement JinMap Updates",
+              "status": "Planned",
+              "description": "Update .jinmap on commits to track layer-to-file mappings.",
+              "subtasks": [
+                {
+                  "type": "Subtask",
+                  "id": "P7.M5.T1.S1",
+                  "title": "Define JinMap types",
+                  "status": "Planned",
+                  "story_points": 1,
+                  "dependencies": [],
+                  "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: PRD Section 16 shows .jinmap format with version, mappings (layer path -> file list), and meta.generated-by. Currently only stub in repair.rs.\n2. INPUT: None - defines new types.\n3. LOGIC: Create src/core/jinmap.rs:\n   a. Define JinMap struct: version: u32, mappings: HashMap<String, Vec<String>>, meta: JinMapMeta\n   b. Define JinMapMeta: generated_by: String\n   c. Implement load() from .jin/.jinmap (YAML)\n   d. Implement save() with atomic write (temp + rename)\n   e. Add pub mod jinmap to core/mod.rs\n4. OUTPUT: JinMap with load/save. Consumed by P7.M5.T1.S2."
+                },
+                {
+                  "type": "Subtask",
+                  "id": "P7.M5.T1.S2",
+                  "title": "Integrate JinMap with commit",
+                  "status": "Planned",
+                  "story_points": 2,
+                  "dependencies": [
+                    "P7.M5.T1.S1",
+                    "P7.M1.T1.S1"
+                  ],
+                  "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: PRD states .jinmap is auto-maintained after every commit. Must reflect actual layer contents.\n2. INPUT: CommitResult from pipeline, JinMap from P7.M5.T1.S1, JinRepo for reading layer trees.\n3. LOGIC: In src/commit/pipeline.rs or commit_cmd.rs after successful commit:\n   a. Load existing JinMap or create new\n   b. For each layer in CommitResult.committed_layers:\n      - Get layer ref path\n      - Walk tree to collect all file paths\n      - Update mappings[layer_path] = file_list\n   c. Set meta.generated_by = 'jin'\n   d. Save JinMap\n4. OUTPUT: .jin/.jinmap reflects current layer contents after each commit."
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "Milestone",
+          "id": "P7.M6",
+          "title": "Test Suite Remediation",
+          "status": "Planned",
+          "description": "Fix 31 failing unit tests. Most failures are in mode.rs and scope.rs due to test environment isolation issues.",
+          "tasks": [
+            {
+              "type": "Task",
+              "id": "P7.M6.T1",
+              "title": "Fix Test Environment Issues",
+              "status": "Planned",
+              "description": "Address test isolation, temp directory, and Git lock file issues.",
+              "subtasks": [
+                {
+                  "type": "Subtask",
+                  "id": "P7.M6.T1.S1",
+                  "title": "Fix mode/scope test isolation",
+                  "status": "Planned",
+                  "story_points": 2,
+                  "dependencies": [],
+                  "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: Test failures show: 'failed to lock file /tmp/.tmpXXX/.jin_global/config.lock', 'failed to load object database', ref_exists() returning false unexpectedly. Tests share global state.\n2. INPUT: Failing tests in src/commands/mode.rs and src/commands/scope.rs.\n3. LOGIC: For each failing test:\n   a. Ensure test creates isolated TempDir for ALL Jin paths (not just project)\n   b. Set JIN_DIR env var to temp path before JinRepo operations\n   c. Create fresh Git repo in temp dir, not rely on global\n   d. Clean up lock files in test teardown\n   e. Use test fixtures from tests/common/fixtures.rs\n4. OUTPUT: All 31 failing tests pass. Run `cargo test` to verify."
                 }
               ]
             }

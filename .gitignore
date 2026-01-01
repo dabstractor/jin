@@ -1,5 +1,7 @@
 # Build artifacts
 target/
+dist/
+build/
 
 # Jin local state
 .jin/
@@ -22,3 +24,22 @@ Thumbs.db
 *.tmp
 *.bak
 test.json
+
+# Environment and secrets
+.env
+.env.local
+.env.*.local
+*.pem
+*.key
+
+# Dependency directories (Rust-specific)
+**/target/
+Cargo.lock
+
+# Test coverage
+*.profraw
+*.profdata
+
+# Debug symbols
+*.dSYM/
+*.su

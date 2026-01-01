@@ -4,4 +4,4 @@
 
 pub mod pipeline;
 
-pub use pipeline::CommitPipeline;
+pub use pipeline::{CommitConfig, CommitPipeline, CommitResult};

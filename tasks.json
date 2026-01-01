@@ -476,7 +476,7 @@
       "type": "Phase",
       "id": "P4",
       "title": "CLI Commands",
-      "status": "Ready",
+      "status": "Complete",
       "description": "Implement all CLI commands by wiring them to existing infrastructure.",
       "milestones": [
         {
@@ -512,7 +512,7 @@
           "type": "Milestone",
           "id": "P4.M2",
           "title": "Core Commands",
-          "status": "Ready",
+          "status": "Complete",
           "description": "Implement init, add, commit, and status commands.",
           "tasks": [
             {
@@ -561,14 +561,14 @@
               "type": "Task",
               "id": "P4.M2.T3",
               "title": "Commit Command",
-              "status": "Ready",
+              "status": "Complete",
               "description": "Commit staged files atomically.",
               "subtasks": [
                 {
                   "type": "Subtask",
                   "id": "P4.M2.T3.S1",
                   "title": "Implement jin commit",
-                  "status": "Ready",
+                  "status": "Complete",
                   "story_points": 2,
                   "dependencies": [
                     "P4.M2.T2.S1",

@@ -191,10 +191,13 @@ fn test_apply_merges_to_workspace() -> Result<(), Box<dyn std::error::Error>> {
     // Verify file restored in workspace
     assert_workspace_file_exists(project_path, &format!(".{}/config.json", mode_name));
 
+    // Verify JSON content semantically (apply uses pretty-printed JSON)
     let restored_content = fs::read_to_string(&config_file)?;
+    let restored_val: serde_json::Value = serde_json::from_str(&restored_content)?;
+    let expected_val: serde_json::Value = serde_json::from_str(test_content)?;
     assert_eq!(
-        restored_content, test_content,
-        "Applied file should have original content"
+        restored_val, expected_val,
+        "Applied file should have equivalent JSON content"
     );
 
     Ok(())

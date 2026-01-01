@@ -176,8 +176,10 @@ pub fn assert_context_mode(project_path: &Path, expected_mode: &str) {
     let context_content = fs::read_to_string(&context_path)
         .unwrap_or_else(|e| panic!("Failed to read context file: {}", e));
 
+    // Context is saved as YAML (mode: value) not JSON ("mode": "value")
     assert!(
-        context_content.contains(&format!("\"mode\": \"{}\"", expected_mode))
+        context_content.contains(&format!("mode: {}", expected_mode))
+            || context_content.contains(&format!("\"mode\": \"{}\"", expected_mode))
             || context_content.contains(&format!("\"mode\":\"{}\"", expected_mode)),
         "Context should contain mode '{}'. Context content:\n{}",
         expected_mode,

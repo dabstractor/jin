@@ -335,7 +335,7 @@ fn test_apply_dirty_workspace_error() -> Result<(), Box<dyn std::error::Error>> 
         .assert()
         .success();
 
-    // Create and commit file
+    // Create, commit, and apply file (to create metadata)
     fs::write(project_path.join("config.txt"), "committed")?;
 
     jin()
@@ -350,7 +350,14 @@ fn test_apply_dirty_workspace_error() -> Result<(), Box<dyn std::error::Error>> 
         .assert()
         .success();
 
-    // Modify file in workspace (dirty)
+    // Apply to create metadata tracking the file
+    jin()
+        .arg("apply")
+        .current_dir(project_path)
+        .assert()
+        .success();
+
+    // Modify file in workspace (dirty - differs from applied state)
     fs::write(project_path.join("config.txt"), "modified")?;
 
     // Try to apply with dirty workspace

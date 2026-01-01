@@ -398,8 +398,10 @@ fn test_commit_subcommand() {
 #[test]
 fn test_apply_subcommand() {
     // Apply requires Jin initialization
+    let temp = tempfile::tempdir().unwrap();
     jin()
         .arg("apply")
+        .current_dir(temp.path())
         .assert()
         .failure()
         .stderr(predicate::str::contains("Jin not initialized"));
@@ -408,8 +410,10 @@ fn test_apply_subcommand() {
 #[test]
 fn test_apply_dry_run() {
     // Apply --dry-run also requires Jin initialization
+    let temp = tempfile::tempdir().unwrap();
     jin()
         .args(["apply", "--dry-run"])
+        .current_dir(temp.path())
         .assert()
         .failure()
         .stderr(predicate::str::contains("Jin not initialized"));

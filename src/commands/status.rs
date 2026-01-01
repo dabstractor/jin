@@ -41,7 +41,11 @@ pub fn execute() -> Result<()> {
         println!();
         println!("Use 'jin add <file>' to stage files for commit.");
     } else {
-        println!("Staged changes ({} file{}):", staged_count, if staged_count == 1 { "" } else { "s" });
+        println!(
+            "Staged changes ({} file{}):",
+            staged_count,
+            if staged_count == 1 { "" } else { "s" }
+        );
         for entry in staging.entries() {
             println!("  {} -> {}", entry.path.display(), entry.target_layer);
         }

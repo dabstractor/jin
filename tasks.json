@@ -476,28 +476,28 @@
       "type": "Phase",
       "id": "P4",
       "title": "CLI Commands",
-      "status": "Researching",
+      "status": "Ready",
       "description": "Implement all CLI commands by wiring them to existing infrastructure.",
       "milestones": [
         {
           "type": "Milestone",
           "id": "P4.M1",
           "title": "CLI Framework",
-          "status": "Researching",
+          "status": "Complete",
           "description": "Set up clap-based CLI with all command definitions.",
           "tasks": [
             {
               "type": "Task",
               "id": "P4.M1.T1",
               "title": "CLI Structure",
-              "status": "Researching",
+              "status": "Complete",
               "description": "Define all commands and subcommands with clap.",
               "subtasks": [
                 {
                   "type": "Subtask",
                   "id": "P4.M1.T1.S1",
                   "title": "Define CLI Structure",
-                  "status": "Ready",
+                  "status": "Complete",
                   "story_points": 2,
                   "dependencies": [
                     "P1.M1.T1.S2"

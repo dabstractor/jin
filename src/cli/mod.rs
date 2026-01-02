@@ -53,6 +53,9 @@ pub enum Commands {
     /// Reset staged or committed changes
     Reset(ResetArgs),
 
+    /// Remove files from staging and optionally workspace
+    Rm(RmArgs),
+
     /// Show differences between layers
     Diff(DiffArgs),
 

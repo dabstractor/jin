@@ -1189,14 +1189,14 @@
               "type": "Task",
               "id": "P7.M2.T1",
               "title": "Implement jin rm Command",
-              "status": "Planned",
+              "status": "Complete",
               "description": "Add command to remove files from Jin layers with proper staging integration.",
               "subtasks": [
                 {
                   "type": "Subtask",
                   "id": "P7.M2.T1.S1",
                   "title": "Define rm CLI structure",
-                  "status": "Planned",
+                  "status": "Complete",
                   "story_points": 1,
                   "dependencies": [
                     "P7.M1.T1.S1"
@@ -1207,7 +1207,7 @@
                   "type": "Subtask",
                   "id": "P7.M2.T1.S2",
                   "title": "Implement rm command logic",
-                  "status": "Planned",
+                  "status": "Complete",
                   "story_points": 2,
                   "dependencies": [
                     "P7.M2.T1.S1"

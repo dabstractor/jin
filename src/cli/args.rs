@@ -85,6 +85,37 @@ pub struct ResetArgs {
     pub force: bool,
 }
 
+/// Arguments for the `rm` command
+#[derive(Args, Debug)]
+pub struct RmArgs {
+    /// Files to remove
+    pub files: Vec<String>,
+
+    /// Target mode layer
+    #[arg(long)]
+    pub mode: bool,
+
+    /// Target scope layer
+    #[arg(long)]
+    pub scope: Option<String>,
+
+    /// Target project layer
+    #[arg(long)]
+    pub project: bool,
+
+    /// Target global layer
+    #[arg(long)]
+    pub global: bool,
+
+    /// Skip confirmation prompt for workspace deletion
+    #[arg(long, short = 'f')]
+    pub force: bool,
+
+    /// Show what would be removed without doing it
+    #[arg(long)]
+    pub dry_run: bool,
+}
+
 /// Arguments for the `diff` command
 #[derive(Args, Debug)]
 pub struct DiffArgs {

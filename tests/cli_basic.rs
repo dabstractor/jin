@@ -441,9 +441,14 @@ fn test_diff_subcommand() {
 
 #[test]
 fn test_log_subcommand() {
-    // Log requires Jin initialization
+    use tempfile::TempDir;
+    let temp = TempDir::new().unwrap();
+
+    // Run in isolated environment
     jin()
         .arg("log")
+        .current_dir(temp.path())
+        .env("JIN_DIR", temp.path().join(".jin_global"))
         .assert()
         .failure()
         .stderr(predicate::str::contains("Jin not initialized"));

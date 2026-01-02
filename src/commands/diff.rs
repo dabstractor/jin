@@ -376,7 +376,7 @@ fn diff_workspace_vs_workspace_active(
     }
 
     // Check for files in workspace but not in merged result
-    for (path, _hash) in &metadata.files {
+    for path in metadata.files.keys() {
         if !merged.merged_files.contains_key(path) {
             has_changes = true;
             println!("Only in workspace: {}", path.display());

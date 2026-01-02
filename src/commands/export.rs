@@ -104,28 +104,28 @@ pub fn execute(args: ExportArgs) -> Result<()> {
 ///
 /// # Steps
 /// 1. Validate file is Jin-tracked
-/// 2. Remove from Jin staging
-/// 3. Add to Git index
-/// 4. Remove from .gitignore managed block
+/// 2. Remove from .gitignore managed block (before git add)
+/// 3. Remove from Jin staging
+/// 4. Add to Git index
 fn export_file(path: &Path, staging: &mut StagingIndex) -> Result<()> {
     // 1. Validate file is Jin-tracked
     validate_jin_tracked(path, staging)?;
 
-    // 2. Remove from Jin staging index
-    staging.remove(path);
-
-    // 3. Add to Git index
-    add_to_git(path)?;
-
-    // 4. Remove from .gitignore managed block
+    // 2. Remove from .gitignore managed block FIRST (before git add)
+    // If this fails, we should still continue - the user can manually fix .gitignore
     if let Err(e) = remove_from_managed_block(path) {
-        // This is not fatal, but we should warn the user
         eprintln!(
             "Warning: Could not remove {} from .gitignore: {}",
             path.display(),
             e
         );
     }
+
+    // 3. Remove from Jin staging index
+    staging.remove(path);
+
+    // 4. Add to Git index (now that it's not in .gitignore)
+    add_to_git(path)?;
 
     Ok(())
 }
@@ -214,7 +214,11 @@ mod tests {
     use super::*;
     use crate::core::Layer;
     use crate::staging::StagedEntry;
+    use std::sync::Mutex;
     use tempfile::TempDir;
+
+    // Mutex to serialize tests that change working directory
+    static TEST_LOCK: Mutex<()> = Mutex::new(());
 
     #[test]
     fn test_validate_jin_tracked_file_not_found() {
@@ -263,6 +267,8 @@ mod tests {
 
     #[test]
     fn test_execute_file_not_jin_tracked() {
+        let _lock = TEST_LOCK.lock(); // Serialize with other directory-changing tests
+
         let temp = TempDir::new().unwrap();
 
         // Set JIN_DIR to an isolated directory for this test
@@ -285,7 +291,8 @@ mod tests {
         };
         let result = execute(args);
 
-        std::env::set_current_dir(&original_dir).unwrap();
+        // Always restore directory
+        let _ = std::env::set_current_dir(&original_dir);
 
         assert!(result.is_err());
         assert!(result
@@ -296,6 +303,8 @@ mod tests {
 
     #[test]
     fn test_add_to_git_no_git_repo() {
+        let _lock = TEST_LOCK.lock(); // Serialize with other directory-changing tests
+
         let temp = TempDir::new().unwrap();
 
         // Set JIN_DIR to an isolated directory for this test
@@ -311,7 +320,8 @@ mod tests {
 
         let result = add_to_git(&file);
 
-        std::env::set_current_dir(original_dir).unwrap();
+        // Always restore directory
+        let _ = std::env::set_current_dir(&original_dir);
 
         assert!(result.is_err());
         assert!(result.unwrap_err().to_string().contains("git add failed"));
@@ -319,6 +329,8 @@ mod tests {
 
     #[test]
     fn test_add_to_git_success() {
+        let _lock = TEST_LOCK.lock(); // Serialize with other directory-changing tests
+
         let temp = TempDir::new().unwrap();
         let temp_path = temp.path().to_path_buf();
 
@@ -351,8 +363,7 @@ mod tests {
         // Use relative path since we're in the git repo directory
         let result = add_to_git(Path::new("test.json"));
 
-        // Change back to original directory after git add completes
-        // Use ok() instead of unwrap() since dir might not exist in test environment
+        // Always restore directory
         let _ = std::env::set_current_dir(&original_dir);
 
         assert!(result.is_ok());

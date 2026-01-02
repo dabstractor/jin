@@ -170,9 +170,9 @@ fn move_file(
     args: &MvArgs,
 ) -> Result<()> {
     // 1. Validate source: Check if file is in staging
-    let existing_entry = staging
-        .get(src)
-        .ok_or_else(|| JinError::NotFound(format!("Source file not in staging: {}", src.display())))?;
+    let existing_entry = staging.get(src).ok_or_else(|| {
+        JinError::NotFound(format!("Source file not in staging: {}", src.display()))
+    })?;
 
     // 2. Validate destination: Check if destination already staged
     if staging.get(dst).is_some() {
@@ -187,7 +187,13 @@ fn move_file(
     let mode = existing_entry.mode;
 
     // 4. Create rename entry: Using new constructor from StagedEntry
-    let rename_entry = StagedEntry::rename(src.to_path_buf(), dst.to_path_buf(), layer, content_hash, mode);
+    let rename_entry = StagedEntry::rename(
+        src.to_path_buf(),
+        dst.to_path_buf(),
+        layer,
+        content_hash,
+        mode,
+    );
 
     // 5. Update staging index: Remove old, add new
     staging.remove(src);
@@ -282,7 +288,11 @@ mod tests {
     #[test]
     fn test_execute_odd_number_of_files() {
         let args = MvArgs {
-            files: vec!["src.txt".to_string(), "dst.txt".to_string(), "extra.txt".to_string()],
+            files: vec![
+                "src.txt".to_string(),
+                "dst.txt".to_string(),
+                "extra.txt".to_string(),
+            ],
             mode: false,
             scope: None,
             project: false,

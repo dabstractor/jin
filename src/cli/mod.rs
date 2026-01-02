@@ -43,9 +43,15 @@ pub enum Commands {
     #[command(subcommand)]
     Mode(ModeAction),
 
+    /// List available modes (alias for `jin mode list`)
+    Modes,
+
     /// Scope lifecycle management
     #[command(subcommand)]
     Scope(ScopeAction),
+
+    /// List available scopes (alias for `jin scope list`)
+    Scopes,
 
     /// Apply merged layers to workspace
     Apply(ApplyArgs),

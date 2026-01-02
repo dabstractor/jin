@@ -188,7 +188,7 @@ fn use_scope(name: &str) -> Result<()> {
 }
 
 /// List all scopes
-fn list() -> Result<()> {
+pub fn list() -> Result<()> {
     // Open Jin repository
     let repo = JinRepo::open_or_create()?;
 

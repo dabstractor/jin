@@ -121,7 +121,7 @@ fn use_mode(name: &str) -> Result<()> {
 }
 
 /// List all modes
-fn list() -> Result<()> {
+pub fn list() -> Result<()> {
     // Open Jin repository
     let repo = JinRepo::open_or_create()?;
 

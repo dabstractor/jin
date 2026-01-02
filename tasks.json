@@ -1253,21 +1253,21 @@
           "type": "Milestone",
           "id": "P7.M3",
           "title": "Command Aliases",
-          "status": "Planned",
+          "status": "Complete",
           "description": "Add jin modes and jin scopes shorthand commands as specified in PRD Section 13.",
           "tasks": [
             {
               "type": "Task",
               "id": "P7.M3.T1",
               "title": "Add modes and scopes Aliases",
-              "status": "Planned",
+              "status": "Complete",
               "description": "Add top-level aliases that map to mode list and scope list subcommands.",
               "subtasks": [
                 {
                   "type": "Subtask",
                   "id": "P7.M3.T1.S1",
                   "title": "Implement modes and scopes commands",
-                  "status": "Planned",
+                  "status": "Complete",
                   "story_points": 1,
                   "dependencies": [],
                   "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: PRD Section 13.1 shows `jin modes`, Section 13.2 shows `jin scopes`. Existing list_modes() in src/commands/mode.rs:199, list_scopes() in src/commands/scope.rs.\n2. INPUT: None - simple aliases.\n3. LOGIC: In src/cli/mod.rs:\n   a. Add `Modes` variant to Commands enum (no args)\n   b. Add `Scopes` variant to Commands enum (no args)\n   c. In main.rs match:\n      - Commands::Modes => mode::list_modes()\n      - Commands::Scopes => scope::list_scopes()\n4. OUTPUT: `jin modes` and `jin scopes` work as shortcuts for `jin mode list` and `jin scope list`."

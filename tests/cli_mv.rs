@@ -28,7 +28,9 @@ fn test_mv_single_file() {
         .current_dir(fixture.path())
         .assert()
         .success()
-        .stdout(predicates::str::contains("Moved 1 file(s) in project-base layer"));
+        .stdout(predicates::str::contains(
+            "Moved 1 file(s) in project-base layer",
+        ));
 
     // Verify staging was updated
     assert_staging_not_contains(fixture.path(), "config.json");
@@ -110,7 +112,11 @@ fn test_mv_with_layer_flags() {
         .success();
 
     // Create and stage a file to mode layer
-    std::fs::write(fixture.path.join("mode-config.json"), r#"{"mode": "config"}"#).unwrap();
+    std::fs::write(
+        fixture.path.join("mode-config.json"),
+        r#"{"mode": "config"}"#,
+    )
+    .unwrap();
     jin()
         .args(["add", "--mode", "mode-config.json"])
         .current_dir(fixture.path())
@@ -122,11 +128,18 @@ fn test_mv_with_layer_flags() {
 
     // Move the file within mode layer
     jin()
-        .args(["mv", "--mode", "mode-config.json", "mode-config-renamed.json"])
+        .args([
+            "mv",
+            "--mode",
+            "mode-config.json",
+            "mode-config-renamed.json",
+        ])
         .current_dir(fixture.path())
         .assert()
         .success()
-        .stdout(predicates::str::contains("Moved 1 file(s) in mode-base layer"));
+        .stdout(predicates::str::contains(
+            "Moved 1 file(s) in mode-base layer",
+        ));
 
     // Verify staging was updated
     assert_staging_not_contains(fixture.path(), "mode-config.json");
@@ -217,10 +230,14 @@ fn test_mv_batch() {
     jin()
         .args([
             "mv",
-            "file1.txt", "renamed1.txt",
-            "file2.txt", "renamed2.txt",
-            "file3.txt", "renamed3.txt",
-            "file4.txt", "renamed4.txt",
+            "file1.txt",
+            "renamed1.txt",
+            "file2.txt",
+            "renamed2.txt",
+            "file3.txt",
+            "renamed3.txt",
+            "file4.txt",
+            "renamed4.txt",
         ])
         .current_dir(fixture.path())
         .assert()
@@ -261,13 +278,18 @@ fn test_mv_to_subdirectory() {
 
     // Verify staging was updated
     // Check for exact JSON path (with quotes to avoid substring matches)
-    let staging_content = std::fs::read_to_string(fixture.path.join(".jin/staging/index.json")).unwrap();
+    let staging_content =
+        std::fs::read_to_string(fixture.path.join(".jin/staging/index.json")).unwrap();
     assert!(!staging_content.contains("\"config.json\""));
     assert!(staging_content.contains("\"settings/config.json\""));
 
     // Verify workspace file was moved to subdirectory
     assert_workspace_file_not_exists(fixture.path(), "config.json");
-    assert_workspace_file(fixture.path(), "settings/config.json", r#"{"key": "value"}"#);
+    assert_workspace_file(
+        fixture.path(),
+        "settings/config.json",
+        r#"{"key": "value"}"#,
+    );
 }
 
 /// Test error: --project without --mode
@@ -382,8 +404,10 @@ fn test_mv_partial_success() {
     jin()
         .args([
             "mv",
-            "staged.txt", "renamed-staged.txt",
-            "unstaged.txt", "renamed-unstaged.txt",
+            "staged.txt",
+            "renamed-staged.txt",
+            "unstaged.txt",
+            "renamed-unstaged.txt",
         ])
         .current_dir(fixture.path())
         .assert()
@@ -391,7 +415,8 @@ fn test_mv_partial_success() {
         .stderr(predicates::str::contains("Error:"));
 
     // Verify the staged file was moved (use exact JSON path matching)
-    let staging_content = std::fs::read_to_string(fixture.path.join(".jin/staging/index.json")).unwrap();
+    let staging_content =
+        std::fs::read_to_string(fixture.path.join(".jin/staging/index.json")).unwrap();
     assert!(!staging_content.contains("\"staged.txt\""));
     assert!(staging_content.contains("\"renamed-staged.txt\""));
 

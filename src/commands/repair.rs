@@ -36,9 +36,9 @@ pub fn execute(args: RepairArgs) -> Result<()> {
     // Check 1: Repository structure
     let repo_result = check_repository_structure(&args, &mut issues_found, &mut issues_fixed);
 
-    // If repository is fatally corrupted, we can't continue
+    // If repository is fatally corrupted, we can't continue (except in dry-run)
     if let Err(e) = &repo_result {
-        if matches!(e, JinError::Other(_)) && issues_found.len() > issues_fixed.len() {
+        if matches!(e, JinError::Other(_)) && issues_found.len() > issues_fixed.len() && !args.dry_run {
             println!();
             println!("FATAL: Repository is severely corrupted.");
             println!();
@@ -660,17 +660,42 @@ mod tests {
     use super::*;
     use tempfile::TempDir;
 
+    /// Scope guard that restores the original directory when dropped
+    struct DirGuard {
+        original_dir: PathBuf,
+        _temp: TempDir, // Keep temp alive
+    }
+
+    impl DirGuard {
+        fn new(temp: TempDir) -> Self {
+            let original_dir = std::env::current_dir().unwrap();
+            std::env::set_current_dir(temp.path()).unwrap();
+            Self {
+                original_dir,
+                _temp: temp,
+            }
+        }
+    }
+
+    impl Drop for DirGuard {
+        fn drop(&mut self) {
+            std::env::set_current_dir(&self.original_dir).ok();
+        }
+    }
+
     fn setup_isolated_test() -> TempDir {
         let temp = TempDir::new().unwrap();
         let jin_dir = temp.path().join(".jin_global");
+        // Create parent directory for JIN_DIR to ensure JinRepo::create() works
+        std::fs::create_dir_all(&jin_dir).unwrap();
         std::env::set_var("JIN_DIR", &jin_dir);
-        std::env::set_current_dir(temp.path()).unwrap();
+        // Do NOT change current directory - tests should use temp.path() explicitly
         temp
     }
 
     #[test]
     fn test_execute_dry_run() {
-        let _temp = setup_isolated_test();
+        let _guard = DirGuard::new(setup_isolated_test());
 
         let args = RepairArgs { dry_run: true };
         let result = execute(args);
@@ -679,7 +704,7 @@ mod tests {
 
     #[test]
     fn test_execute_no_issues() {
-        let _temp = setup_isolated_test();
+        let _guard = DirGuard::new(setup_isolated_test());
 
         let args = RepairArgs { dry_run: false };
         let result = execute(args);
@@ -688,8 +713,7 @@ mod tests {
 
     #[test]
     fn test_check_staging_index_missing() {
-        let _temp = setup_isolated_test();
-        let original_dir = std::env::current_dir().unwrap();
+        let _guard = DirGuard::new(setup_isolated_test());
 
         let args = RepairArgs { dry_run: true };
         let mut issues_found = Vec::new();
@@ -699,23 +723,19 @@ mod tests {
 
         // Missing index is fine
         assert_eq!(issues_found.len(), 0);
-
-        std::env::set_current_dir(original_dir).ok();
     }
 
     #[test]
     fn test_check_staging_index_corrupted() {
         let temp = TempDir::new().unwrap();
-        let _guard = temp.path();
 
         // Create corrupted staging index in temp directory
         let index_path = temp.path().join(".jin/staging/index.json");
         std::fs::create_dir_all(index_path.parent().unwrap()).unwrap();
         std::fs::write(&index_path, "invalid json").unwrap();
 
-        // Change to temp directory
-        let original_dir = std::env::current_dir().unwrap();
-        std::env::set_current_dir(temp.path()).unwrap();
+        // Use DirGuard to change to temp directory and auto-restore
+        let _guard = DirGuard::new(temp);
 
         let args = RepairArgs { dry_run: true };
         let mut issues_found = Vec::new();
@@ -725,9 +745,6 @@ mod tests {
 
         assert_eq!(issues_found.len(), 1);
         assert!(issues_found[0].contains("corrupted"));
-
-        // Restore original directory
-        std::env::set_current_dir(original_dir).ok();
     }
 
     #[test]
@@ -752,8 +769,8 @@ mod tests {
         std::fs::create_dir_all(index_path.parent().unwrap()).unwrap();
         std::fs::write(&index_path, "invalid json").unwrap();
 
-        // Change to temp directory
-        std::env::set_current_dir(temp.path()).unwrap();
+        // Use DirGuard to change to temp directory and auto-restore
+        let _guard = DirGuard::new(temp);
 
         let result = rebuild_staging_index(&index_path);
         assert!(result.is_ok());
@@ -770,12 +787,14 @@ mod tests {
     #[test]
     fn test_check_jinmap_valid_yaml() {
         let temp = TempDir::new().unwrap();
-        let original_dir = std::env::current_dir().unwrap();
-        std::env::set_current_dir(temp.path()).unwrap();
 
-        // Create .jin directory and valid .jinmap in current directory
-        std::fs::create_dir_all(".jin").unwrap();
-        std::fs::write(".jin/.jinmap", "# comment\nkey: value\n").unwrap();
+        // Create .jin directory and valid .jinmap in temp directory
+        let jin_dir = temp.path().join(".jin");
+        std::fs::create_dir_all(&jin_dir).unwrap();
+        std::fs::write(jin_dir.join(".jinmap"), "# comment\nkey: value\n").unwrap();
+
+        // Use DirGuard to change to temp directory and auto-restore
+        let _guard = DirGuard::new(temp);
 
         let args = RepairArgs { dry_run: true };
         let mut issues_found = Vec::new();
@@ -784,20 +803,20 @@ mod tests {
         check_jinmap(&args, &mut issues_found, &mut issues_fixed);
 
         assert_eq!(issues_found.len(), 0);
-
-        // Restore original directory
-        std::env::set_current_dir(original_dir).ok();
     }
 
     #[test]
     fn test_check_jinmap_invalid_yaml() {
-        let _temp = setup_isolated_test();
-        let original_dir = std::env::current_dir().unwrap();
+        let temp = TempDir::new().unwrap();
 
-        // Create .jin directory and invalid .jinmap in current directory
-        std::fs::create_dir_all(".jin").unwrap();
+        // Create .jin directory and invalid .jinmap in temp directory
+        let jin_dir = temp.path().join(".jin");
+        std::fs::create_dir_all(&jin_dir).unwrap();
         // Use content that YAML will actually reject - unclosed bracket
-        std::fs::write(".jin/.jinmap", "key: [unclosed").unwrap();
+        std::fs::write(jin_dir.join(".jinmap"), "key: [unclosed").unwrap();
+
+        // Use DirGuard to change to temp directory and auto-restore
+        let _guard = DirGuard::new(temp);
 
         let args = RepairArgs { dry_run: true };
         let mut issues_found = Vec::new();
@@ -807,16 +826,11 @@ mod tests {
 
         assert_eq!(issues_found.len(), 1);
         assert!(issues_found[0].contains("not valid YAML"));
-
-        // Restore original directory
-        std::env::set_current_dir(original_dir).ok();
     }
 
     #[test]
     fn test_check_workspace_metadata_missing() {
-        let temp = TempDir::new().unwrap();
-        let original_dir = std::env::current_dir().unwrap();
-        std::env::set_current_dir(temp.path()).unwrap();
+        let _guard = DirGuard::new(TempDir::new().unwrap());
 
         let args = RepairArgs { dry_run: true };
         let mut issues_found = Vec::new();
@@ -826,18 +840,19 @@ mod tests {
 
         // Missing metadata is fine
         assert_eq!(issues_found.len(), 0);
-
-        std::env::set_current_dir(original_dir).ok();
     }
 
     #[test]
     fn test_rebuild_workspace_metadata() {
-        let _temp = setup_isolated_test();
+        let temp = setup_isolated_test();
 
         // Create corrupted metadata
-        let metadata_path = WorkspaceMetadata::default_path();
+        let metadata_path = temp.path().join(WorkspaceMetadata::default_path());
         std::fs::create_dir_all(metadata_path.parent().unwrap()).unwrap();
         std::fs::write(&metadata_path, "invalid json").unwrap();
+
+        // Use DirGuard to change to temp directory and auto-restore
+        let _guard = DirGuard::new(temp);
 
         let result = rebuild_workspace_metadata(&metadata_path);
         assert!(result.is_ok());
@@ -858,19 +873,16 @@ mod tests {
 
     #[test]
     fn test_create_default_context() {
-        let _temp = setup_isolated_test();
-        let original_dir = std::env::current_dir().unwrap();
+        let temp = setup_isolated_test();
 
         // Create .jin directory first - this is required for context to be saved
-        let jin_dir = std::path::PathBuf::from(".jin");
+        let jin_dir = temp.path().join(".jin");
         std::fs::create_dir_all(&jin_dir).unwrap();
 
+        // Use DirGuard to change to temp directory and auto-restore
+        let _guard = DirGuard::new(temp);
+
         let result = create_default_context();
-        if let Err(ref e) = result {
-            eprintln!("Error creating context: {}", e);
-            eprintln!("Current dir: {:?}", std::env::current_dir());
-            eprintln!(".jin exists: {}", jin_dir.exists());
-        }
         assert!(result.is_ok(), "Failed to create context: {:?}", result);
 
         let context_path = ProjectContext::default_path();
@@ -879,8 +891,5 @@ mod tests {
             "Context file was not created at {}",
             context_path.display()
         );
-
-        // Restore original directory
-        std::env::set_current_dir(original_dir).ok();
     }
 }

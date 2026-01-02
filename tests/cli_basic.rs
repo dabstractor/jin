@@ -456,11 +456,84 @@ fn test_log_subcommand() {
 
 #[test]
 fn test_context_subcommand() {
+    use tempfile::TempDir;
+    let temp = TempDir::new().unwrap();
+
+    // Run in isolated environment - no Jin initialization
     jin()
         .arg("context")
+        .current_dir(temp.path())
         .assert()
         .failure()
         .stderr(predicate::str::contains("Jin not initialized"));
+}
+
+#[test]
+fn test_context_subcommand_success() {
+    use tempfile::TempDir;
+    let temp = TempDir::new().unwrap();
+
+    // Use temp path for unique JIN_DIR
+    let jin_dir = temp.path().join(".jin_global");
+
+    // Initialize Jin
+    jin()
+        .arg("init")
+        .current_dir(temp.path())
+        .env("JIN_DIR", &jin_dir)
+        .assert()
+        .success();
+
+    // Test context shows default values
+    jin()
+        .arg("context")
+        .current_dir(temp.path())
+        .env("JIN_DIR", &jin_dir)
+        .assert()
+        .success()
+        .stdout(predicate::str::contains("Current Jin context"))
+        .stdout(predicate::str::contains("(none)"));
+
+    // Create and use a mode
+    let mode_name = format!("test_mode_{}", std::process::id());
+    jin()
+        .args(["mode", "create", &mode_name])
+        .env("JIN_DIR", &jin_dir)
+        .assert()
+        .success();
+
+    jin()
+        .args(["mode", "use", &mode_name])
+        .current_dir(temp.path())
+        .env("JIN_DIR", &jin_dir)
+        .assert()
+        .success();
+
+    // Create and use a scope
+    let scope_name = format!("test_scope_{}", std::process::id());
+    jin()
+        .args(["scope", "create", &scope_name])
+        .env("JIN_DIR", &jin_dir)
+        .assert()
+        .success();
+
+    jin()
+        .args(["scope", "use", &scope_name])
+        .current_dir(temp.path())
+        .env("JIN_DIR", &jin_dir)
+        .assert()
+        .success();
+
+    // Test context shows active mode and scope
+    jin()
+        .arg("context")
+        .current_dir(temp.path())
+        .env("JIN_DIR", &jin_dir)
+        .assert()
+        .success()
+        .stdout(predicate::str::contains("Current Jin context"))
+        .stdout(predicate::str::contains(&mode_name))
+        .stdout(predicate::str::contains(&scope_name));
 }
 
 #[test]

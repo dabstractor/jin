@@ -20,6 +20,7 @@ pub mod link;
 pub mod list;
 pub mod log;
 pub mod mode;
+pub mod mv;
 pub mod pull;
 pub mod push;
 pub mod repair;
@@ -41,6 +42,7 @@ pub fn execute(cli: Cli) -> Result<()> {
         Commands::Apply(args) => apply::execute(args),
         Commands::Reset(args) => reset::execute(args),
         Commands::Rm(args) => rm::execute(args),
+        Commands::Mv(args) => mv::execute(args),
         Commands::Diff(args) => diff::execute(args),
         Commands::Log(args) => log::execute(args),
         Commands::Context => context::execute(),

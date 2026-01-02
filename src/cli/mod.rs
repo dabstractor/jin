@@ -56,6 +56,9 @@ pub enum Commands {
     /// Remove files from staging and optionally workspace
     Rm(RmArgs),
 
+    /// Move/rename files in staging and optionally workspace
+    Mv(MvArgs),
+
     /// Show differences between layers
     Diff(DiffArgs),
 

@@ -57,6 +57,31 @@ impl StagedEntry {
     pub fn is_delete(&self) -> bool {
         self.operation == StagedOperation::Delete
     }
+
+    /// Create a new staged entry for renaming a file
+    ///
+    /// Preserves content_hash and mode from the original entry.
+    /// The new_path is stored in the path field.
+    pub fn rename(
+        _old_path: PathBuf,
+        new_path: PathBuf,
+        target_layer: Layer,
+        content_hash: String,
+        mode: u32,
+    ) -> Self {
+        Self {
+            path: new_path,
+            target_layer,
+            content_hash,
+            mode,
+            operation: StagedOperation::Rename,
+        }
+    }
+
+    /// Check if this entry is a rename operation
+    pub fn is_rename(&self) -> bool {
+        self.operation == StagedOperation::Rename
+    }
 }
 
 #[cfg(test)]

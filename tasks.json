@@ -1182,7 +1182,7 @@
           "type": "Milestone",
           "id": "P7.M2",
           "title": "File Operation Commands",
-          "status": "Planned",
+          "status": "Complete",
           "description": "Implement jin rm and jin mv commands as specified in PRD Section 18.8 and 21.",
           "tasks": [
             {
@@ -1220,14 +1220,14 @@
               "type": "Task",
               "id": "P7.M2.T2",
               "title": "Implement jin mv Command",
-              "status": "Planned",
+              "status": "Complete",
               "description": "Add command to rename/move files within Jin layers.",
               "subtasks": [
                 {
                   "type": "Subtask",
                   "id": "P7.M2.T2.S1",
                   "title": "Define mv CLI structure",
-                  "status": "Planned",
+                  "status": "Complete",
                   "story_points": 1,
                   "dependencies": [
                     "P7.M2.T1.S2"
@@ -1238,7 +1238,7 @@
                   "type": "Subtask",
                   "id": "P7.M2.T2.S2",
                   "title": "Implement mv command logic",
-                  "status": "Planned",
+                  "status": "Complete",
                   "story_points": 2,
                   "dependencies": [
                     "P7.M2.T2.S1"

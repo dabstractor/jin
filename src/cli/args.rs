@@ -116,6 +116,37 @@ pub struct RmArgs {
     pub dry_run: bool,
 }
 
+/// Arguments for the `mv` command
+#[derive(Args, Debug)]
+pub struct MvArgs {
+    /// Source and destination file pairs (src1, dst1, src2, dst2, ...)
+    pub files: Vec<String>,
+
+    /// Target mode layer
+    #[arg(long)]
+    pub mode: bool,
+
+    /// Target scope layer
+    #[arg(long)]
+    pub scope: Option<String>,
+
+    /// Target project layer
+    #[arg(long)]
+    pub project: bool,
+
+    /// Target global layer
+    #[arg(long)]
+    pub global: bool,
+
+    /// Skip confirmation prompt for workspace moves
+    #[arg(long, short = 'f')]
+    pub force: bool,
+
+    /// Show what would be moved without doing it
+    #[arg(long)]
+    pub dry_run: bool,
+}
+
 /// Arguments for the `diff` command
 #[derive(Args, Debug)]
 pub struct DiffArgs {

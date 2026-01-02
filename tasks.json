@@ -1148,28 +1148,28 @@
       "type": "Phase",
       "id": "P7",
       "title": "Critical Gap Remediation",
-      "status": "Ready",
+      "status": "Planned",
       "description": "Address critical implementation gaps discovered during PRD validation. The commit CLI is a stub (pipeline exists), rm/mv commands are missing, audit logging was never implemented, and .jinmap is not integrated into the commit workflow.",
       "milestones": [
         {
           "type": "Milestone",
           "id": "P7.M1",
           "title": "Commit Command Wiring",
-          "status": "Ready",
+          "status": "Complete",
           "description": "Wire the existing CommitPipeline to the jin commit CLI command. Infrastructure exists in src/commit/pipeline.rs but commit_cmd.rs is a stub.",
           "tasks": [
             {
               "type": "Task",
               "id": "P7.M1.T1",
               "title": "Wire jin commit to CommitPipeline",
-              "status": "Ready",
+              "status": "Complete",
               "description": "Connect the stub in commit_cmd.rs to the working CommitPipeline.",
               "subtasks": [
                 {
                   "type": "Subtask",
                   "id": "P7.M1.T1.S1",
                   "title": "Implement commit CLI wiring",
-                  "status": "Ready",
+                  "status": "Complete",
                   "story_points": 2,
                   "dependencies": [],
                   "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: CommitPipeline at src/commit/pipeline.rs is fully implemented with execute(), dry_run support, and LayerTransaction integration. CLI stub at src/commands/commit_cmd.rs:10-12 just prints 'not yet implemented'.\n2. INPUT: CommitArgs from src/cli/args.rs (message: String, dry_run: bool). StagingIndex::load() from src/staging/index.rs.\n3. LOGIC: Replace stub in commit_cmd::execute():\n   a. Load StagingIndex via StagingIndex::load()\n   b. Validate staging not empty (return error if empty)\n   c. Create CommitPipeline::new(staging)\n   d. Build CommitConfig::new(args.message).dry_run(args.dry_run)\n   e. Call pipeline.execute(&config)\n   f. Match on Result: print commit_hashes, file_count, layers touched\n   g. Handle JinError variants with user-friendly messages\n4. OUTPUT: Functional `jin commit -m \"message\"` command. Exposes no new interfaces - completes the add→commit workflow."

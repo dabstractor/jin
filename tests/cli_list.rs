@@ -24,8 +24,12 @@ fn test_list_empty_repository() {
         .assert()
         .success()
         .stdout(predicate::str::contains("Available in Jin repository:"))
-        .stdout(predicate::str::contains("(no modes, scopes, or projects found)"))
-        .stdout(predicate::str::contains("Use 'jin mode use <mode>' to activate a mode"));
+        .stdout(predicate::str::contains(
+            "(no modes, scopes, or projects found)",
+        ))
+        .stdout(predicate::str::contains(
+            "Use 'jin mode use <mode>' to activate a mode",
+        ));
 }
 
 /// Test list after creating a mode with files (creates layer ref)
@@ -264,10 +268,12 @@ fn test_list_shows_usage_hints() {
         .env("JIN_DIR", &jin_dir)
         .assert()
         .success()
-        .stdout(predicate::str::contains("Use 'jin mode use <mode>' to activate a mode"))
-        .stdout(
-            predicate::str::contains("Use 'jin scope use <scope>' to activate a scope"),
-        );
+        .stdout(predicate::str::contains(
+            "Use 'jin mode use <mode>' to activate a mode",
+        ))
+        .stdout(predicate::str::contains(
+            "Use 'jin scope use <scope>' to activate a scope",
+        ));
 }
 
 /// Test list with mode-bound scopes

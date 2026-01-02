@@ -44,5 +44,6 @@ Cargo.lock
 *.dSYM/
 *.su
 # --- JIN MANAGED START ---
+/tmp/test_jin_commit/config.json
 readme.md
 # --- JIN MANAGED END ---

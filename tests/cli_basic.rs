@@ -332,8 +332,15 @@ fn test_scope_use_subcommand() {
 
 #[test]
 fn test_scope_list_subcommand() {
+    // Scope list requires project initialization (context)
+    // Use isolated temp directory to avoid existing .jin context
+    use tempfile::TempDir;
+    let temp = TempDir::new().unwrap();
+
     jin()
         .args(["scope", "list"])
+        .current_dir(temp.path())
+        .env("JIN_DIR", temp.path().join(".jin"))
         .assert()
         .failure()
         .stderr(predicate::str::contains("Jin not initialized"));
@@ -554,9 +561,13 @@ fn test_layers_subcommand() {
 
 #[test]
 fn test_list_subcommand() {
-    // List requires Jin initialization
+    // List requires Jin initialization - use isolated JIN_DIR
+    use tempfile::TempDir;
+    let temp = TempDir::new().unwrap();
+
     jin()
         .arg("list")
+        .env("JIN_DIR", temp.path().join(".jin"))
         .assert()
         .failure()
         .stderr(predicate::str::contains("Jin not initialized"));

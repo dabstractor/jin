@@ -20,15 +20,23 @@ use common::fixtures::*;
 /// Test layer routing: mode base (Layer 2)
 #[test]
 fn test_layer_routing_mode_base() -> Result<(), Box<dyn std::error::Error>> {
-    let fixture = setup_test_repo()?;
+    let fixture = TestFixture::new()?;
     let project_path = fixture.path();
+    let jin_dir = fixture.jin_dir.as_ref().unwrap();
 
-    let mode_name = format!("test_mode_{}", std::process::id());
-    create_mode(&mode_name)?;
+    // CRITICAL: Set JIN_DIR BEFORE any Jin operations
+    fixture.set_jin_dir();
+
+    // Initialize project
+    jin_init(project_path)?;
+
+    let mode_name = format!("test_mode_{}", unique_test_id());
+    create_mode(&mode_name, Some(jin_dir))?;
 
     jin()
         .args(["mode", "use", &mode_name])
         .current_dir(project_path)
+        .env("JIN_DIR", jin_dir)
         .assert()
         .success();
 
@@ -41,18 +49,20 @@ fn test_layer_routing_mode_base() -> Result<(), Box<dyn std::error::Error>> {
     jin()
         .args(["add", "config.json", "--mode"])
         .current_dir(project_path)
+        .env("JIN_DIR", jin_dir)
         .assert()
         .success();
 
     jin()
         .args(["commit", "-m", "Mode base"])
         .current_dir(project_path)
+        .env("JIN_DIR", jin_dir)
         .assert()
         .success();
 
     // Verify ref created for mode base layer
     let ref_path = format!("refs/jin/layers/mode/{}", mode_name);
-    assert_layer_ref_exists(&ref_path);
+    assert_layer_ref_exists(&ref_path, Some(jin_dir));
 
     Ok(())
 }
@@ -60,15 +70,20 @@ fn test_layer_routing_mode_base() -> Result<(), Box<dyn std::error::Error>> {
 /// Test layer routing: mode + project (Layer 5)
 #[test]
 fn test_layer_routing_mode_project() -> Result<(), Box<dyn std::error::Error>> {
-    let fixture = setup_test_repo()?;
+    let fixture = TestFixture::new()?;
     let project_path = fixture.path();
+    let jin_dir = fixture.jin_dir.as_ref().unwrap();
 
-    let mode_name = format!("test_mode_{}", std::process::id());
-    create_mode(&mode_name)?;
+    fixture.set_jin_dir();
+    jin_init(project_path)?;
+
+    let mode_name = format!("test_mode_{}", unique_test_id());
+    create_mode(&mode_name, Some(jin_dir))?;
 
     jin()
         .args(["mode", "use", &mode_name])
         .current_dir(project_path)
+        .env("JIN_DIR", jin_dir)
         .assert()
         .success();
 
@@ -81,12 +96,14 @@ fn test_layer_routing_mode_project() -> Result<(), Box<dyn std::error::Error>> {
     jin()
         .args(["add", "project.json", "--mode", "--project"])
         .current_dir(project_path)
+        .env("JIN_DIR", jin_dir)
         .assert()
         .success();
 
     jin()
         .args(["commit", "-m", "Mode project"])
         .current_dir(project_path)
+        .env("JIN_DIR", jin_dir)
         .assert()
         .success();
 
@@ -100,7 +117,7 @@ fn test_layer_routing_mode_project() -> Result<(), Box<dyn std::error::Error>> {
         "refs/jin/layers/mode/{}/project/{}",
         mode_name, project_name
     );
-    assert_layer_ref_exists(&ref_path);
+    assert_layer_ref_exists(&ref_path, Some(jin_dir));
 
     Ok(())
 }
@@ -108,24 +125,30 @@ fn test_layer_routing_mode_project() -> Result<(), Box<dyn std::error::Error>> {
 /// Test layer routing: mode + scope (Layer 7)
 #[test]
 fn test_layer_routing_mode_scope() -> Result<(), Box<dyn std::error::Error>> {
-    let fixture = setup_test_repo()?;
+    let fixture = TestFixture::new()?;
     let project_path = fixture.path();
+    let jin_dir = fixture.jin_dir.as_ref().unwrap();
 
-    let mode_name = format!("test_mode_{}", std::process::id());
-    let scope_name = format!("env:test_{}", std::process::id());
+    fixture.set_jin_dir();
+    jin_init(project_path)?;
 
-    create_mode(&mode_name)?;
-    create_scope(&scope_name)?;
+    let mode_name = format!("test_mode_{}", unique_test_id());
+    let scope_name = format!("env:test_{}", unique_test_id());
+
+    create_mode(&mode_name, Some(jin_dir))?;
+    create_scope(&scope_name, Some(jin_dir))?;
 
     jin()
         .args(["mode", "use", &mode_name])
         .current_dir(project_path)
+        .env("JIN_DIR", jin_dir)
         .assert()
         .success();
 
     jin()
         .args(["scope", "use", &scope_name])
         .current_dir(project_path)
+        .env("JIN_DIR", jin_dir)
         .assert()
         .success();
 
@@ -143,18 +166,20 @@ fn test_layer_routing_mode_scope() -> Result<(), Box<dyn std::error::Error>> {
             &format!("--scope={}", scope_name),
         ])
         .current_dir(project_path)
+        .env("JIN_DIR", jin_dir)
         .assert()
         .success();
 
     jin()
         .args(["commit", "-m", "Mode scope"])
         .current_dir(project_path)
+        .env("JIN_DIR", jin_dir)
         .assert()
         .success();
 
     // Verify ref created for mode scope layer
     let ref_path = format!("refs/jin/layers/mode/{}/scope/{}", mode_name, scope_name);
-    assert_layer_ref_exists(&ref_path);
+    assert_layer_ref_exists(&ref_path, Some(jin_dir));
 
     Ok(())
 }
@@ -162,24 +187,30 @@ fn test_layer_routing_mode_scope() -> Result<(), Box<dyn std::error::Error>> {
 /// Test layer routing: mode + scope + project (Layer 8)
 #[test]
 fn test_layer_routing_mode_scope_project() -> Result<(), Box<dyn std::error::Error>> {
-    let fixture = setup_test_repo()?;
+    let fixture = TestFixture::new()?;
     let project_path = fixture.path();
+    let jin_dir = fixture.jin_dir.as_ref().unwrap();
 
-    let mode_name = format!("test_mode_{}", std::process::id());
-    let scope_name = format!("env:test_{}", std::process::id());
+    fixture.set_jin_dir();
+    jin_init(project_path)?;
 
-    create_mode(&mode_name)?;
-    create_scope(&scope_name)?;
+    let mode_name = format!("test_mode_{}", unique_test_id());
+    let scope_name = format!("env:test_{}", unique_test_id());
+
+    create_mode(&mode_name, Some(jin_dir))?;
+    create_scope(&scope_name, Some(jin_dir))?;
 
     jin()
         .args(["mode", "use", &mode_name])
         .current_dir(project_path)
+        .env("JIN_DIR", jin_dir)
         .assert()
         .success();
 
     jin()
         .args(["scope", "use", &scope_name])
         .current_dir(project_path)
+        .env("JIN_DIR", jin_dir)
         .assert()
         .success();
 
@@ -198,12 +229,14 @@ fn test_layer_routing_mode_scope_project() -> Result<(), Box<dyn std::error::Err
             "--project",
         ])
         .current_dir(project_path)
+        .env("JIN_DIR", jin_dir)
         .assert()
         .success();
 
     jin()
         .args(["commit", "-m", "Mode scope project"])
         .current_dir(project_path)
+        .env("JIN_DIR", jin_dir)
         .assert()
         .success();
 
@@ -216,7 +249,7 @@ fn test_layer_routing_mode_scope_project() -> Result<(), Box<dyn std::error::Err
         "refs/jin/layers/mode/{}/scope/{}/project/{}",
         mode_name, scope_name, project_name
     );
-    assert_layer_ref_exists(&ref_path);
+    assert_layer_ref_exists(&ref_path, Some(jin_dir));
 
     Ok(())
 }
@@ -224,15 +257,20 @@ fn test_layer_routing_mode_scope_project() -> Result<(), Box<dyn std::error::Err
 /// Test layer precedence: higher layer wins
 #[test]
 fn test_layer_precedence_higher_wins() -> Result<(), Box<dyn std::error::Error>> {
-    let fixture = setup_test_repo()?;
+    let fixture = TestFixture::new()?;
     let project_path = fixture.path();
+    let jin_dir = fixture.jin_dir.as_ref().unwrap();
 
-    let mode_name = format!("test_mode_{}", std::process::id());
-    create_mode(&mode_name)?;
+    fixture.set_jin_dir();
+    jin_init(project_path)?;
+
+    let mode_name = format!("test_mode_{}", unique_test_id());
+    create_mode(&mode_name, Some(jin_dir))?;
 
     jin()
         .args(["mode", "use", &mode_name])
         .current_dir(project_path)
+        .env("JIN_DIR", jin_dir)
         .assert()
         .success();
 
@@ -245,12 +283,14 @@ fn test_layer_precedence_higher_wins() -> Result<(), Box<dyn std::error::Error>>
     jin()
         .args(["add", "config.json", "--mode"])
         .current_dir(project_path)
+        .env("JIN_DIR", jin_dir)
         .assert()
         .success();
 
     jin()
         .args(["commit", "-m", "Mode base"])
         .current_dir(project_path)
+        .env("JIN_DIR", jin_dir)
         .assert()
         .success();
 
@@ -263,12 +303,14 @@ fn test_layer_precedence_higher_wins() -> Result<(), Box<dyn std::error::Error>>
     jin()
         .args(["add", "config.json", "--mode", "--project"])
         .current_dir(project_path)
+        .env("JIN_DIR", jin_dir)
         .assert()
         .success();
 
     jin()
         .args(["commit", "-m", "Mode project"])
         .current_dir(project_path)
+        .env("JIN_DIR", jin_dir)
         .assert()
         .success();
 
@@ -276,6 +318,7 @@ fn test_layer_precedence_higher_wins() -> Result<(), Box<dyn std::error::Error>>
     jin()
         .arg("apply")
         .current_dir(project_path)
+        .env("JIN_DIR", jin_dir)
         .assert()
         .success();
 
@@ -297,15 +340,20 @@ fn test_layer_precedence_higher_wins() -> Result<(), Box<dyn std::error::Error>>
 /// Test deep merge of JSON files across layers
 #[test]
 fn test_mode_scope_deep_merge() -> Result<(), Box<dyn std::error::Error>> {
-    let fixture = setup_test_repo()?;
+    let fixture = TestFixture::new()?;
     let project_path = fixture.path();
+    let jin_dir = fixture.jin_dir.as_ref().unwrap();
 
-    let mode_name = format!("test_mode_{}", std::process::id());
-    create_mode(&mode_name)?;
+    fixture.set_jin_dir();
+    jin_init(project_path)?;
+
+    let mode_name = format!("test_mode_{}", unique_test_id());
+    create_mode(&mode_name, Some(jin_dir))?;
 
     jin()
         .args(["mode", "use", &mode_name])
         .current_dir(project_path)
+        .env("JIN_DIR", jin_dir)
         .assert()
         .success();
 
@@ -318,12 +366,14 @@ fn test_mode_scope_deep_merge() -> Result<(), Box<dyn std::error::Error>> {
     jin()
         .args(["add", "settings.json", "--mode"])
         .current_dir(project_path)
+        .env("JIN_DIR", jin_dir)
         .assert()
         .success();
 
     jin()
         .args(["commit", "-m", "Base settings"])
         .current_dir(project_path)
+        .env("JIN_DIR", jin_dir)
         .assert()
         .success();
 
@@ -336,12 +386,14 @@ fn test_mode_scope_deep_merge() -> Result<(), Box<dyn std::error::Error>> {
     jin()
         .args(["add", "settings.json", "--mode", "--project"])
         .current_dir(project_path)
+        .env("JIN_DIR", jin_dir)
         .assert()
         .success();
 
     jin()
         .args(["commit", "-m", "Project settings"])
         .current_dir(project_path)
+        .env("JIN_DIR", jin_dir)
         .assert()
         .success();
 
@@ -349,6 +401,7 @@ fn test_mode_scope_deep_merge() -> Result<(), Box<dyn std::error::Error>> {
     jin()
         .arg("apply")
         .current_dir(project_path)
+        .env("JIN_DIR", jin_dir)
         .assert()
         .success();
 
@@ -386,8 +439,12 @@ fn test_mode_scope_deep_merge() -> Result<(), Box<dyn std::error::Error>> {
 /// Test global layer (Layer 1)
 #[test]
 fn test_layer_routing_global_base() -> Result<(), Box<dyn std::error::Error>> {
-    let fixture = setup_test_repo()?;
+    let fixture = TestFixture::new()?;
     let project_path = fixture.path();
+    let jin_dir = fixture.jin_dir.as_ref().unwrap();
+
+    fixture.set_jin_dir();
+    jin_init(project_path)?;
 
     // Add file to global layer
     fs::write(project_path.join("global.json"), r#"{"layer": "global"}"#)?;
@@ -395,17 +452,19 @@ fn test_layer_routing_global_base() -> Result<(), Box<dyn std::error::Error>> {
     jin()
         .args(["add", "global.json", "--global"])
         .current_dir(project_path)
+        .env("JIN_DIR", jin_dir)
         .assert()
         .success();
 
     jin()
         .args(["commit", "-m", "Global config"])
         .current_dir(project_path)
+        .env("JIN_DIR", jin_dir)
         .assert()
         .success();
 
     // Verify ref created for global layer
-    assert_layer_ref_exists("refs/jin/layers/global");
+    assert_layer_ref_exists("refs/jin/layers/global", Some(jin_dir));
 
     Ok(())
 }
@@ -413,8 +472,12 @@ fn test_layer_routing_global_base() -> Result<(), Box<dyn std::error::Error>> {
 /// Test project base layer (Layer 9 - lowest precedence user layer)
 #[test]
 fn test_layer_routing_project_base() -> Result<(), Box<dyn std::error::Error>> {
-    let fixture = setup_test_repo()?;
+    let fixture = TestFixture::new()?;
     let project_path = fixture.path();
+    let jin_dir = fixture.jin_dir.as_ref().unwrap();
+
+    fixture.set_jin_dir();
+    jin_init(project_path)?;
 
     // Add file to project layer (no flags)
     fs::write(project_path.join("project.json"), r#"{"layer": "project"}"#)?;
@@ -422,12 +485,14 @@ fn test_layer_routing_project_base() -> Result<(), Box<dyn std::error::Error>> {
     jin()
         .args(["add", "project.json"])
         .current_dir(project_path)
+        .env("JIN_DIR", jin_dir)
         .assert()
         .success();
 
     jin()
         .args(["commit", "-m", "Project config"])
         .current_dir(project_path)
+        .env("JIN_DIR", jin_dir)
         .assert()
         .success();
 
@@ -437,7 +502,7 @@ fn test_layer_routing_project_base() -> Result<(), Box<dyn std::error::Error>> {
         .and_then(|n| n.to_str())
         .expect("Failed to get project name");
     let ref_path = format!("refs/jin/layers/project/{}", project_name);
-    assert_layer_ref_exists(&ref_path);
+    assert_layer_ref_exists(&ref_path, Some(jin_dir));
 
     Ok(())
 }
@@ -445,14 +510,18 @@ fn test_layer_routing_project_base() -> Result<(), Box<dyn std::error::Error>> {
 /// Test error: use scope without mode when scope is mode-scoped
 #[test]
 fn test_scope_requires_mode_error() -> Result<(), Box<dyn std::error::Error>> {
-    let fixture = setup_test_repo()?;
+    let fixture = TestFixture::new()?;
     let project_path = fixture.path();
+    let jin_dir = fixture.jin_dir.as_ref().unwrap();
 
-    let mode_name = format!("test_mode_{}", std::process::id());
-    let scope_name = format!("env:test_{}", std::process::id());
+    fixture.set_jin_dir();
+    jin_init(project_path)?;
+
+    let mode_name = format!("test_mode_{}", unique_test_id());
+    let scope_name = format!("env:test_{}", unique_test_id());
 
     // Create mode-scoped scope
-    create_mode(&mode_name)?;
+    create_mode(&mode_name, Some(jin_dir))?;
 
     jin()
         .args([
@@ -461,6 +530,7 @@ fn test_scope_requires_mode_error() -> Result<(), Box<dyn std::error::Error>> {
             &scope_name,
             &format!("--mode={}", mode_name),
         ])
+        .env("JIN_DIR", jin_dir)
         .assert()
         .success();
 
@@ -468,6 +538,7 @@ fn test_scope_requires_mode_error() -> Result<(), Box<dyn std::error::Error>> {
     let result = jin()
         .args(["scope", "use", &scope_name])
         .current_dir(project_path)
+        .env("JIN_DIR", jin_dir)
         .assert();
 
     // Should fail or warn about mode requirement
@@ -485,19 +556,24 @@ fn test_scope_requires_mode_error() -> Result<(), Box<dyn std::error::Error>> {
 /// Test multiple modes don't interfere
 #[test]
 fn test_multiple_modes_isolated() -> Result<(), Box<dyn std::error::Error>> {
-    let fixture = setup_test_repo()?;
+    let fixture = TestFixture::new()?;
     let project_path = fixture.path();
+    let jin_dir = fixture.jin_dir.as_ref().unwrap();
 
-    let mode_a = format!("mode_a_{}", std::process::id());
-    let mode_b = format!("mode_b_{}", std::process::id());
+    fixture.set_jin_dir();
+    jin_init(project_path)?;
 
-    create_mode(&mode_a)?;
-    create_mode(&mode_b)?;
+    let mode_a = format!("mode_a_{}", unique_test_id());
+    let mode_b = format!("mode_b_{}", unique_test_id());
+
+    create_mode(&mode_a, Some(jin_dir))?;
+    create_mode(&mode_b, Some(jin_dir))?;
 
     // Add file to mode A
     jin()
         .args(["mode", "use", &mode_a])
         .current_dir(project_path)
+        .env("JIN_DIR", jin_dir)
         .assert()
         .success();
 
@@ -506,12 +582,14 @@ fn test_multiple_modes_isolated() -> Result<(), Box<dyn std::error::Error>> {
     jin()
         .args(["add", "a.txt", "--mode"])
         .current_dir(project_path)
+        .env("JIN_DIR", jin_dir)
         .assert()
         .success();
 
     jin()
         .args(["commit", "-m", "Mode A"])
         .current_dir(project_path)
+        .env("JIN_DIR", jin_dir)
         .assert()
         .success();
 
@@ -519,6 +597,7 @@ fn test_multiple_modes_isolated() -> Result<(), Box<dyn std::error::Error>> {
     jin()
         .args(["mode", "use", &mode_b])
         .current_dir(project_path)
+        .env("JIN_DIR", jin_dir)
         .assert()
         .success();
 
@@ -527,18 +606,20 @@ fn test_multiple_modes_isolated() -> Result<(), Box<dyn std::error::Error>> {
     jin()
         .args(["add", "b.txt", "--mode"])
         .current_dir(project_path)
+        .env("JIN_DIR", jin_dir)
         .assert()
         .success();
 
     jin()
         .args(["commit", "-m", "Mode B"])
         .current_dir(project_path)
+        .env("JIN_DIR", jin_dir)
         .assert()
         .success();
 
     // Verify both mode refs exist independently
-    assert_layer_ref_exists(&format!("refs/jin/layers/mode/{}", mode_a));
-    assert_layer_ref_exists(&format!("refs/jin/layers/mode/{}", mode_b));
+    assert_layer_ref_exists(&format!("refs/jin/layers/mode/{}", mode_a), Some(jin_dir));
+    assert_layer_ref_exists(&format!("refs/jin/layers/mode/{}", mode_b), Some(jin_dir));
 
     Ok(())
 }

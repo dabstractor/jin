@@ -6,6 +6,7 @@
 use assert_cmd::Command;
 use std::fs;
 use std::path::{Path, PathBuf};
+use std::sync::atomic::{AtomicUsize, Ordering};
 use tempfile::TempDir;
 
 /// Test fixture that maintains isolated directory
@@ -17,22 +18,35 @@ pub struct TestFixture {
     _tempdir: TempDir,
     /// Path to the test directory
     pub path: PathBuf,
+    /// Optional isolated Jin directory for test isolation
+    pub jin_dir: Option<PathBuf>,
 }
 
 impl TestFixture {
-    /// Create a new isolated test directory
+    /// Create a new isolated test directory with optional Jin isolation
     pub fn new() -> Result<Self, Box<dyn std::error::Error>> {
         let tempdir = TempDir::new()?;
         let path = tempdir.path().to_path_buf();
+        let jin_dir = Some(path.join(".jin_global"));  // Isolated Jin directory
         Ok(TestFixture {
             _tempdir: tempdir,
             path,
+            jin_dir,
         })
     }
 
     /// Get the path to the test directory
     pub fn path(&self) -> &Path {
         &self.path
+    }
+
+    /// Set JIN_DIR environment variable for this fixture
+    ///
+    /// CRITICAL: Call this BEFORE any Jin operations to ensure isolation
+    pub fn set_jin_dir(&self) {
+        if let Some(ref jin_dir) = self.jin_dir {
+            std::env::set_var("JIN_DIR", jin_dir);
+        }
     }
 }
 
@@ -61,6 +75,14 @@ impl RemoteFixture {
             local_path,
             remote_path,
         })
+    }
+}
+
+impl Drop for RemoteFixture {
+    fn drop(&mut self) {
+        // CRITICAL: Clean up Git locks before temp dir is deleted
+        let _ = crate::common::git_helpers::cleanup_git_locks(&self.local_path);
+        let _ = crate::common::git_helpers::cleanup_git_locks(&self.remote_path);
     }
 }
 
@@ -168,11 +190,27 @@ pub fn jin() -> Command {
     cmd
 }
 
-/// Create a mode in the global Jin repository
+/// Create a mode in the Jin repository with optional isolation
 ///
 /// This is a helper for tests that need modes to exist.
-pub fn create_mode(mode_name: &str) -> Result<(), Box<dyn std::error::Error>> {
-    let result = jin().args(["mode", "create", mode_name]).assert();
+/// When jin_dir is provided, uses that directory for isolation.
+///
+/// # Arguments
+/// * `mode_name` - Name of the mode to create
+/// * `jin_dir` - Optional path to isolated Jin directory
+///
+/// # Gotchas
+/// - If jin_dir is None, uses global ~/.jin (NOT recommended for tests)
+/// - Always pass Some(jin_dir) for test isolation
+pub fn create_mode(mode_name: &str, jin_dir: Option<&PathBuf>) -> Result<(), Box<dyn std::error::Error>> {
+    let mut cmd = jin();
+
+    // CRITICAL: Set JIN_DIR before command execution for isolation
+    if let Some(jin_dir) = jin_dir {
+        cmd.env("JIN_DIR", jin_dir);
+    }
+
+    let result = cmd.args(["mode", "create", mode_name]).assert();
 
     // Accept either success (new mode) or error (already exists)
     let output = result.get_output();
@@ -190,11 +228,27 @@ pub fn create_mode(mode_name: &str) -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
-/// Create a scope in the global Jin repository
+/// Create a scope in the Jin repository with optional isolation
 ///
 /// This is a helper for tests that need scopes to exist.
-pub fn create_scope(scope_name: &str) -> Result<(), Box<dyn std::error::Error>> {
-    let result = jin().args(["scope", "create", scope_name]).assert();
+/// When jin_dir is provided, uses that directory for isolation.
+///
+/// # Arguments
+/// * `scope_name` - Name of the scope to create
+/// * `jin_dir` - Optional path to isolated Jin directory
+///
+/// # Gotchas
+/// - If jin_dir is None, uses global ~/.jin (NOT recommended for tests)
+/// - Always pass Some(jin_dir) for test isolation
+pub fn create_scope(scope_name: &str, jin_dir: Option<&PathBuf>) -> Result<(), Box<dyn std::error::Error>> {
+    let mut cmd = jin();
+
+    // CRITICAL: Set JIN_DIR before command execution for isolation
+    if let Some(jin_dir) = jin_dir {
+        cmd.env("JIN_DIR", jin_dir);
+    }
+
+    let result = cmd.args(["scope", "create", scope_name]).assert();
 
     // Accept either success (new scope) or error (already exists)
     let output = result.get_output();
@@ -210,6 +264,24 @@ pub fn create_scope(scope_name: &str) -> Result<(), Box<dyn std::error::Error>> 
     }
 
     Ok(())
+}
+
+/// Generates unique test identifiers
+///
+/// GOTCHA: std::process::id() is NOT sufficient for parallel tests
+/// Use this function instead to generate truly unique test IDs.
+///
+/// # Returns
+/// A unique string combining process ID and atomic counter
+///
+/// # Example
+/// ```rust
+/// let mode_name = format!("test_mode_{}", unique_test_id());
+/// ```
+pub fn unique_test_id() -> String {
+    static COUNTER: AtomicUsize = AtomicUsize::new(0);
+    let count = COUNTER.fetch_add(1, Ordering::SeqCst);
+    format!("{}_{}", std::process::id(), count)
 }
 
 #[cfg(test)]

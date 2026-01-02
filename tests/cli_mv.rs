@@ -99,15 +99,19 @@ fn test_mv_dry_run() {
 /// Test layer routing with --mode flag
 #[test]
 fn test_mv_with_layer_flags() {
-    let fixture = setup_test_repo().unwrap();
+    let fixture = TestFixture::new().unwrap();
+    let jin_dir = fixture.jin_dir.as_ref().unwrap();
+    fixture.set_jin_dir();
+    jin_init(fixture.path()).unwrap();
 
     // Create a mode
-    create_mode("testmode").unwrap();
+    create_mode("testmode", Some(jin_dir)).unwrap();
 
     // Set active mode
     jin()
         .args(["mode", "use", "testmode"])
         .current_dir(fixture.path())
+        .env("JIN_DIR", jin_dir)
         .assert()
         .success();
 

@@ -60,18 +60,21 @@ fn test_link_with_filesystem_path() -> Result<(), Box<dyn std::error::Error>> {
 #[test]
 fn test_fetch_updates_refs() -> Result<(), Box<dyn std::error::Error>> {
     let remote_fixture = setup_jin_with_remote()?;
-    let mode_name = format!("fetch_test_{}", std::process::id());
+    let mode_name = format!("fetch_test_{}", unique_test_id());
 
     // Setup: Create commit in "remote" (actually local for testing)
     // First, create a temporary workspace to populate the remote
     let temp_workspace = TestFixture::new()?;
+    let jin_dir = temp_workspace.jin_dir.as_ref().unwrap();
+    temp_workspace.set_jin_dir();
     jin_init(temp_workspace.path())?;
 
-    create_mode(&mode_name)?;
+    create_mode(&mode_name, Some(jin_dir))?;
 
     jin()
         .args(["mode", "use", &mode_name])
         .current_dir(temp_workspace.path())
+        .env("JIN_DIR", jin_dir)
         .assert()
         .success();
 
@@ -80,12 +83,14 @@ fn test_fetch_updates_refs() -> Result<(), Box<dyn std::error::Error>> {
     jin()
         .args(["add", "test.txt", "--mode"])
         .current_dir(temp_workspace.path())
+        .env("JIN_DIR", jin_dir)
         .assert()
         .success();
 
     jin()
         .args(["commit", "-m", "Test commit for fetch"])
         .current_dir(temp_workspace.path())
+        .env("JIN_DIR", jin_dir)
         .assert()
         .success();
 
@@ -97,6 +102,7 @@ fn test_fetch_updates_refs() -> Result<(), Box<dyn std::error::Error>> {
             "--force",
         ])
         .current_dir(temp_workspace.path())
+        .env("JIN_DIR", jin_dir)
         .assert()
         .success();
 
@@ -129,17 +135,20 @@ fn test_fetch_updates_refs() -> Result<(), Box<dyn std::error::Error>> {
 #[test]
 fn test_pull_merges_changes() -> Result<(), Box<dyn std::error::Error>> {
     let remote_fixture = setup_jin_with_remote()?;
-    let mode_name = format!("pull_test_{}", std::process::id());
+    let mode_name = format!("pull_test_{}", unique_test_id());
 
     // Setup: Create commit in remote (via temp workspace)
     let temp_workspace = TestFixture::new()?;
+    let jin_dir = temp_workspace.jin_dir.as_ref().unwrap();
+    temp_workspace.set_jin_dir();
     jin_init(temp_workspace.path())?;
 
-    create_mode(&mode_name)?;
+    create_mode(&mode_name, Some(jin_dir))?;
 
     jin()
         .args(["mode", "use", &mode_name])
         .current_dir(temp_workspace.path())
+        .env("JIN_DIR", jin_dir)
         .assert()
         .success();
 
@@ -148,12 +157,14 @@ fn test_pull_merges_changes() -> Result<(), Box<dyn std::error::Error>> {
     jin()
         .args(["add", "remote_file.txt", "--mode"])
         .current_dir(temp_workspace.path())
+        .env("JIN_DIR", jin_dir)
         .assert()
         .success();
 
     jin()
         .args(["commit", "-m", "Remote commit"])
         .current_dir(temp_workspace.path())
+        .env("JIN_DIR", jin_dir)
         .assert()
         .success();
 
@@ -164,12 +175,14 @@ fn test_pull_merges_changes() -> Result<(), Box<dyn std::error::Error>> {
             "--force",
         ])
         .current_dir(temp_workspace.path())
+        .env("JIN_DIR", jin_dir)
         .assert()
         .success();
 
     jin()
         .arg("push")
         .current_dir(temp_workspace.path())
+        .env("JIN_DIR", jin_dir)
         .assert()
         .success();
 
@@ -177,12 +190,14 @@ fn test_pull_merges_changes() -> Result<(), Box<dyn std::error::Error>> {
     jin()
         .args(["link", remote_fixture.remote_path.to_str().unwrap()])
         .current_dir(&remote_fixture.local_path)
+        .env("JIN_DIR", jin_dir)
         .assert()
         .success();
 
     jin()
         .arg("pull")
         .current_dir(&remote_fixture.local_path)
+        .env("JIN_DIR", jin_dir)
         .assert()
         .success();
 
@@ -190,12 +205,14 @@ fn test_pull_merges_changes() -> Result<(), Box<dyn std::error::Error>> {
     jin()
         .args(["mode", "use", &mode_name])
         .current_dir(&remote_fixture.local_path)
+        .env("JIN_DIR", jin_dir)
         .assert()
         .success();
 
     jin()
         .arg("apply")
         .current_dir(&remote_fixture.local_path)
+        .env("JIN_DIR", jin_dir)
         .assert()
         .success();
 
@@ -209,21 +226,25 @@ fn test_pull_merges_changes() -> Result<(), Box<dyn std::error::Error>> {
 #[test]
 fn test_push_uploads_commits() -> Result<(), Box<dyn std::error::Error>> {
     let remote_fixture = setup_jin_with_remote()?;
-    let mode_name = format!("push_test_{}", std::process::id());
+    let mode_name = format!("push_test_{}", unique_test_id());
+    let jin_dir = remote_fixture.local_path.join(".jin_global");
+    std::env::set_var("JIN_DIR", &jin_dir);
 
     // Link to remote
     jin()
         .args(["link", remote_fixture.remote_path.to_str().unwrap()])
         .current_dir(&remote_fixture.local_path)
+        .env("JIN_DIR", &jin_dir)
         .assert()
         .success();
 
     // Create local commit
-    create_mode(&mode_name)?;
+    create_mode(&mode_name, Some(&jin_dir))?;
 
     jin()
         .args(["mode", "use", &mode_name])
         .current_dir(&remote_fixture.local_path)
+        .env("JIN_DIR", &jin_dir)
         .assert()
         .success();
 
@@ -232,12 +253,14 @@ fn test_push_uploads_commits() -> Result<(), Box<dyn std::error::Error>> {
     jin()
         .args(["add", "local.txt", "--mode"])
         .current_dir(&remote_fixture.local_path)
+        .env("JIN_DIR", &jin_dir)
         .assert()
         .success();
 
     jin()
         .args(["commit", "-m", "Local commit to push"])
         .current_dir(&remote_fixture.local_path)
+        .env("JIN_DIR", &jin_dir)
         .assert()
         .success();
 
@@ -245,6 +268,7 @@ fn test_push_uploads_commits() -> Result<(), Box<dyn std::error::Error>> {
     jin()
         .arg("push")
         .current_dir(&remote_fixture.local_path)
+        .env("JIN_DIR", &jin_dir)
         .assert()
         .success();
 
@@ -273,17 +297,20 @@ fn test_push_uploads_commits() -> Result<(), Box<dyn std::error::Error>> {
 #[test]
 fn test_sync_complete_workflow() -> Result<(), Box<dyn std::error::Error>> {
     let remote_fixture = setup_jin_with_remote()?;
-    let mode_name = format!("sync_test_{}", std::process::id());
+    let mode_name = format!("sync_test_{}", unique_test_id());
 
     // Setup: Create commit in remote
     let temp_workspace = TestFixture::new()?;
+    let jin_dir = temp_workspace.jin_dir.as_ref().unwrap();
+    temp_workspace.set_jin_dir();
     jin_init(temp_workspace.path())?;
 
-    create_mode(&mode_name)?;
+    create_mode(&mode_name, Some(jin_dir))?;
 
     jin()
         .args(["mode", "use", &mode_name])
         .current_dir(temp_workspace.path())
+        .env("JIN_DIR", jin_dir)
         .assert()
         .success();
 
@@ -292,12 +319,14 @@ fn test_sync_complete_workflow() -> Result<(), Box<dyn std::error::Error>> {
     jin()
         .args(["add", "sync.txt", "--mode"])
         .current_dir(temp_workspace.path())
+        .env("JIN_DIR", jin_dir)
         .assert()
         .success();
 
     jin()
         .args(["commit", "-m", "Sync test"])
         .current_dir(temp_workspace.path())
+        .env("JIN_DIR", jin_dir)
         .assert()
         .success();
 
@@ -308,12 +337,14 @@ fn test_sync_complete_workflow() -> Result<(), Box<dyn std::error::Error>> {
             "--force",
         ])
         .current_dir(temp_workspace.path())
+        .env("JIN_DIR", jin_dir)
         .assert()
         .success();
 
     jin()
         .arg("push")
         .current_dir(temp_workspace.path())
+        .env("JIN_DIR", jin_dir)
         .assert()
         .success();
 
@@ -321,12 +352,14 @@ fn test_sync_complete_workflow() -> Result<(), Box<dyn std::error::Error>> {
     jin()
         .args(["link", remote_fixture.remote_path.to_str().unwrap()])
         .current_dir(&remote_fixture.local_path)
+        .env("JIN_DIR", jin_dir)
         .assert()
         .success();
 
     jin()
         .args(["mode", "use", &mode_name])
         .current_dir(&remote_fixture.local_path)
+        .env("JIN_DIR", jin_dir)
         .assert()
         .success();
 
@@ -334,6 +367,7 @@ fn test_sync_complete_workflow() -> Result<(), Box<dyn std::error::Error>> {
     jin()
         .arg("sync")
         .current_dir(&remote_fixture.local_path)
+        .env("JIN_DIR", jin_dir)
         .assert()
         .success();
 

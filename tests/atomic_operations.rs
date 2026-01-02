@@ -14,15 +14,20 @@ use common::fixtures::*;
 /// Test that commit is atomic (all refs updated or none)
 #[test]
 fn test_commit_is_atomic() -> Result<(), Box<dyn std::error::Error>> {
-    let fixture = setup_test_repo()?;
+    let fixture = TestFixture::new()?;
     let project_path = fixture.path();
+    let jin_dir = fixture.jin_dir.as_ref().unwrap();
 
-    let mode_name = format!("atomic_{}", std::process::id());
-    create_mode(&mode_name)?;
+    fixture.set_jin_dir();
+    jin_init(project_path)?;
+
+    let mode_name = format!("atomic_{}", unique_test_id());
+    create_mode(&mode_name, Some(jin_dir))?;
 
     jin()
         .args(["mode", "use", &mode_name])
         .current_dir(project_path)
+        .env("JIN_DIR", jin_dir)
         .assert()
         .success();
 
@@ -32,6 +37,7 @@ fn test_commit_is_atomic() -> Result<(), Box<dyn std::error::Error>> {
     jin()
         .args(["add", "test.txt", "--mode"])
         .current_dir(project_path)
+        .env("JIN_DIR", jin_dir)
         .assert()
         .success();
 
@@ -42,13 +48,14 @@ fn test_commit_is_atomic() -> Result<(), Box<dyn std::error::Error>> {
     jin()
         .args(["commit", "-m", "Atomic commit"])
         .current_dir(project_path)
+        .env("JIN_DIR", jin_dir)
         .assert()
         .success();
 
     // Verify:
     // 1. Ref created (commit succeeded)
     let ref_path = format!("refs/jin/layers/mode/{}", mode_name);
-    assert_layer_ref_exists(&ref_path);
+    assert_layer_ref_exists(&ref_path, Some(jin_dir));
 
     // 2. Staging cleared (commit completed)
     let staging_after = fs::read_to_string(project_path.join(".jin/staging/index.json"))?;
@@ -67,8 +74,12 @@ fn test_commit_is_atomic() -> Result<(), Box<dyn std::error::Error>> {
 /// Test that failed commit rolls back (no partial state)
 #[test]
 fn test_failed_commit_rolls_back() -> Result<(), Box<dyn std::error::Error>> {
-    let fixture = setup_test_repo()?;
+    let fixture = TestFixture::new()?;
     let project_path = fixture.path();
+    let jin_dir = fixture.jin_dir.as_ref().unwrap();
+
+    fixture.set_jin_dir();
+    jin_init(project_path)?;
 
     // Stage file
     fs::write(project_path.join("test.txt"), "content")?;
@@ -76,6 +87,7 @@ fn test_failed_commit_rolls_back() -> Result<(), Box<dyn std::error::Error>> {
     jin()
         .args(["add", "test.txt"])
         .current_dir(project_path)
+        .env("JIN_DIR", jin_dir)
         .assert()
         .success();
 
@@ -89,6 +101,7 @@ fn test_failed_commit_rolls_back() -> Result<(), Box<dyn std::error::Error>> {
     jin()
         .args(["commit", "-m", "Should fail"])
         .current_dir(project_path)
+        .env("JIN_DIR", jin_dir)
         .assert()
         .failure();
 
@@ -107,15 +120,20 @@ fn test_failed_commit_rolls_back() -> Result<(), Box<dyn std::error::Error>> {
 /// Test multi-layer commit atomicity
 #[test]
 fn test_multi_layer_commit_atomic() -> Result<(), Box<dyn std::error::Error>> {
-    let fixture = setup_test_repo()?;
+    let fixture = TestFixture::new()?;
     let project_path = fixture.path();
+    let jin_dir = fixture.jin_dir.as_ref().unwrap();
 
-    let mode_name = format!("multi_{}", std::process::id());
-    create_mode(&mode_name)?;
+    fixture.set_jin_dir();
+    jin_init(project_path)?;
+
+    let mode_name = format!("multi_{}", unique_test_id());
+    create_mode(&mode_name, Some(jin_dir))?;
 
     jin()
         .args(["mode", "use", &mode_name])
         .current_dir(project_path)
+        .env("JIN_DIR", jin_dir)
         .assert()
         .success();
 
@@ -126,12 +144,14 @@ fn test_multi_layer_commit_atomic() -> Result<(), Box<dyn std::error::Error>> {
     jin()
         .args(["add", "mode.txt", "--mode"])
         .current_dir(project_path)
+        .env("JIN_DIR", jin_dir)
         .assert()
         .success();
 
     jin()
         .args(["add", "project.txt", "--mode", "--project"])
         .current_dir(project_path)
+        .env("JIN_DIR", jin_dir)
         .assert()
         .success();
 
@@ -139,12 +159,13 @@ fn test_multi_layer_commit_atomic() -> Result<(), Box<dyn std::error::Error>> {
     jin()
         .args(["commit", "-m", "Multi-layer commit"])
         .current_dir(project_path)
+        .env("JIN_DIR", jin_dir)
         .assert()
         .success();
 
     // Verify both refs created (atomicity across layers)
     let mode_ref = format!("refs/jin/layers/mode/{}", mode_name);
-    assert_layer_ref_exists(&mode_ref);
+    assert_layer_ref_exists(&mode_ref, Some(jin_dir));
 
     let project_name = project_path
         .file_name()
@@ -154,7 +175,7 @@ fn test_multi_layer_commit_atomic() -> Result<(), Box<dyn std::error::Error>> {
         "refs/jin/layers/mode/{}/project/{}",
         mode_name, project_name
     );
-    assert_layer_ref_exists(&project_ref);
+    assert_layer_ref_exists(&project_ref, Some(jin_dir));
 
     // Verify staging cleared for both
     assert_staging_not_contains(project_path, "mode.txt");
@@ -166,8 +187,12 @@ fn test_multi_layer_commit_atomic() -> Result<(), Box<dyn std::error::Error>> {
 /// Test state consistency after operation failure
 #[test]
 fn test_state_consistent_after_failure() -> Result<(), Box<dyn std::error::Error>> {
-    let fixture = setup_test_repo()?;
+    let fixture = TestFixture::new()?;
     let project_path = fixture.path();
+    let jin_dir = fixture.jin_dir.as_ref().unwrap();
+
+    fixture.set_jin_dir();
+    jin_init(project_path)?;
 
     // Create valid state
     fs::write(project_path.join("file.txt"), "content")?;
@@ -175,6 +200,7 @@ fn test_state_consistent_after_failure() -> Result<(), Box<dyn std::error::Error
     jin()
         .args(["add", "file.txt"])
         .current_dir(project_path)
+        .env("JIN_DIR", jin_dir)
         .assert()
         .success();
 
@@ -188,6 +214,7 @@ fn test_state_consistent_after_failure() -> Result<(), Box<dyn std::error::Error
     jin()
         .arg("status")
         .current_dir(project_path)
+        .env("JIN_DIR", jin_dir)
         .assert()
         .failure();
 
@@ -195,6 +222,7 @@ fn test_state_consistent_after_failure() -> Result<(), Box<dyn std::error::Error
     jin()
         .arg("repair")
         .current_dir(project_path)
+        .env("JIN_DIR", jin_dir)
         .assert()
         .success();
 
@@ -202,6 +230,7 @@ fn test_state_consistent_after_failure() -> Result<(), Box<dyn std::error::Error
     jin()
         .arg("status")
         .current_dir(project_path)
+        .env("JIN_DIR", jin_dir)
         .assert()
         .success();
 
@@ -250,15 +279,20 @@ fn test_reset_atomic() -> Result<(), Box<dyn std::error::Error>> {
 /// Test apply operation doesn't leave partial workspace state
 #[test]
 fn test_apply_atomic_workspace_update() -> Result<(), Box<dyn std::error::Error>> {
-    let fixture = setup_test_repo()?;
+    let fixture = TestFixture::new()?;
     let project_path = fixture.path();
+    let jin_dir = fixture.jin_dir.as_ref().unwrap();
 
-    let mode_name = format!("apply_atomic_{}", std::process::id());
-    create_mode(&mode_name)?;
+    fixture.set_jin_dir();
+    jin_init(project_path)?;
+
+    let mode_name = format!("apply_atomic_{}", unique_test_id());
+    create_mode(&mode_name, Some(jin_dir))?;
 
     jin()
         .args(["mode", "use", &mode_name])
         .current_dir(project_path)
+        .env("JIN_DIR", jin_dir)
         .assert()
         .success();
 
@@ -269,18 +303,21 @@ fn test_apply_atomic_workspace_update() -> Result<(), Box<dyn std::error::Error>
     jin()
         .args(["add", "file1.txt", "--mode"])
         .current_dir(project_path)
+        .env("JIN_DIR", jin_dir)
         .assert()
         .success();
 
     jin()
         .args(["add", "file2.txt", "--mode"])
         .current_dir(project_path)
+        .env("JIN_DIR", jin_dir)
         .assert()
         .success();
 
     jin()
         .args(["commit", "-m", "Two files"])
         .current_dir(project_path)
+        .env("JIN_DIR", jin_dir)
         .assert()
         .success();
 
@@ -292,6 +329,7 @@ fn test_apply_atomic_workspace_update() -> Result<(), Box<dyn std::error::Error>
     jin()
         .arg("apply")
         .current_dir(project_path)
+        .env("JIN_DIR", jin_dir)
         .assert()
         .success();
 

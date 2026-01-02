@@ -68,16 +68,21 @@ fn test_mode_create_and_use() -> Result<(), Box<dyn std::error::Error>> {
 /// Test adding files to mode layer
 #[test]
 fn test_add_files_to_mode_layer() -> Result<(), Box<dyn std::error::Error>> {
-    let fixture = setup_test_repo()?;
+    let fixture = TestFixture::new()?;
     let project_path = fixture.path();
+    let jin_dir = fixture.jin_dir.as_ref().unwrap();
+
+    fixture.set_jin_dir();
+    jin_init(project_path)?;
 
     // Create and use mode
-    let mode_name = format!("test_mode_{}", std::process::id());
-    create_mode(&mode_name)?;
+    let mode_name = format!("test_mode_{}", unique_test_id());
+    create_mode(&mode_name, Some(jin_dir))?;
 
     jin()
         .args(["mode", "use", &mode_name])
         .current_dir(project_path)
+        .env("JIN_DIR", jin_dir)
         .assert()
         .success();
 
@@ -89,6 +94,7 @@ fn test_add_files_to_mode_layer() -> Result<(), Box<dyn std::error::Error>> {
     jin()
         .args(["add", "config.json", "--mode"])
         .current_dir(project_path)
+        .env("JIN_DIR", jin_dir)
         .assert()
         .success();
 
@@ -101,16 +107,21 @@ fn test_add_files_to_mode_layer() -> Result<(), Box<dyn std::error::Error>> {
 /// Test that commit creates layer commit
 #[test]
 fn test_commit_creates_layer_commit() -> Result<(), Box<dyn std::error::Error>> {
-    let fixture = setup_test_repo()?;
+    let fixture = TestFixture::new()?;
     let project_path = fixture.path();
+    let jin_dir = fixture.jin_dir.as_ref().unwrap();
+
+    fixture.set_jin_dir();
+    jin_init(project_path)?;
 
     // Create and use mode
-    let mode_name = format!("test_mode_{}", std::process::id());
-    create_mode(&mode_name)?;
+    let mode_name = format!("test_mode_{}", unique_test_id());
+    create_mode(&mode_name, Some(jin_dir))?;
 
     jin()
         .args(["mode", "use", &mode_name])
         .current_dir(project_path)
+        .env("JIN_DIR", jin_dir)
         .assert()
         .success();
 
@@ -120,6 +131,7 @@ fn test_commit_creates_layer_commit() -> Result<(), Box<dyn std::error::Error>> 
     jin()
         .args(["add", "test.txt", "--mode"])
         .current_dir(project_path)
+        .env("JIN_DIR", jin_dir)
         .assert()
         .success();
 
@@ -127,12 +139,13 @@ fn test_commit_creates_layer_commit() -> Result<(), Box<dyn std::error::Error>> 
     jin()
         .args(["commit", "-m", "Test commit"])
         .current_dir(project_path)
+        .env("JIN_DIR", jin_dir)
         .assert()
         .success();
 
     // Verify layer ref exists
     let ref_path = format!("refs/jin/layers/mode/{}", mode_name);
-    assert_layer_ref_exists(&ref_path);
+    assert_layer_ref_exists(&ref_path, Some(jin_dir));
 
     // Verify staging cleared after commit
     assert_staging_not_contains(project_path, "test.txt");
@@ -143,16 +156,21 @@ fn test_commit_creates_layer_commit() -> Result<(), Box<dyn std::error::Error>> 
 /// Test that apply merges to workspace
 #[test]
 fn test_apply_merges_to_workspace() -> Result<(), Box<dyn std::error::Error>> {
-    let fixture = setup_test_repo()?;
+    let fixture = TestFixture::new()?;
     let project_path = fixture.path();
+    let jin_dir = fixture.jin_dir.as_ref().unwrap();
+
+    fixture.set_jin_dir();
+    jin_init(project_path)?;
 
     // Create and use mode
-    let mode_name = format!("test_mode_{}", std::process::id());
-    create_mode(&mode_name)?;
+    let mode_name = format!("test_mode_{}", unique_test_id());
+    create_mode(&mode_name, Some(jin_dir))?;
 
     jin()
         .args(["mode", "use", &mode_name])
         .current_dir(project_path)
+        .env("JIN_DIR", jin_dir)
         .assert()
         .success();
 
@@ -168,12 +186,14 @@ fn test_apply_merges_to_workspace() -> Result<(), Box<dyn std::error::Error>> {
     jin()
         .args(["add", &format!(".{}/config.json", mode_name), "--mode"])
         .current_dir(project_path)
+        .env("JIN_DIR", jin_dir)
         .assert()
         .success();
 
     jin()
         .args(["commit", "-m", "Add mode config"])
         .current_dir(project_path)
+        .env("JIN_DIR", jin_dir)
         .assert()
         .success();
 
@@ -185,6 +205,7 @@ fn test_apply_merges_to_workspace() -> Result<(), Box<dyn std::error::Error>> {
     jin()
         .arg("apply")
         .current_dir(project_path)
+        .env("JIN_DIR", jin_dir)
         .assert()
         .success();
 

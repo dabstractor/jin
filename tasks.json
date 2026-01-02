@@ -1148,7 +1148,7 @@
       "type": "Phase",
       "id": "P7",
       "title": "Critical Gap Remediation",
-      "status": "Planned",
+      "status": "Complete",
       "description": "Address critical implementation gaps discovered during PRD validation. The commit CLI is a stub (pipeline exists), rm/mv commands are missing, audit logging was never implemented, and .jinmap is not integrated into the commit workflow.",
       "milestones": [
         {
@@ -1369,21 +1369,21 @@
           "type": "Milestone",
           "id": "P7.M6",
           "title": "Test Suite Remediation",
-          "status": "Planned",
+          "status": "Complete",
           "description": "Fix 31 failing unit tests. Most failures are in mode.rs and scope.rs due to test environment isolation issues.",
           "tasks": [
             {
               "type": "Task",
               "id": "P7.M6.T1",
               "title": "Fix Test Environment Issues",
-              "status": "Planned",
+              "status": "Complete",
               "description": "Address test isolation, temp directory, and Git lock file issues.",
               "subtasks": [
                 {
                   "type": "Subtask",
                   "id": "P7.M6.T1.S1",
                   "title": "Fix mode/scope test isolation",
-                  "status": "Planned",
+                  "status": "Complete",
                   "story_points": 2,
                   "dependencies": [],
                   "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: Test failures show: 'failed to lock file /tmp/.tmpXXX/.jin_global/config.lock', 'failed to load object database', ref_exists() returning false unexpectedly. Tests share global state.\n2. INPUT: Failing tests in src/commands/mode.rs and src/commands/scope.rs.\n3. LOGIC: For each failing test:\n   a. Ensure test creates isolated TempDir for ALL Jin paths (not just project)\n   b. Set JIN_DIR env var to temp path before JinRepo operations\n   c. Create fresh Git repo in temp dir, not rely on global\n   d. Clean up lock files in test teardown\n   e. Use test fixtures from tests/common/fixtures.rs\n4. OUTPUT: All 31 failing tests pass. Run `cargo test` to verify."

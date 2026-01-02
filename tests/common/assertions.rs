@@ -128,31 +128,45 @@ pub fn assert_staging_not_contains(project_path: &Path, file: &str) {
 ///
 /// # Arguments
 /// * `ref_path` - Git ref path (e.g., "refs/jin/layers/mode/dev")
+/// * `jin_repo_path` - Optional path to Jin repository (None uses ~/.jin)
 ///
 /// # Panics
-/// Panics if the ref doesn't exist in ~/.jin/
-pub fn assert_layer_ref_exists(ref_path: &str) {
-    let home_dir = dirs::home_dir().expect("Failed to get home directory");
-    let jin_repo_path = home_dir.join(".jin");
+/// Panics if the ref doesn't exist in the specified Jin repository
+///
+/// # Gotchas
+/// - When jin_repo_path is None, falls back to JIN_DIR env var or ~/.jin
+/// - For test isolation, always pass Some(jin_dir) with test-specific path
+pub fn assert_layer_ref_exists(ref_path: &str, jin_repo_path: Option<&std::path::Path>) {
+    let repo_path = match jin_repo_path {
+        Some(path) => path.to_path_buf(),
+        None => {
+            // Fallback to environment variable or home directory
+            if let Ok(jin_dir) = std::env::var("JIN_DIR") {
+                std::path::PathBuf::from(jin_dir)
+            } else {
+                dirs::home_dir().expect("Failed to get home directory").join(".jin")
+            }
+        }
+    };
 
     assert!(
-        jin_repo_path.exists(),
+        repo_path.exists(),
         "Jin repository should exist at {:?}",
-        jin_repo_path
+        repo_path
     );
 
-    let repo = git2::Repository::open(&jin_repo_path).unwrap_or_else(|e| {
+    let repo = git2::Repository::open(&repo_path).unwrap_or_else(|e| {
         panic!(
             "Failed to open Jin repository at {:?}: {}",
-            jin_repo_path, e
+            repo_path, e
         )
     });
 
     match repo.find_reference(ref_path) {
         Ok(_) => {} // Success
         Err(e) => panic!(
-            "Layer ref '{}' should exist in Jin repository: {}",
-            ref_path, e
+            "Layer ref '{}' should exist in Jin repository at {:?}: {}",
+            ref_path, repo_path, e
         ),
     };
 }

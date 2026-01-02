@@ -4,9 +4,12 @@
 
 use crate::cli::DiffArgs;
 use crate::core::{JinError, Layer, ProjectContext, Result};
-use crate::git::JinRepo;
+use crate::git::{JinRepo, TreeOps};
+use crate::merge::{get_applicable_layers, merge_layers, LayerMergeConfig};
 use crate::staging::StagingIndex;
+use crate::staging::WorkspaceMetadata;
 use git2::{DiffFormat, DiffOptions};
+use std::path::Path;
 
 /// Execute the diff command
 ///
@@ -157,38 +160,256 @@ fn diff_workspace_vs_layer(
         }
     };
 
+    let tree_id = tree.id();
+
     println!("Comparing workspace vs {}", layer);
     println!();
 
-    // Note: For now, we'll show which files exist in the layer
-    // Full workspace diff would require comparing actual workspace files
-    let mut file_count = 0;
-    tree.walk(git2::TreeWalkMode::PreOrder, |_, entry| {
-        if entry.kind() == Some(git2::ObjectType::Blob) {
-            file_count += 1;
-            println!("  {}", entry.name().unwrap_or("<unnamed>"));
-        }
-        git2::TreeWalkResult::Ok
-    })?;
+    // Collect all files in the layer tree
+    let jin_repo = JinRepo::open()?;
+    let layer_files = jin_repo.list_tree_files(tree_id)?;
 
-    println!();
-    println!("Layer contains {} files", file_count);
+    let mut has_changes = false;
+
+    for file_path in layer_files {
+        let path = Path::new(&file_path);
+
+        // Read layer content
+        let layer_content = match jin_repo.read_file_from_tree(tree_id, path) {
+            Ok(content) => content,
+            Err(_) => continue,
+        };
+
+        // Check if file exists in workspace
+        if path.exists() {
+            // Read workspace content
+            let workspace_content = match std::fs::read(path) {
+                Ok(content) => content,
+                Err(_) => continue,
+            };
+
+            // Compare contents
+            if layer_content != workspace_content {
+                has_changes = true;
+
+                // Generate diff between layer and workspace
+                let layer_str = String::from_utf8_lossy(&layer_content);
+                let workspace_str = String::from_utf8_lossy(&workspace_content);
+
+                println!("--- a/{} (layer)", file_path);
+                println!("+++ b/{} (workspace)", file_path);
+
+                // Print a simple line-by-line diff
+                let layer_lines: Vec<&str> = layer_str.lines().collect();
+                let workspace_lines: Vec<&str> = workspace_str.lines().collect();
+
+                print_text_diff(&layer_lines, &workspace_lines);
+                println!();
+            }
+        } else {
+            // File exists in layer but not in workspace
+            has_changes = true;
+            println!("Only in {}: {}", layer, file_path);
+            println!();
+        }
+    }
+
+    if !has_changes {
+        println!("No differences between workspace and {}", layer);
+    }
 
     Ok(())
+}
+
+/// Print a simple line-by-line diff for text files
+fn print_text_diff(old_lines: &[&str], new_lines: &[&str]) {
+    // Simple line-by-line comparison with unified diff output
+    let mut old_idx = 0;
+    let mut new_idx = 0;
+
+    while old_idx < old_lines.len() || new_idx < new_lines.len() {
+        let old_line = if old_idx < old_lines.len() {
+            old_lines[old_idx]
+        } else {
+            ""
+        };
+        let new_line = if new_idx < new_lines.len() {
+            new_lines[new_idx]
+        } else {
+            ""
+        };
+
+        if old_line == new_line {
+            // Lines are equal
+            println!(" {}", old_line);
+            old_idx += 1;
+            new_idx += 1;
+        } else {
+            // Lines differ - find the next match
+            let old_next = find_next_match(old_idx, old_lines, new_idx, new_lines);
+            let new_next = find_next_match(new_idx, new_lines, old_idx, old_lines);
+
+            // Print deletions from old
+            while old_idx < old_lines.len() && (old_idx < old_next.0 || old_next.0 == usize::MAX) {
+                println!("\x1b[31m-{}\x1b[0m", old_lines[old_idx]);
+                old_idx += 1;
+            }
+
+            // Print insertions from new
+            while new_idx < new_lines.len() && (new_idx < new_next.0 || new_next.0 == usize::MAX) {
+                println!("\x1b[32m+{}\x1b[0m", new_lines[new_idx]);
+                new_idx += 1;
+            }
+        }
+    }
+}
+
+/// Find the next matching line between two sequences
+fn find_next_match(
+    current_idx: usize,
+    current_lines: &[&str],
+    other_idx: usize,
+    other_lines: &[&str],
+) -> (usize, usize) {
+    let search_radius = 5; // Look ahead up to 5 lines
+
+    for i in 0..=search_radius {
+        let curr_pos = current_idx + i;
+        if curr_pos >= current_lines.len() {
+            break;
+        }
+        let curr_line = current_lines[curr_pos];
+
+        for j in 0..=search_radius {
+            let other_pos = other_idx + j;
+            if other_pos >= other_lines.len() {
+                break;
+            }
+            if curr_line == other_lines[other_pos] {
+                return (curr_pos, other_pos);
+            }
+        }
+    }
+
+    (usize::MAX, usize::MAX)
 }
 
 /// Diff workspace vs workspace-active (merged layers)
 fn diff_workspace_vs_workspace_active(
     _repo: &git2::Repository,
-    _context: &ProjectContext,
+    context: &ProjectContext,
 ) -> Result<()> {
-    // For now, show a simplified version
-    // Full implementation would require materializing merged layers
     println!("Comparing workspace vs workspace-active");
     println!();
-    println!("(Workspace diff not yet fully implemented)");
+
+    // Check if workspace metadata exists
+    let metadata = match WorkspaceMetadata::load() {
+        Ok(m) => m,
+        Err(JinError::NotFound(_)) => {
+            println!("No workspace metadata found.");
+            println!("Run 'jin apply' to create an initial workspace state.");
+            return Ok(());
+        }
+        Err(e) => return Err(e),
+    };
+
+    // Get applicable layers for current context
+    let layers = get_applicable_layers(
+        context.mode.as_deref(),
+        context.scope.as_deref(),
+        context.project.as_deref(),
+    );
+
+    // Merge layers to get workspace-active content
+    let jin_repo = JinRepo::open()?;
+    let config = LayerMergeConfig {
+        layers,
+        mode: context.mode.clone(),
+        scope: context.scope.clone(),
+        project: context.project.clone(),
+    };
+
+    let merged = match merge_layers(&config, &jin_repo) {
+        Ok(m) => m,
+        Err(JinError::NotFound(_)) => {
+            println!("No layers found to merge.");
+            return Ok(());
+        }
+        Err(e) => return Err(e),
+    };
+
+    let mut has_changes = false;
+
+    // Compare each merged file to actual workspace file
+    for (path, merged_file) in &merged.merged_files {
+        // Serialize merged content to string
+        let merged_str = match serialize_merged_content(merged_file) {
+            Ok(s) => s,
+            Err(_) => continue,
+        };
+
+        // Read workspace file
+        let workspace_str = match std::fs::read_to_string(path) {
+            Ok(s) => s,
+            Err(_) => {
+                // File doesn't exist in workspace
+                has_changes = true;
+                println!("Only in workspace-active: {}", path.display());
+                println!();
+                continue;
+            }
+        };
+
+        // Compare contents
+        if merged_str != workspace_str {
+            has_changes = true;
+
+            println!("--- a/{} (workspace-active)", path.display());
+            println!("+++ b/{} (workspace)", path.display());
+
+            let merged_lines: Vec<&str> = merged_str.lines().collect();
+            let workspace_lines: Vec<&str> = workspace_str.lines().collect();
+
+            print_text_diff(&merged_lines, &workspace_lines);
+            println!();
+        }
+    }
+
+    // Check for files in workspace but not in merged result
+    for (path, _hash) in &metadata.files {
+        if !merged.merged_files.contains_key(path) {
+            has_changes = true;
+            println!("Only in workspace: {}", path.display());
+            println!();
+        }
+    }
+
+    if !has_changes {
+        println!("No differences between workspace and workspace-active");
+    }
 
     Ok(())
+}
+
+/// Serialize merged content to string based on file format
+fn serialize_merged_content(merged_file: &crate::merge::MergedFile) -> Result<String> {
+    use crate::merge::FileFormat;
+
+    match merged_file.format {
+        FileFormat::Json => merged_file.content.to_json_string(),
+        FileFormat::Yaml => merged_file.content.to_yaml_string(),
+        FileFormat::Toml => merged_file.content.to_toml_string(),
+        FileFormat::Ini => merged_file.content.to_ini_string(),
+        FileFormat::Text => {
+            if let Some(text) = merged_file.content.as_str() {
+                Ok(text.to_string())
+            } else {
+                Err(JinError::Other(
+                    "Text file has non-string content".to_string(),
+                ))
+            }
+        }
+    }
 }
 
 /// Print a git diff with colored output

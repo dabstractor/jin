@@ -123,7 +123,10 @@ impl JinMap {
 
         // Atomic write pattern - use temp file in same directory
         // For .jinmap, we need to append .tmp directly since with_extension doesn't work well for dotfiles
-        let temp_path = path.with_file_name(format!("{}.tmp", path.file_name().unwrap().to_string_lossy()));
+        let temp_path = path.with_file_name(format!(
+            "{}.tmp",
+            path.file_name().unwrap().to_string_lossy()
+        ));
         std::fs::write(&temp_path, content).map_err(JinError::Io)?;
         std::fs::rename(&temp_path, &path).map_err(JinError::Io)?;
 

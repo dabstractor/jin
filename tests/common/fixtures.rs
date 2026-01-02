@@ -27,7 +27,7 @@ impl TestFixture {
     pub fn new() -> Result<Self, Box<dyn std::error::Error>> {
         let tempdir = TempDir::new()?;
         let path = tempdir.path().to_path_buf();
-        let jin_dir = Some(path.join(".jin_global"));  // Isolated Jin directory
+        let jin_dir = Some(path.join(".jin_global")); // Isolated Jin directory
         Ok(TestFixture {
             _tempdir: tempdir,
             path,
@@ -46,6 +46,18 @@ impl TestFixture {
     pub fn set_jin_dir(&self) {
         if let Some(ref jin_dir) = self.jin_dir {
             std::env::set_var("JIN_DIR", jin_dir);
+        }
+    }
+}
+
+impl Drop for TestFixture {
+    fn drop(&mut self) {
+        // CRITICAL: Clean up Git locks before temp dir is deleted
+        let _ = crate::common::git_helpers::cleanup_git_locks(&self.path);
+
+        // Also clean up Jin directory locks if it exists
+        if let Some(ref jin_dir) = self.jin_dir {
+            let _ = crate::common::git_helpers::cleanup_git_locks(jin_dir);
         }
     }
 }
@@ -96,9 +108,12 @@ pub fn jin_init(path: &Path) -> Result<(), Box<dyn std::error::Error>> {
 
 /// Create a test repository with Jin initialized
 ///
-/// Returns a TestFixture with Jin already initialized.
+/// Returns a TestFixture with Jin already initialized and JIN_DIR set.
+///
+/// CRITICAL: This function sets JIN_DIR for test isolation.
 pub fn setup_test_repo() -> Result<TestFixture, Box<dyn std::error::Error>> {
     let fixture = TestFixture::new()?;
+    fixture.set_jin_dir();
     jin_init(fixture.path())?;
     Ok(fixture)
 }
@@ -202,7 +217,10 @@ pub fn jin() -> Command {
 /// # Gotchas
 /// - If jin_dir is None, uses global ~/.jin (NOT recommended for tests)
 /// - Always pass Some(jin_dir) for test isolation
-pub fn create_mode(mode_name: &str, jin_dir: Option<&PathBuf>) -> Result<(), Box<dyn std::error::Error>> {
+pub fn create_mode(
+    mode_name: &str,
+    jin_dir: Option<&PathBuf>,
+) -> Result<(), Box<dyn std::error::Error>> {
     let mut cmd = jin();
 
     // CRITICAL: Set JIN_DIR before command execution for isolation
@@ -240,7 +258,10 @@ pub fn create_mode(mode_name: &str, jin_dir: Option<&PathBuf>) -> Result<(), Box
 /// # Gotchas
 /// - If jin_dir is None, uses global ~/.jin (NOT recommended for tests)
 /// - Always pass Some(jin_dir) for test isolation
-pub fn create_scope(scope_name: &str, jin_dir: Option<&PathBuf>) -> Result<(), Box<dyn std::error::Error>> {
+pub fn create_scope(
+    scope_name: &str,
+    jin_dir: Option<&PathBuf>,
+) -> Result<(), Box<dyn std::error::Error>> {
     let mut cmd = jin();
 
     // CRITICAL: Set JIN_DIR before command execution for isolation

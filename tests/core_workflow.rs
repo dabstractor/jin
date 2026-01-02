@@ -15,11 +15,15 @@ use common::fixtures::*;
 fn test_init_creates_context_and_repo() -> Result<(), Box<dyn std::error::Error>> {
     let fixture = TestFixture::new()?;
     let project_path = fixture.path();
+    let jin_dir = fixture.jin_dir.as_ref().unwrap();
+
+    fixture.set_jin_dir();
 
     // Run jin init
     jin()
         .arg("init")
         .current_dir(project_path)
+        .env("JIN_DIR", jin_dir)
         .assert()
         .success();
 
@@ -40,15 +44,20 @@ fn test_init_creates_context_and_repo() -> Result<(), Box<dyn std::error::Error>
 /// Test mode create and use commands
 #[test]
 fn test_mode_create_and_use() -> Result<(), Box<dyn std::error::Error>> {
-    let fixture = setup_test_repo()?;
+    let fixture = TestFixture::new()?;
     let project_path = fixture.path();
+    let jin_dir = fixture.jin_dir.as_ref().unwrap();
+
+    fixture.set_jin_dir();
+    jin_init(project_path)?;
 
     // Create unique mode name to avoid conflicts
-    let mode_name = format!("test_mode_{}", std::process::id());
+    let mode_name = format!("test_mode_{}", unique_test_id());
 
     // Create mode
     jin()
         .args(["mode", "create", &mode_name])
+        .env("JIN_DIR", jin_dir)
         .assert()
         .success();
 
@@ -56,6 +65,7 @@ fn test_mode_create_and_use() -> Result<(), Box<dyn std::error::Error>> {
     jin()
         .args(["mode", "use", &mode_name])
         .current_dir(project_path)
+        .env("JIN_DIR", jin_dir)
         .assert()
         .success();
 
@@ -311,8 +321,12 @@ fn test_complete_workflow_init_to_apply() -> Result<(), Box<dyn std::error::Erro
 /// Test add without mode flag (project base layer)
 #[test]
 fn test_add_to_project_base_layer() -> Result<(), Box<dyn std::error::Error>> {
-    let fixture = setup_test_repo()?;
+    let fixture = TestFixture::new()?;
     let project_path = fixture.path();
+    let jin_dir = fixture.jin_dir.as_ref().unwrap();
+
+    fixture.set_jin_dir();
+    jin_init(project_path)?;
 
     // Create test file
     fs::write(project_path.join("readme.md"), "# Project\n")?;
@@ -321,6 +335,7 @@ fn test_add_to_project_base_layer() -> Result<(), Box<dyn std::error::Error>> {
     jin()
         .args(["add", "readme.md"])
         .current_dir(project_path)
+        .env("JIN_DIR", jin_dir)
         .assert()
         .success();
 
@@ -330,6 +345,7 @@ fn test_add_to_project_base_layer() -> Result<(), Box<dyn std::error::Error>> {
     jin()
         .args(["commit", "-m", "Add readme"])
         .current_dir(project_path)
+        .env("JIN_DIR", jin_dir)
         .assert()
         .success();
 
@@ -339,13 +355,18 @@ fn test_add_to_project_base_layer() -> Result<(), Box<dyn std::error::Error>> {
 /// Test error: add non-existent file
 #[test]
 fn test_add_nonexistent_file_error() -> Result<(), Box<dyn std::error::Error>> {
-    let fixture = setup_test_repo()?;
+    let fixture = TestFixture::new()?;
     let project_path = fixture.path();
+    let jin_dir = fixture.jin_dir.as_ref().unwrap();
+
+    fixture.set_jin_dir();
+    jin_init(project_path)?;
 
     // Try to add non-existent file
     jin()
         .args(["add", "nonexistent.txt"])
         .current_dir(project_path)
+        .env("JIN_DIR", jin_dir)
         .assert()
         .failure()
         .stderr(
@@ -358,13 +379,18 @@ fn test_add_nonexistent_file_error() -> Result<(), Box<dyn std::error::Error>> {
 /// Test error: commit with no staged changes
 #[test]
 fn test_commit_no_staged_changes_error() -> Result<(), Box<dyn std::error::Error>> {
-    let fixture = setup_test_repo()?;
+    let fixture = TestFixture::new()?;
     let project_path = fixture.path();
+    let jin_dir = fixture.jin_dir.as_ref().unwrap();
+
+    fixture.set_jin_dir();
+    jin_init(project_path)?;
 
     // Try to commit without staging anything
     let result = jin()
         .args(["commit", "-m", "Empty commit"])
         .current_dir(project_path)
+        .env("JIN_DIR", jin_dir)
         .assert();
 
     let output = result.get_output();
@@ -384,13 +410,18 @@ fn test_commit_no_staged_changes_error() -> Result<(), Box<dyn std::error::Error
 /// Test error: use mode that doesn't exist
 #[test]
 fn test_mode_use_nonexistent_error() -> Result<(), Box<dyn std::error::Error>> {
-    let fixture = setup_test_repo()?;
+    let fixture = TestFixture::new()?;
     let project_path = fixture.path();
+    let jin_dir = fixture.jin_dir.as_ref().unwrap();
+
+    fixture.set_jin_dir();
+    jin_init(project_path)?;
 
     // Try to use non-existent mode
     jin()
         .args(["mode", "use", "nonexistent_mode_12345"])
         .current_dir(project_path)
+        .env("JIN_DIR", jin_dir)
         .assert()
         .failure()
         .stderr(predicate::str::contains("not found"));
@@ -401,11 +432,19 @@ fn test_mode_use_nonexistent_error() -> Result<(), Box<dyn std::error::Error>> {
 /// Test init in already initialized directory
 #[test]
 fn test_init_already_initialized() -> Result<(), Box<dyn std::error::Error>> {
-    let fixture = setup_test_repo()?;
+    let fixture = TestFixture::new()?;
     let project_path = fixture.path();
+    let jin_dir = fixture.jin_dir.as_ref().unwrap();
+
+    fixture.set_jin_dir();
+    jin_init(project_path)?;
 
     // Try to init again
-    let result = jin().arg("init").current_dir(project_path).assert();
+    let result = jin()
+        .arg("init")
+        .current_dir(project_path)
+        .env("JIN_DIR", jin_dir)
+        .assert();
 
     // Should either succeed (idempotent) or warn about existing init
     let output = result.get_output();

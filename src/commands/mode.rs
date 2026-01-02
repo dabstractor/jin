@@ -270,13 +270,13 @@ fn unset() -> Result<()> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use serial_test::serial;
     use tempfile::TempDir;
 
     /// Setup isolated test environment
     ///
-    /// NOTE: These tests require single-threaded execution due to
-    /// shared environment variables (JIN_DIR, current directory).
-    /// Run with: cargo test --package jin --lib commands::mode::tests -- --test-threads=1
+    /// NOTE: These tests are marked with #[serial] to prevent parallel execution
+    /// due to shared environment variables (JIN_DIR, current directory).
     fn setup_test_env() -> TempDir {
         let temp = TempDir::new().unwrap();
 
@@ -326,6 +326,7 @@ mod tests {
     }
 
     #[test]
+    #[serial]
     fn test_create_mode() {
         let _temp = setup_test_env();
         let result = create("testmode");
@@ -337,6 +338,7 @@ mod tests {
     }
 
     #[test]
+    #[serial]
     fn test_create_mode_duplicate() {
         let _temp = setup_test_env();
         create("testmode").unwrap();
@@ -347,6 +349,7 @@ mod tests {
     }
 
     #[test]
+    #[serial]
     fn test_use_mode() {
         let _temp = setup_test_env();
         create("testmode").unwrap();
@@ -360,6 +363,7 @@ mod tests {
     }
 
     #[test]
+    #[serial]
     fn test_use_mode_nonexistent() {
         let _temp = setup_test_env();
         let result = use_mode("nonexistent");
@@ -367,6 +371,7 @@ mod tests {
     }
 
     #[test]
+    #[serial]
     fn test_list_empty() {
         let _temp = setup_test_env();
         let result = list();
@@ -374,6 +379,7 @@ mod tests {
     }
 
     #[test]
+    #[serial]
     fn test_list_with_modes() {
         let _temp = setup_test_env();
         create("mode1").unwrap();
@@ -385,6 +391,7 @@ mod tests {
     }
 
     #[test]
+    #[serial]
     fn test_show_no_mode() {
         let _temp = setup_test_env();
         let result = show();
@@ -392,6 +399,7 @@ mod tests {
     }
 
     #[test]
+    #[serial]
     fn test_show_with_mode() {
         let _temp = setup_test_env();
         create("testmode").unwrap();
@@ -402,6 +410,7 @@ mod tests {
     }
 
     #[test]
+    #[serial]
     fn test_unset() {
         let _temp = setup_test_env();
         create("testmode").unwrap();
@@ -416,6 +425,7 @@ mod tests {
     }
 
     #[test]
+    #[serial]
     fn test_unset_no_mode() {
         let _temp = setup_test_env();
         let result = unset();
@@ -423,6 +433,7 @@ mod tests {
     }
 
     #[test]
+    #[serial]
     fn test_delete_mode() {
         let _temp = setup_test_env();
         create("testmode").unwrap();
@@ -436,6 +447,7 @@ mod tests {
     }
 
     #[test]
+    #[serial]
     fn test_delete_active_mode() {
         let _temp = setup_test_env();
         create("testmode").unwrap();
@@ -450,6 +462,7 @@ mod tests {
     }
 
     #[test]
+    #[serial]
     fn test_delete_nonexistent() {
         let _temp = setup_test_env();
         let result = delete("nonexistent");

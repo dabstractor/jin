@@ -68,11 +68,10 @@ That's it! Your configuration is now managed by Jin.
 
 ### Next Steps
 
-- **New to Jin?** → Read the [Getting Started Guide](docs/GETTING_STARTED.md)
-- **Want to understand layers?** → See [Layer System Explained](docs/LAYER_SYSTEM.md)
-- **Need command reference?** → See [Commands](docs/COMMANDS.md)
-- **Looking for examples?** → See [Common Workflows](docs/WORKFLOWS.md)
-- **Troubleshooting?** → See [FAQ](docs/TROUBLESHOOTING.md)
+- **Explore commands**: Run `jin help` or `jin <command> --help` for detailed usage
+- **Create modes**: Use `jin mode create <name>` to set up environment-specific configurations
+- **Create scopes**: Use `jin scope create <name>` for nested configuration contexts
+- **View layers**: Run `jin layers` to see the 9-layer merge hierarchy
 
 ## Installation
 
@@ -119,15 +118,15 @@ Jin provides 32 commands organized by function:
 
 **Utility**: `completion`
 
-For complete reference, see [Command Documentation](docs/COMMANDS.md).
+For complete reference, run `jin help` or use `--help` with any command.
 
 ## Documentation
 
-- [Getting Started Guide](docs/GETTING_STARTED.md) - Step-by-step tutorial
-- [Layer System Explained](docs/LAYER_SYSTEM.md) - Understanding Jin's precedence system
-- [Command Reference](docs/COMMANDS.md) - All 32 commands with examples
-- [Common Workflows](docs/WORKFLOWS.md) - Real-world usage patterns
-- [Troubleshooting](docs/TROUBLESHOOTING.md) - Common issues and solutions
+Jin includes built-in help for all commands:
+- `jin help` - Show all available commands
+- `jin <command> --help` - Show detailed help for a specific command
+- `jin help modes` - Show mode management help
+- `jin help scopes` - Show scope management help
 
 ## Why Jin?
 

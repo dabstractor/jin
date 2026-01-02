@@ -206,6 +206,7 @@ fn format_layer_name(layer: Layer) -> &'static str {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use serial_test::serial;
     use tempfile::TempDir;
 
     #[test]
@@ -223,6 +224,7 @@ mod tests {
     }
 
     #[test]
+    #[serial]
     fn test_validate_file_success() {
         let temp = TempDir::new().unwrap();
         let file = temp.path().join("test.json");
@@ -253,6 +255,7 @@ mod tests {
     }
 
     #[test]
+    #[serial]
     fn test_stage_file_creates_blob() {
         let temp = TempDir::new().unwrap();
 

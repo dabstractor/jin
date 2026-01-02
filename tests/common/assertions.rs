@@ -144,7 +144,9 @@ pub fn assert_layer_ref_exists(ref_path: &str, jin_repo_path: Option<&std::path:
             if let Ok(jin_dir) = std::env::var("JIN_DIR") {
                 std::path::PathBuf::from(jin_dir)
             } else {
-                dirs::home_dir().expect("Failed to get home directory").join(".jin")
+                dirs::home_dir()
+                    .expect("Failed to get home directory")
+                    .join(".jin")
             }
         }
     };
@@ -155,12 +157,8 @@ pub fn assert_layer_ref_exists(ref_path: &str, jin_repo_path: Option<&std::path:
         repo_path
     );
 
-    let repo = git2::Repository::open(&repo_path).unwrap_or_else(|e| {
-        panic!(
-            "Failed to open Jin repository at {:?}: {}",
-            repo_path, e
-        )
-    });
+    let repo = git2::Repository::open(&repo_path)
+        .unwrap_or_else(|e| panic!("Failed to open Jin repository at {:?}: {}", repo_path, e));
 
     match repo.find_reference(ref_path) {
         Ok(_) => {} // Success

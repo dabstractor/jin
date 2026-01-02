@@ -41,6 +41,7 @@ pub fn execute() -> Result<()> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use serial_test::serial;
     use tempfile::TempDir;
 
     fn setup_test_env() -> TempDir {
@@ -62,6 +63,7 @@ mod tests {
     }
 
     #[test]
+    #[serial]
     fn test_execute_default_context() {
         let _temp = setup_test_env();
         let result = execute();
@@ -69,6 +71,7 @@ mod tests {
     }
 
     #[test]
+    #[serial]
     fn test_execute_with_mode_and_scope() {
         let _temp = setup_test_env();
 
@@ -83,6 +86,7 @@ mod tests {
     }
 
     #[test]
+    #[serial]
     fn test_execute_not_initialized() {
         let temp = TempDir::new().unwrap();
         std::env::set_current_dir(temp.path()).unwrap();

@@ -12,7 +12,10 @@ use std::path::Path;
 /// when tests fail or are interrupted. Lock files cleaned include:
 /// - `.git/index.lock` - Index lock file
 /// - `.git/HEAD.lock` - HEAD reference lock file
+/// - `.git/config.lock` - Config lock file (for JIN_DIR)
 /// - `.git/refs/heads/main.lock` - Main branch lock file
+/// - `.git/packed-refs.lock` - Packed refs lock file
+/// - All `.lock` files under `.git/refs/`
 ///
 /// # Arguments
 /// * `repo_path` - Path to the Git repository
@@ -38,9 +41,30 @@ pub fn cleanup_git_locks(repo_path: &Path) -> Result<(), Box<dyn std::error::Err
         fs::remove_file(&index_lock)?;
     }
 
+    // Clean config.lock (critical for JIN_DIR isolation)
+    let config_lock = git_dir.join("config.lock");
+    if config_lock.exists() {
+        fs::remove_file(&config_lock)?;
+    }
+
+    // Clean HEAD.lock
+    let head_lock = git_dir.join("HEAD.lock");
+    if head_lock.exists() {
+        fs::remove_file(&head_lock)?;
+    }
+
+    // Clean packed-refs.lock
+    let packed_refs_lock = git_dir.join("packed-refs.lock");
+    if packed_refs_lock.exists() {
+        fs::remove_file(&packed_refs_lock)?;
+    }
+
     // Clean other common lock files
     // Ignore errors for files that may not exist
-    let lock_files = &["HEAD.lock", "refs/heads/main.lock", "refs/heads/master.lock"];
+    let lock_files = &[
+        "refs/heads/main.lock",
+        "refs/heads/master.lock",
+    ];
 
     for lock_file in lock_files {
         let lock_path = git_dir.join(lock_file);
@@ -49,6 +73,27 @@ pub fn cleanup_git_locks(repo_path: &Path) -> Result<(), Box<dyn std::error::Err
         }
     }
 
+    // Recursively clean all .lock files under refs directory
+    let refs_dir = git_dir.join("refs");
+    if refs_dir.exists() {
+        clean_lock_files_recursive(&refs_dir)?;
+    }
+
+    Ok(())
+}
+
+/// Recursively remove all .lock files in a directory
+fn clean_lock_files_recursive(dir: &Path) -> Result<(), Box<dyn std::error::Error>> {
+    for entry in fs::read_dir(dir)? {
+        let entry = entry?;
+        let path = entry.path();
+
+        if path.is_dir() {
+            clean_lock_files_recursive(&path)?;
+        } else if path.extension().map_or(false, |ext| ext == "lock") {
+            let _ = fs::remove_file(&path); // Ignore errors
+        }
+    }
     Ok(())
 }
 
@@ -83,7 +128,10 @@ impl GitTestEnv {
     pub fn new() -> Result<Self, Box<dyn std::error::Error>> {
         let temp_dir = tempfile::TempDir::new()?;
         let repo_path = temp_dir.path().to_path_buf();
-        Ok(Self { temp_dir, repo_path })
+        Ok(Self {
+            temp_dir,
+            repo_path,
+        })
     }
 
     /// Get the path to the test directory

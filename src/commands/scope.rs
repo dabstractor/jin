@@ -308,9 +308,16 @@ fn delete(name: &str) -> Result<()> {
 
     // Delete associated layer refs (may not exist if no files committed)
     // Silently ignore errors
+    //
+    // Note: Layer refs use the original scope name (with colons), not ref_safe_name
+    // We need to try both the exact match and patterns that might match nested refs
     let layer_patterns = [
+        // Direct match for scope layer refs
         format!("refs/jin/layers/scope/{}", name),
         format!("refs/jin/layers/mode/*/scope/{}", name),
+        // Also try ref-safe version for layer refs that might have been created differently
+        format!("refs/jin/layers/scope/{}", ref_safe_name),
+        format!("refs/jin/layers/mode/*/scope/{}", ref_safe_name),
     ];
 
     for pattern in &layer_patterns {
@@ -379,6 +386,7 @@ fn unset() -> Result<()> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use serial_test::serial;
     use tempfile::TempDir;
 
     fn setup_test_env() -> TempDir {
@@ -442,6 +450,7 @@ mod tests {
     }
 
     #[test]
+    #[serial]
     fn test_create_untethered_scope() {
         let _temp = setup_test_env();
         let result = create("testscope", None);
@@ -453,6 +462,7 @@ mod tests {
     }
 
     #[test]
+    #[serial]
     fn test_create_mode_bound_scope() {
         let _temp = setup_test_env();
         create_test_mode("testmode");
@@ -466,6 +476,7 @@ mod tests {
     }
 
     #[test]
+    #[serial]
     fn test_create_scope_with_colon() {
         let _temp = setup_test_env();
         let result = create("language:javascript", None);
@@ -477,6 +488,7 @@ mod tests {
     }
 
     #[test]
+    #[serial]
     fn test_create_scope_nonexistent_mode() {
         let _temp = setup_test_env();
         let result = create("testscope", Some("nonexistent"));
@@ -484,6 +496,7 @@ mod tests {
     }
 
     #[test]
+    #[serial]
     fn test_create_scope_duplicate() {
         let _temp = setup_test_env();
         create("testscope", None).unwrap();
@@ -494,6 +507,7 @@ mod tests {
     }
 
     #[test]
+    #[serial]
     fn test_use_scope() {
         let _temp = setup_test_env();
         create("testscope", None).unwrap();
@@ -507,6 +521,7 @@ mod tests {
     }
 
     #[test]
+    #[serial]
     fn test_use_scope_nonexistent() {
         let _temp = setup_test_env();
         let result = use_scope("nonexistent");
@@ -514,6 +529,7 @@ mod tests {
     }
 
     #[test]
+    #[serial]
     fn test_list_empty() {
         let _temp = setup_test_env();
         let result = list();
@@ -521,6 +537,7 @@ mod tests {
     }
 
     #[test]
+    #[serial]
     fn test_list_with_scopes() {
         let _temp = setup_test_env();
         create("scope1", None).unwrap();
@@ -534,6 +551,7 @@ mod tests {
     }
 
     #[test]
+    #[serial]
     fn test_show_no_scope() {
         let _temp = setup_test_env();
         let result = show();
@@ -541,6 +559,7 @@ mod tests {
     }
 
     #[test]
+    #[serial]
     fn test_show_with_scope() {
         let _temp = setup_test_env();
         create("testscope", None).unwrap();
@@ -551,6 +570,7 @@ mod tests {
     }
 
     #[test]
+    #[serial]
     fn test_unset() {
         let _temp = setup_test_env();
         create("testscope", None).unwrap();
@@ -565,6 +585,7 @@ mod tests {
     }
 
     #[test]
+    #[serial]
     fn test_unset_no_scope() {
         let _temp = setup_test_env();
         let result = unset();
@@ -572,6 +593,7 @@ mod tests {
     }
 
     #[test]
+    #[serial]
     fn test_delete_untethered_scope() {
         let _temp = setup_test_env();
         create("testscope", None).unwrap();
@@ -585,6 +607,7 @@ mod tests {
     }
 
     #[test]
+    #[serial]
     fn test_delete_mode_bound_scope() {
         let _temp = setup_test_env();
         create_test_mode("testmode");
@@ -599,6 +622,7 @@ mod tests {
     }
 
     #[test]
+    #[serial]
     fn test_delete_active_scope() {
         let _temp = setup_test_env();
         create("testscope", None).unwrap();
@@ -613,6 +637,7 @@ mod tests {
     }
 
     #[test]
+    #[serial]
     fn test_delete_nonexistent() {
         let _temp = setup_test_env();
         let result = delete("nonexistent");

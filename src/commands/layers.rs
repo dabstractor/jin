@@ -126,11 +126,11 @@ fn count_files_in_layer(repo: &git2::Repository, ref_path: &str) -> Result<usize
 #[cfg(test)]
 mod tests {
     use super::*;
+    use serial_test::serial;
     use tempfile::TempDir;
 
     /// These tests modify global process state (environment variables and current directory).
-    /// Run with single-threaded mode when testing the full suite:
-    ///   cargo test --lib layers -- --test-threads=1
+    /// Tests are marked with #[serial] to prevent parallel execution issues.
     fn setup_test_env() -> TempDir {
         let temp = TempDir::new().unwrap();
 
@@ -149,6 +149,7 @@ mod tests {
     }
 
     #[test]
+    #[serial]
     fn test_execute_default_context() {
         let _temp = setup_test_env();
         let result = execute();
@@ -156,6 +157,7 @@ mod tests {
     }
 
     #[test]
+    #[serial]
     fn test_execute_with_mode_and_scope() {
         let _temp = setup_test_env();
 
@@ -170,6 +172,7 @@ mod tests {
     }
 
     #[test]
+    #[serial]
     fn test_execute_not_initialized() {
         let temp = TempDir::new().unwrap();
         std::env::set_current_dir(temp.path()).unwrap();

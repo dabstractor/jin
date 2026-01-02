@@ -12,6 +12,7 @@
 //! - **Atomic commits** across multiple layers
 //! - **Automatic .gitignore management**
 
+pub mod audit;
 pub mod cli;
 pub mod commands;
 pub mod commit;

@@ -1,5 +1,6 @@
 //! Commit pipeline implementation
 
+use crate::audit::{AuditEntry, AuditLogger};
 use crate::core::{JinError, Layer, ProjectContext, Result};
 use crate::git::{JinRepo, LayerTransaction, ObjectOps, RefOps};
 use crate::staging::{StagedEntry, StagingIndex};
@@ -88,19 +89,19 @@ impl CommitPipeline {
         // Open Jin repository
         let repo = JinRepo::open_or_create()?;
 
-        // Create commits for each layer
-        let mut layer_commits: Vec<(Layer, Oid)> = Vec::new();
+        // Create commits for each layer, capturing parent commits
+        let mut layer_commits: Vec<(Layer, Oid, Option<String>)> = Vec::new();
 
         for layer in &affected_layers {
             let entries = self.staging.entries_for_layer(*layer);
-            let commit_oid =
+            let (commit_oid, parent_oid) =
                 self.create_layer_commit(&repo, *layer, &entries, &context, &config.message)?;
-            layer_commits.push((*layer, commit_oid));
+            layer_commits.push((*layer, commit_oid, parent_oid));
         }
 
         // Apply all updates atomically via transaction
         let mut tx = LayerTransaction::begin(&repo, &config.message)?;
-        for (layer, commit_oid) in &layer_commits {
+        for (layer, commit_oid, _) in &layer_commits {
             tx.add_layer_update(
                 *layer,
                 context.mode.as_deref(),
@@ -111,6 +112,13 @@ impl CommitPipeline {
         }
         tx.commit()?;
 
+        // Collect files for audit before clearing staging
+        let files: Vec<String> = self
+            .staging
+            .entries()
+            .map(|e| e.path.display().to_string())
+            .collect();
+
         // Clear staging on success
         self.staging.clear();
         self.staging.save()?;
@@ -118,8 +126,13 @@ impl CommitPipeline {
         // Build result
         let commit_hashes: Vec<(Layer, String)> = layer_commits
             .iter()
-            .map(|(l, oid)| (*l, oid.to_string()))
+            .map(|(l, oid, _)| (*l, oid.to_string()))
             .collect();
+
+        // Write audit log (non-blocking - log warning on failure)
+        if let Err(e) = self.log_audit(&layer_commits, &context, &files) {
+            eprintln!("Warning: Failed to write audit log: {}", e);
+        }
 
         Ok(CommitResult {
             committed_layers: affected_layers,
@@ -129,6 +142,8 @@ impl CommitPipeline {
     }
 
     /// Create a commit for a single layer
+    ///
+    /// Returns the new commit OID and the parent commit OID (if any)
     fn create_layer_commit(
         &self,
         repo: &JinRepo,
@@ -136,15 +151,20 @@ impl CommitPipeline {
         entries: &[&StagedEntry],
         context: &ProjectContext,
         message: &str,
-    ) -> Result<Oid> {
+    ) -> Result<(Oid, Option<String>)> {
         // Build tree from entries
         let tree_oid = self.build_layer_tree(repo, entries)?;
 
         // Get parent commit if layer ref exists
         let parent_oids = self.get_parent_commits(repo, layer, context)?;
 
+        // Capture parent OID for audit
+        let parent_oid = parent_oids.first().map(|oid| oid.to_string());
+
         // Create commit (don't update ref directly - transaction handles that)
-        repo.create_commit(None, message, tree_oid, &parent_oids)
+        let commit_oid = repo.create_commit(None, message, tree_oid, &parent_oids)?;
+
+        Ok((commit_oid, parent_oid))
     }
 
     /// Build a tree from staged entries
@@ -232,6 +252,50 @@ impl CommitPipeline {
         // If there's an incomplete transaction, RecoveryManager handles it
         // This method exists for explicit abort during pipeline execution
         Ok(())
+    }
+
+    /// Log audit entries for the commit
+    ///
+    /// Creates audit entries for each layer commit and writes them to the audit log.
+    /// This is a non-blocking operation - failures will log warnings but not fail the commit.
+    fn log_audit(
+        &self,
+        layer_commits: &[(Layer, Oid, Option<String>)],
+        context: &ProjectContext,
+        files: &[String],
+    ) -> Result<()> {
+        // Get user from Git config
+        let user = Self::get_git_user();
+
+        // Create audit logger
+        let logger = AuditLogger::from_project()?;
+
+        // For each layer commit, create audit entry
+        for (layer, commit_oid, base_commit) in layer_commits {
+            let entry = AuditEntry::from_commit(
+                user.clone(),
+                context.project.clone(),
+                context.mode.clone(),
+                context.scope.clone(),
+                Some(layer.precedence()),
+                files.to_vec(),
+                base_commit.clone(),
+                commit_oid.to_string(),
+            );
+
+            logger.log_entry(&entry)?;
+        }
+
+        Ok(())
+    }
+
+    /// Get the current Git user from Git config
+    fn get_git_user() -> String {
+        std::process::Command::new("git")
+            .args(["config", "user.email"])
+            .output()
+            .map(|output| String::from_utf8_lossy(&output.stdout).trim().to_string())
+            .unwrap_or_else(|_| "unknown".to_string())
     }
 }
 
@@ -487,7 +551,7 @@ mod tests {
         let pipeline = CommitPipeline::new(staging);
         let entries = vec![&entry];
 
-        let commit_oid = pipeline
+        let (commit_oid, parent_oid) = pipeline
             .create_layer_commit(&repo, Layer::GlobalBase, &entries, &context, "Test commit")
             .unwrap();
 
@@ -495,6 +559,7 @@ mod tests {
         let commit = repo.find_commit(commit_oid).unwrap();
         assert_eq!(commit.message().unwrap(), "Test commit");
         assert_eq!(commit.parent_count(), 0); // Initial commit, no parents
+        assert!(parent_oid.is_none(), "Initial commit should have no parent");
     }
 
     #[test]
@@ -509,6 +574,7 @@ mod tests {
         let _initial = repo
             .create_commit(Some("refs/jin/layers/global"), "Initial", tree1, &[])
             .unwrap();
+        let initial_oid = _initial;
 
         // Now create a new commit that should have parent
         let blob2 = repo.create_blob(b"updated").unwrap();
@@ -523,7 +589,7 @@ mod tests {
         let pipeline = CommitPipeline::new(staging);
         let entries = vec![&entry];
 
-        let commit_oid = pipeline
+        let (commit_oid, parent_oid) = pipeline
             .create_layer_commit(
                 &repo,
                 Layer::GlobalBase,
@@ -537,6 +603,7 @@ mod tests {
         let commit = repo.find_commit(commit_oid).unwrap();
         assert_eq!(commit.message().unwrap(), "Update commit");
         assert_eq!(commit.parent_count(), 1); // Should have one parent
+        assert_eq!(parent_oid, Some(initial_oid.to_string()));
     }
 
     #[test]

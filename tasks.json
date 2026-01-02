@@ -1280,21 +1280,21 @@
           "type": "Milestone",
           "id": "P7.M4",
           "title": "Audit Logging System",
-          "status": "Planned",
+          "status": "Complete",
           "description": "Implement the audit logging system specified in PRD Section 17. Append-only logs in jin/.audit/ tracking all commits.",
           "tasks": [
             {
               "type": "Task",
               "id": "P7.M4.T1",
               "title": "Create Audit Module",
-              "status": "Planned",
+              "status": "Complete",
               "description": "Implement audit logging infrastructure with PRD-compliant format.",
               "subtasks": [
                 {
                   "type": "Subtask",
                   "id": "P7.M4.T1.S1",
                   "title": "Define AuditEntry types",
-                  "status": "Planned",
+                  "status": "Complete",
                   "story_points": 1,
                   "dependencies": [],
                   "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: PRD Section 17 specifies audit log format with timestamp, user, project, mode, scope, layer, files, base_commit, merge_commit, and context fields.\n2. INPUT: None - defines new types.\n3. LOGIC: Create src/audit/mod.rs and src/audit/entry.rs:\n   a. Define AuditEntry struct with all PRD fields\n   b. Use chrono for RFC3339 timestamps\n   c. Derive Serialize/Deserialize\n   d. Define AuditContext sub-struct for active_mode, active_scope\n   e. Add to lib.rs: pub mod audit\n4. OUTPUT: AuditEntry struct with new() constructor. Consumed by P7.M4.T1.S2."
@@ -1303,7 +1303,7 @@
                   "type": "Subtask",
                   "id": "P7.M4.T1.S2",
                   "title": "Implement audit file operations",
-                  "status": "Planned",
+                  "status": "Complete",
                   "story_points": 1,
                   "dependencies": [
                     "P7.M4.T1.S1"
@@ -1314,7 +1314,7 @@
                   "type": "Subtask",
                   "id": "P7.M4.T1.S3",
                   "title": "Integrate audit with CommitPipeline",
-                  "status": "Planned",
+                  "status": "Complete",
                   "story_points": 1,
                   "dependencies": [
                     "P7.M4.T1.S2",

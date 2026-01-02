@@ -64,14 +64,17 @@ pub fn execute(args: ResetArgs) -> Result<()> {
 
     // 6. Confirmation for --hard mode
     if mode == ResetMode::Hard {
-        let count = entries.len();
-        let message = format!(
-            "This will discard {} file(s) from staging AND workspace. Type 'yes' to confirm:",
-            count
-        );
-        if !prompt_confirmation(&message)? {
-            println!("Reset cancelled");
-            return Ok(());
+        // Skip confirmation if --force is present
+        if !args.force {
+            let count = entries.len();
+            let message = format!(
+                "This will discard {} file(s) from staging AND workspace. Type 'yes' to confirm:",
+                count
+            );
+            if !prompt_confirmation(&message)? {
+                println!("Reset cancelled");
+                return Ok(());
+            }
         }
     }
 
@@ -107,6 +110,11 @@ pub fn execute(args: ResetArgs) -> Result<()> {
 
 /// Determine target layer from reset arguments and context
 fn determine_target_layer(args: &ResetArgs, context: &ProjectContext) -> Result<Layer> {
+    // --global → Layer 1 (GlobalBase)
+    if args.global {
+        return Ok(Layer::GlobalBase);
+    }
+
     // --mode + --scope=X + --project → Layer 4 (ModeScopeProject)
     if args.mode && args.scope.is_some() && args.project {
         context.require_mode()?;
@@ -237,6 +245,8 @@ mod tests {
             mode: false,
             scope: None,
             project: false,
+            global: false,
+            force: false,
         };
         let result = execute(args);
         assert!(matches!(result, Err(JinError::NotInitialized)));
@@ -252,9 +262,28 @@ mod tests {
             mode: false,
             scope: None,
             project: false,
+            global: false,
+            force: false,
         };
         let result = determine_target_layer(&args, &context).unwrap();
         assert_eq!(result, Layer::ProjectBase);
+    }
+
+    #[test]
+    fn test_determine_target_layer_global() {
+        let context = ProjectContext::default();
+        let args = ResetArgs {
+            soft: false,
+            mixed: false,
+            hard: false,
+            mode: false,
+            scope: None,
+            project: false,
+            global: true,
+            force: false,
+        };
+        let result = determine_target_layer(&args, &context).unwrap();
+        assert_eq!(result, Layer::GlobalBase);
     }
 
     #[test]
@@ -269,6 +298,8 @@ mod tests {
             mode: true,
             scope: None,
             project: false,
+            global: false,
+            force: false,
         };
         let result = determine_target_layer(&args, &context).unwrap();
         assert_eq!(result, Layer::ModeBase);
@@ -286,6 +317,8 @@ mod tests {
             mode: true,
             scope: Some("lang:rust".to_string()),
             project: false,
+            global: false,
+            force: false,
         };
         let result = determine_target_layer(&args, &context).unwrap();
         assert_eq!(result, Layer::ModeScope);
@@ -303,6 +336,8 @@ mod tests {
             mode: true,
             scope: None,
             project: true,
+            global: false,
+            force: false,
         };
         let result = determine_target_layer(&args, &context).unwrap();
         assert_eq!(result, Layer::ModeProject);
@@ -318,6 +353,8 @@ mod tests {
             mode: false,
             scope: None,
             project: true,
+            global: false,
+            force: false,
         };
         let result = determine_target_layer(&args, &context);
         assert!(result.is_err());
@@ -336,5 +373,49 @@ mod tests {
         assert_eq!(layer_name(Layer::GlobalBase), "global-base");
         assert_eq!(layer_name(Layer::ModeBase), "mode-base");
         assert_eq!(layer_name(Layer::ProjectBase), "project-base");
+    }
+
+    #[test]
+    fn test_reset_hard_with_force() {
+        let temp = TempDir::new().unwrap();
+        let project_path = temp.path();
+
+        // Initialize jin project
+        std::env::set_current_dir(project_path).unwrap();
+        let context = ProjectContext::default();
+        context.save().unwrap();
+
+        // Create a test file
+        let test_file = project_path.join("test.json");
+        std::fs::write(&test_file, r#"{"test": true}"#).unwrap();
+
+        // Stage the file
+        let mut staging = StagingIndex::new();
+        let entry = StagedEntry {
+            path: test_file.clone(),
+            target_layer: Layer::ProjectBase,
+            content_hash: "abc123".to_string(),
+            mode: 0o644,
+            operation: crate::staging::StagedOperation::AddOrModify,
+        };
+        staging.add(entry);
+        staging.save().unwrap();
+
+        // Reset hard with force flag (should not prompt)
+        let args = ResetArgs {
+            soft: false,
+            mixed: false,
+            hard: true,
+            mode: false,
+            scope: None,
+            project: false,
+            global: false,
+            force: true,
+        };
+        let result = execute(args);
+        assert!(result.is_ok());
+
+        // Verify file was deleted
+        assert!(!test_file.exists());
     }
 }

@@ -75,6 +75,14 @@ pub struct ResetArgs {
     /// Reset project layer
     #[arg(long)]
     pub project: bool,
+
+    /// Reset global layer
+    #[arg(long)]
+    pub global: bool,
+
+    /// Skip confirmation prompt for destructive operations
+    #[arg(long, short = 'f')]
+    pub force: bool,
 }
 
 /// Arguments for the `diff` command

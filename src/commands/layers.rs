@@ -128,6 +128,9 @@ mod tests {
     use super::*;
     use tempfile::TempDir;
 
+    /// These tests modify global process state (environment variables and current directory).
+    /// Run with single-threaded mode when testing the full suite:
+    ///   cargo test --lib layers -- --test-threads=1
     fn setup_test_env() -> TempDir {
         let temp = TempDir::new().unwrap();
 

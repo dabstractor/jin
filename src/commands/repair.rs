@@ -38,7 +38,10 @@ pub fn execute(args: RepairArgs) -> Result<()> {
 
     // If repository is fatally corrupted, we can't continue (except in dry-run)
     if let Err(e) = &repo_result {
-        if matches!(e, JinError::Other(_)) && issues_found.len() > issues_fixed.len() && !args.dry_run {
+        if matches!(e, JinError::Other(_))
+            && issues_found.len() > issues_fixed.len()
+            && !args.dry_run
+        {
             println!();
             println!("FATAL: Repository is severely corrupted.");
             println!();

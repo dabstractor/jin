@@ -539,8 +539,14 @@ fn test_context_subcommand_success() {
 #[test]
 fn test_layers_subcommand() {
     // Layers requires Jin initialization
+    use tempfile::TempDir;
+    let temp = TempDir::new().unwrap();
+
+    // Run in isolated environment
     jin()
         .arg("layers")
+        .current_dir(temp.path())
+        .env("JIN_DIR", temp.path().join(".jin_global"))
         .assert()
         .failure()
         .stderr(predicate::str::contains("Jin not initialized"));

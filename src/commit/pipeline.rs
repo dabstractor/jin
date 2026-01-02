@@ -1,7 +1,7 @@
 //! Commit pipeline implementation
 
 use crate::audit::{AuditEntry, AuditLogger};
-use crate::core::{JinError, Layer, ProjectContext, Result};
+use crate::core::{JinError, JinMap, Layer, ProjectContext, Result};
 use crate::git::{JinRepo, LayerTransaction, ObjectOps, RefOps};
 use crate::staging::{StagedEntry, StagingIndex};
 use git2::Oid;
@@ -128,6 +128,11 @@ impl CommitPipeline {
             .iter()
             .map(|(l, oid, _)| (*l, oid.to_string()))
             .collect();
+
+        // Update JinMap with new layer mappings (non-blocking)
+        if let Err(e) = self.update_jinmap(&layer_commits, &context, &repo) {
+            eprintln!("Warning: Failed to update .jinmap: {}", e);
+        }
 
         // Write audit log (non-blocking - log warning on failure)
         if let Err(e) = self.log_audit(&layer_commits, &context, &files) {
@@ -285,6 +290,39 @@ impl CommitPipeline {
 
             logger.log_entry(&entry)?;
         }
+
+        Ok(())
+    }
+
+    /// Update JinMap with layer mappings from the commit
+    ///
+    /// Loads or creates the JinMap, updates it with mappings from the committed layers,
+    /// and saves it to disk. This is a non-blocking operation - failures will return
+    /// an error but the commit will still succeed.
+    ///
+    /// # Arguments
+    ///
+    /// * `layer_commits` - Slice of (Layer, commit Oid, parent Oid) tuples from the commit
+    /// * `context` - Project context for mode/scope/project values
+    /// * `repo` - Jin repository for reading tree objects
+    fn update_jinmap(
+        &self,
+        layer_commits: &[(Layer, Oid, Option<String>)],
+        context: &ProjectContext,
+        repo: &JinRepo,
+    ) -> Result<()> {
+        // Load or create JinMap
+        let mut jinmap = JinMap::load()?;
+
+        // Extract just the (Layer, Oid) pairs for update_from_commits
+        let layer_oids: Vec<(Layer, Oid)> =
+            layer_commits.iter().map(|(l, oid, _)| (*l, *oid)).collect();
+
+        // Update mappings from committed trees
+        jinmap.update_from_commits(&layer_oids, context, repo)?;
+
+        // Save updated JinMap
+        jinmap.save()?;
 
         Ok(())
     }

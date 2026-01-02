@@ -1330,21 +1330,21 @@
           "type": "Milestone",
           "id": "P7.M5",
           "title": "JinMap Workflow Integration",
-          "status": "Planned",
+          "status": "Complete",
           "description": "Integrate .jinmap updates into commit workflow as specified in PRD Section 16. Currently only used in repair command.",
           "tasks": [
             {
               "type": "Task",
               "id": "P7.M5.T1",
               "title": "Implement JinMap Updates",
-              "status": "Planned",
+              "status": "Complete",
               "description": "Update .jinmap on commits to track layer-to-file mappings.",
               "subtasks": [
                 {
                   "type": "Subtask",
                   "id": "P7.M5.T1.S1",
                   "title": "Define JinMap types",
-                  "status": "Planned",
+                  "status": "Complete",
                   "story_points": 1,
                   "dependencies": [],
                   "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: PRD Section 16 shows .jinmap format with version, mappings (layer path -> file list), and meta.generated-by. Currently only stub in repair.rs.\n2. INPUT: None - defines new types.\n3. LOGIC: Create src/core/jinmap.rs:\n   a. Define JinMap struct: version: u32, mappings: HashMap<String, Vec<String>>, meta: JinMapMeta\n   b. Define JinMapMeta: generated_by: String\n   c. Implement load() from .jin/.jinmap (YAML)\n   d. Implement save() with atomic write (temp + rename)\n   e. Add pub mod jinmap to core/mod.rs\n4. OUTPUT: JinMap with load/save. Consumed by P7.M5.T1.S2."
@@ -1353,7 +1353,7 @@
                   "type": "Subtask",
                   "id": "P7.M5.T1.S2",
                   "title": "Integrate JinMap with commit",
-                  "status": "Planned",
+                  "status": "Complete",
                   "story_points": 2,
                   "dependencies": [
                     "P7.M5.T1.S1",

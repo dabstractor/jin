@@ -794,7 +794,12 @@ mod tests {
         // Create .jin directory and valid .jinmap in temp directory
         let jin_dir = temp.path().join(".jin");
         std::fs::create_dir_all(&jin_dir).unwrap();
-        std::fs::write(jin_dir.join(".jinmap"), "# comment\nkey: value\n").unwrap();
+        // Use a valid JinMap YAML structure - proper format with mappings as empty map
+        std::fs::write(
+            jin_dir.join(".jinmap"),
+            "---\nversion: 1\nmappings: {}\nmeta:\n  generated-by: jin\n",
+        )
+        .unwrap();
 
         // Use DirGuard to change to temp directory and auto-restore
         let _guard = DirGuard::new(temp);
@@ -815,8 +820,8 @@ mod tests {
         // Create .jin directory and invalid .jinmap in temp directory
         let jin_dir = temp.path().join(".jin");
         std::fs::create_dir_all(&jin_dir).unwrap();
-        // Use content that YAML will actually reject - unclosed bracket
-        std::fs::write(jin_dir.join(".jinmap"), "key: [unclosed").unwrap();
+        // Use content that YAML will actually reject - unclosed quote
+        std::fs::write(jin_dir.join(".jinmap"), "key: \"unclosed").unwrap();
 
         // Use DirGuard to change to temp directory and auto-restore
         let _guard = DirGuard::new(temp);

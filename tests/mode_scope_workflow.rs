@@ -17,8 +17,12 @@ mod common;
 use common::assertions::*;
 use common::fixtures::*;
 
+// Use serial_test to ensure tests that use JIN_DIR environment variable run sequentially
+use serial_test::serial;
+
 /// Test layer routing: mode base (Layer 2)
 #[test]
+#[serial]
 fn test_layer_routing_mode_base() -> Result<(), Box<dyn std::error::Error>> {
     let fixture = TestFixture::new()?;
     let project_path = fixture.path();
@@ -69,6 +73,7 @@ fn test_layer_routing_mode_base() -> Result<(), Box<dyn std::error::Error>> {
 
 /// Test layer routing: mode + project (Layer 5)
 #[test]
+#[serial]
 fn test_layer_routing_mode_project() -> Result<(), Box<dyn std::error::Error>> {
     let fixture = TestFixture::new()?;
     let project_path = fixture.path();
@@ -124,6 +129,7 @@ fn test_layer_routing_mode_project() -> Result<(), Box<dyn std::error::Error>> {
 
 /// Test layer routing: mode + scope (Layer 7)
 #[test]
+#[serial]
 fn test_layer_routing_mode_scope() -> Result<(), Box<dyn std::error::Error>> {
     let fixture = TestFixture::new()?;
     let project_path = fixture.path();
@@ -186,6 +192,7 @@ fn test_layer_routing_mode_scope() -> Result<(), Box<dyn std::error::Error>> {
 
 /// Test layer routing: mode + scope + project (Layer 8)
 #[test]
+#[serial]
 fn test_layer_routing_mode_scope_project() -> Result<(), Box<dyn std::error::Error>> {
     let fixture = TestFixture::new()?;
     let project_path = fixture.path();
@@ -256,6 +263,7 @@ fn test_layer_routing_mode_scope_project() -> Result<(), Box<dyn std::error::Err
 
 /// Test layer precedence: higher layer wins
 #[test]
+#[serial]
 fn test_layer_precedence_higher_wins() -> Result<(), Box<dyn std::error::Error>> {
     let fixture = TestFixture::new()?;
     let project_path = fixture.path();
@@ -339,6 +347,7 @@ fn test_layer_precedence_higher_wins() -> Result<(), Box<dyn std::error::Error>>
 
 /// Test deep merge of JSON files across layers
 #[test]
+#[serial]
 fn test_mode_scope_deep_merge() -> Result<(), Box<dyn std::error::Error>> {
     let fixture = TestFixture::new()?;
     let project_path = fixture.path();
@@ -438,6 +447,7 @@ fn test_mode_scope_deep_merge() -> Result<(), Box<dyn std::error::Error>> {
 
 /// Test global layer (Layer 1)
 #[test]
+#[serial]
 fn test_layer_routing_global_base() -> Result<(), Box<dyn std::error::Error>> {
     let fixture = TestFixture::new()?;
     let project_path = fixture.path();
@@ -471,6 +481,7 @@ fn test_layer_routing_global_base() -> Result<(), Box<dyn std::error::Error>> {
 
 /// Test project base layer (Layer 9 - lowest precedence user layer)
 #[test]
+#[serial]
 fn test_layer_routing_project_base() -> Result<(), Box<dyn std::error::Error>> {
     let fixture = TestFixture::new()?;
     let project_path = fixture.path();
@@ -509,6 +520,7 @@ fn test_layer_routing_project_base() -> Result<(), Box<dyn std::error::Error>> {
 
 /// Test error: use scope without mode when scope is mode-scoped
 #[test]
+#[serial]
 fn test_scope_requires_mode_error() -> Result<(), Box<dyn std::error::Error>> {
     let fixture = TestFixture::new()?;
     let project_path = fixture.path();
@@ -555,6 +567,7 @@ fn test_scope_requires_mode_error() -> Result<(), Box<dyn std::error::Error>> {
 
 /// Test multiple modes don't interfere
 #[test]
+#[serial]
 fn test_multiple_modes_isolated() -> Result<(), Box<dyn std::error::Error>> {
     let fixture = TestFixture::new()?;
     let project_path = fixture.path();

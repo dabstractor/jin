@@ -986,14 +986,14 @@
               "type": "Task",
               "id": "P2.M4.T3",
               "title": "Fix Git Lock Contention Issues",
-              "status": "Planned",
+              "status": "Complete",
               "description": "Fix 4 mode command tests failing due to Git lock contention. Pre-test cleanup and better isolation should resolve these.",
               "subtasks": [
                 {
                   "type": "Subtask",
                   "id": "P2.M4.T3.S1",
                   "title": "Fix mode command tests",
-                  "status": "Planned",
+                  "status": "Complete",
                   "story_points": 1,
                   "dependencies": [
                     "P2.M4.T1.S2"

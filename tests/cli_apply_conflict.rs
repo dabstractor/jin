@@ -101,10 +101,7 @@ fn test_apply_with_conflicts_creates_jinmerge_files() {
 
     // Verify .jinmerge file was created
     let jinmerge_path = fixture.path().join("config.json.jinmerge");
-    assert!(
-        jinmerge_path.exists(),
-        ".jinmerge file should be created"
-    );
+    assert!(jinmerge_path.exists(), ".jinmerge file should be created");
 
     // Verify .jinmerge file has correct format
     let jinmerge_content = fs::read_to_string(&jinmerge_path).unwrap();
@@ -284,10 +281,7 @@ fn test_apply_with_conflicts_applies_non_conflicting_files() {
         .success();
 
     // Verify non-conflicting file was applied
-    assert!(
-        safe_path.exists(),
-        "Non-conflicting file should be applied"
-    );
+    assert!(safe_path.exists(), "Non-conflicting file should be applied");
     let safe_content = fs::read_to_string(&safe_path).unwrap();
     assert_eq!(safe_content, r#"{"safe": true}"#);
 
@@ -447,11 +441,7 @@ fn test_apply_with_multiple_conflicts() {
     // Verify all 3 .jinmerge files were created
     for name in ["a.json", "b.json", "c.json"] {
         let jinmerge_path = fixture.path().join(format!("{}.jinmerge", name));
-        assert!(
-            jinmerge_path.exists(),
-            "{} .jinmerge should exist",
-            name
-        );
+        assert!(jinmerge_path.exists(), "{} .jinmerge should exist", name);
     }
 
     // Verify paused state contains all 3 conflicts

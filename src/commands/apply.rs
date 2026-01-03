@@ -15,35 +15,35 @@ use std::path::{Path, PathBuf};
 
 /// State for a paused apply operation due to conflicts
 #[derive(Debug, Clone, Serialize, Deserialize)]
-struct PausedApplyState {
+pub struct PausedApplyState {
     /// When the operation was paused
-    timestamp: DateTime<Utc>,
+    pub timestamp: DateTime<Utc>,
     /// Layer configuration used for the merge attempt
-    layer_config: PausedLayerConfig,
+    pub layer_config: PausedLayerConfig,
     /// Files with conflicts (original paths, not .jinmerge paths)
-    conflict_files: Vec<PathBuf>,
+    pub conflict_files: Vec<PathBuf>,
     /// Files that were successfully applied
-    applied_files: Vec<PathBuf>,
+    pub applied_files: Vec<PathBuf>,
     /// Number of conflicts total
-    conflict_count: usize,
+    pub conflict_count: usize,
 }
 
 /// Simplified layer config for serialization
 #[derive(Debug, Clone, Serialize, Deserialize)]
-struct PausedLayerConfig {
+pub struct PausedLayerConfig {
     /// Layer names as strings
-    layers: Vec<String>,
+    pub layers: Vec<String>,
     /// Active mode, if any
-    mode: Option<String>,
+    pub mode: Option<String>,
     /// Active scope, if any
-    scope: Option<String>,
+    pub scope: Option<String>,
     /// Project name
-    project: Option<String>,
+    pub project: Option<String>,
 }
 
 impl PausedApplyState {
     /// Save state to `.jin/.paused_apply.yaml`
-    fn save(&self) -> Result<()> {
+    pub fn save(&self) -> Result<()> {
         let path = PathBuf::from(".jin/.paused_apply.yaml");
         let content = serde_yaml::to_string(self)
             .map_err(|e| JinError::Other(format!("Failed to serialize paused state: {}", e)))?;
@@ -57,8 +57,24 @@ impl PausedApplyState {
     }
 
     /// Check if a paused operation exists
-    fn exists() -> bool {
+    pub fn exists() -> bool {
         PathBuf::from(".jin/.paused_apply.yaml").exists()
+    }
+
+    /// Load state from `.jin/.paused_apply.yaml`
+    pub fn load() -> Result<Self> {
+        let path = PathBuf::from(".jin/.paused_apply.yaml");
+
+        if !path.exists() {
+            return Err(JinError::Other(
+                "No paused apply operation found".to_string(),
+            ));
+        }
+
+        let content = std::fs::read_to_string(&path).map_err(JinError::Io)?;
+
+        serde_yaml::from_str(&content)
+            .map_err(|e| JinError::Other(format!("Invalid paused state: {}", e)))
     }
 }
 

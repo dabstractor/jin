@@ -217,3 +217,22 @@ pub struct PushArgs {
     #[arg(long)]
     pub force: bool,
 }
+
+/// Arguments for the `resolve` command
+#[derive(Args, Debug)]
+pub struct ResolveArgs {
+    /// File(s) to resolve (optional, resolves all if not specified)
+    pub files: Vec<String>,
+
+    /// Resolve all remaining conflicts
+    #[arg(long, short = 'a')]
+    pub all: bool,
+
+    /// Skip confirmation prompts
+    #[arg(long, short = 'f')]
+    pub force: bool,
+
+    /// Show what would be resolved without doing it
+    #[arg(long)]
+    pub dry_run: bool,
+}

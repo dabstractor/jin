@@ -56,6 +56,9 @@ pub enum Commands {
     /// Apply merged layers to workspace
     Apply(ApplyArgs),
 
+    /// Resolve merge conflicts
+    Resolve(ResolveArgs),
+
     /// Reset staged or committed changes
     Reset(ResetArgs),
 

@@ -25,6 +25,7 @@ pub mod pull;
 pub mod push;
 pub mod repair;
 pub mod reset;
+pub mod resolve;
 pub mod rm;
 pub mod scope;
 pub mod status;
@@ -42,6 +43,7 @@ pub fn execute(cli: Cli) -> Result<()> {
         Commands::Scope(action) => scope::execute(action),
         Commands::Scopes => scope::list(),
         Commands::Apply(args) => apply::execute(args),
+        Commands::Resolve(args) => resolve::execute(args),
         Commands::Reset(args) => reset::execute(args),
         Commands::Rm(args) => rm::execute(args),
         Commands::Mv(args) => mv::execute(args),

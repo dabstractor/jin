@@ -122,14 +122,14 @@
               "type": "Task",
               "id": "P1.M1.T3",
               "title": "Implement Resolve Command",
-              "status": "Planned",
+              "status": "Complete",
               "description": "Create the jin resolve command that completes the conflict resolution workflow. Users run this command after manually resolving .jinmerge conflicts to continue the interrupted apply operation.",
               "subtasks": [
                 {
                   "type": "Subtask",
                   "id": "P1.M1.T3.S1",
                   "title": "Add resolve CLI arguments",
-                  "status": "Planned",
+                  "status": "Complete",
                   "story_points": 1,
                   "dependencies": [],
                   "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: Follow clap derive pattern from existing commands (plan/architecture/external_deps.md Section 1.6).\n2. INPUT: User provides paths to resolved files on command line.\n3. LOGIC: Add ResolveArgs struct to src/cli/mod.rs with 'paths: Vec<PathBuf>' field for resolved file paths. Add '--all' flag for resolving all conflicts at once. Derive Parser and Debug traits.\n4. OUTPUT: ResolveArgs struct for use by resolve command implementation."
@@ -138,7 +138,7 @@
                   "type": "Subtask",
                   "id": "P1.M1.T3.S2",
                   "title": "Implement resolve validation logic",
-                  "status": "Planned",
+                  "status": "Complete",
                   "story_points": 1,
                   "dependencies": [
                     "P1.M1.T3.S1",
@@ -150,7 +150,7 @@
                   "type": "Subtask",
                   "id": "P1.M1.T3.S3",
                   "title": "Resume apply operation after resolution",
-                  "status": "Planned",
+                  "status": "Complete",
                   "story_points": 2,
                   "dependencies": [
                     "P1.M1.T3.S2"
@@ -161,7 +161,7 @@
                   "type": "Subtask",
                   "id": "P1.M1.T3.S4",
                   "title": "Add resolve command to CLI",
-                  "status": "Planned",
+                  "status": "Complete",
                   "story_points": 1,
                   "dependencies": [
                     "P1.M1.T3.S3"

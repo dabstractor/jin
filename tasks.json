@@ -3,103 +3,221 @@
     {
       "type": "Phase",
       "id": "P1",
-      "title": "Foundation & Core Infrastructure",
-      "status": "Complete",
-      "description": "Establish the Rust project structure, core types, error handling, and foundational Git integration. This phase creates the skeleton upon which all features are built.",
+      "title": "Phase 1: Critical PRD Compliance Gaps",
+      "status": "Planned",
+      "description": "Implement the three critical gaps that violate PRD non-negotiable invariants: .jinmerge conflict resolution workflow, fetch-before-push enforcement, and detached workspace state detection. These gaps block core functionality and must be resolved before Jin can be considered production-ready.",
       "milestones": [
         {
           "type": "Milestone",
           "id": "P1.M1",
-          "title": "Project Scaffolding",
-          "status": "Complete",
-          "description": "Create Rust project structure with all dependencies, module layout, and basic CLI skeleton.",
+          "title": "Milestone 1.1: .jinmerge Conflict Resolution Workflow",
+          "status": "Planned",
+          "description": "Implement the PRD-mandated .jinmerge file format for conflict resolution. This replaces the current abort-on-conflict behavior with a Git-style conflict resolution workflow that allows users to manually resolve merge conflicts before completing the apply operation.",
           "tasks": [
             {
               "type": "Task",
               "id": "P1.M1.T1",
-              "title": "Initialize Rust Project",
-              "status": "Complete",
-              "description": "Create Cargo.toml with all dependencies and establish the module directory structure.",
+              "title": "Create .jinmerge File Format Module",
+              "status": "Planned",
+              "description": "Implement the core data structures and file format for .jinmerge conflict files that show layer-aware conflict markers with full ref paths.",
               "subtasks": [
                 {
                   "type": "Subtask",
                   "id": "P1.M1.T1.S1",
-                  "title": "Create Cargo.toml with Dependencies",
-                  "status": "Complete",
+                  "title": "Define JinMergeConflict data structures",
+                  "status": "Planned",
                   "story_points": 1,
                   "dependencies": [],
-                  "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: See plan/architecture/external_deps.md for exact crate versions.\n2. INPUT: None - this is the first subtask.\n3. LOGIC: Create Cargo.toml with all required dependencies.\n4. OUTPUT: Valid Cargo.toml that compiles with `cargo check`."
+                  "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: diffy crate cannot support custom conflict markers - custom implementation required (plan/architecture/external_deps.md Section 1.2).\n2. INPUT: None (foundational data structures).\n3. LOGIC: Create JinMergeConflict and ConflictRegion structs in src/merge/jinmerge.rs. Each ConflictRegion must contain layer1_ref (full ref path like 'mode/claude/scope/language:javascript/'), layer1_content, layer2_ref, layer2_content. Do NOT use diffy for marker generation.\n4. OUTPUT: Public structs with public fields for use by apply command (S2) and resolve command (S3)."
                 },
                 {
                   "type": "Subtask",
                   "id": "P1.M1.T1.S2",
-                  "title": "Create Module Directory Structure",
-                  "status": "Complete",
+                  "title": "Implement .jinmerge file generation",
+                  "status": "Planned",
                   "story_points": 1,
-                  "dependencies": [
-                    "P1.M1.T1.S1"
-                  ],
-                  "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: See plan/architecture/system_context.md Section 2.1 for structure.\n2. INPUT: Cargo.toml from P1.M1.T1.S1.\n3. LOGIC: Create all module directories and mod.rs files.\n4. OUTPUT: Compilable project structure."
+                  "dependencies": ["P1.M1.T1.S1"],
+                  "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: PRD Section 11.3 specifies exact format: '<<<<<<< layer_ref\\ncontent\\n=======\\ncontent\\n>>>>>>> layer_ref' (plan/architecture/codebase_analysis.md Section 2, Gap #1).\n2. INPUT: JinMergeConflict struct from S1 with populated conflict regions.\n3. LOGIC: Implement write_to_file() method that generates .jinmerge files in workspace with Git-style conflict markers. Markers must include full layer ref paths (not 'ours/theirs'). Write file to same path as original but with .jinmerge extension.\n4. OUTPUT: .jinmerge file written to workspace filesystem, returning Result<()> for error handling by apply command."
+                },
+                {
+                  "type": "Subtask",
+                  "id": "P1.M1.T1.S3",
+                  "title": "Implement .jinmerge file parsing",
+                  "status": "Planned",
+                  "story_points": 1,
+                  "dependencies": ["P1.M1.T1.S2"],
+                  "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: Needed for resolve command to validate resolved files (plan/architecture/codebase_analysis.md Section 4.3).\n2. INPUT: PathBuf pointing to .jinmerge file in workspace.\n3. LOGIC: Implement parse_from_file() function that reads .jinmerge file and extracts conflict regions. Must validate marker format and extract layer ref paths. Return error if file format invalid.\n4. OUTPUT: JinMergeConflict struct with parsed regions for use by resolve command validation."
+                },
+                {
+                  "type": "Subtask",
+                  "id": "P1.M1.T1.S4",
+                  "title": "Add .jinmerge module to merge mod.rs",
+                  "status": "Planned",
+                  "story_points": 1,
+                  "dependencies": ["P1.M1.T1.S1"],
+                  "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: Follow existing merge module structure (plan/architecture/codebase_analysis.md Section 3.2).\n2. INPUT: jinmerge module exists at src/merge/jinmerge.rs.\n3. LOGIC: Add 'pub mod jinmerge;' to src/merge/mod.rs. Re-export main structs (JinMergeConflict, ConflictRegion) for use by commands module.\n4. OUTPUT: merge::jinmerge module accessible as crate::merge::jinmerge in commands."
                 }
               ]
             },
             {
               "type": "Task",
               "id": "P1.M1.T2",
-              "title": "Core Error Types",
-              "status": "Complete",
-              "description": "Define the error hierarchy for all Jin operations using thiserror.",
+              "title": "Modify Apply Command to Write .jinmerge Files",
+              "status": "Planned",
+              "description": "Replace the current abort-on-conflict behavior in jin apply with .jinmerge file creation workflow. When conflicts are detected, write .jinmerge files and pause the operation instead of failing.",
               "subtasks": [
                 {
                   "type": "Subtask",
                   "id": "P1.M1.T2.S1",
-                  "title": "Define JinError Enum",
-                  "status": "Complete",
-                  "story_points": 2,
-                  "dependencies": [
-                    "P1.M1.T1.S2"
-                  ],
-                  "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: See src/core/error.rs for implementation.\n2. INPUT: Module structure from P1.M1.T1.S2.\n3. LOGIC: Define JinError with all variants and From impls.\n4. OUTPUT: JinError type exported from core::error."
+                  "title": "Refactor conflict detection to collect merge results",
+                  "status": "Planned",
+                  "story_points": 1,
+                  "dependencies": ["P1.M1.T1.S4"],
+                  "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: Current code at lines 63-76 in apply.rs aborts on conflicts (plan/architecture/codebase_analysis.md Section 2, Gap #1). Current merged object contains conflict_files Vec<PathBuf>.\n2. INPUT: LayerMergeResult from merge_layers() call in execute() function.\n3. LOGIC: Before aborting, collect file contents for each conflict from merged.merged_files map. For each conflict file, read the base content from each layer involved in conflict. Store as Vec<ConflictFileData> struct with path, base_content, and conflicting layer contents.\n4. OUTPUT: Vec<ConflictFileData> containing all information needed to generate .jinmerge files."
+                },
+                {
+                  "type": "Subtask",
+                  "id": "P1.M1.T2.S2",
+                  "title": "Generate .jinmerge files for each conflict",
+                  "status": "Planned",
+                  "story_points": 1,
+                  "dependencies": ["P1.M1.T2.S1"],
+                  "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: Use jinmerge module from T1 (plan/architecture/codebase_analysis.md Section 2, Gap #1).\n2. INPUT: Vec<ConflictFileData> from S1 with file contents and layer information.\n3. LOGIC: For each conflict, create JinMergeConflict with ConflictRegion for each conflicting layer. Call write_to_file() to write .jinmerge file to workspace. The .jinmerge file should be in same directory as original file (e.g., .claude/config.json -> .claude/config.json.jinmerge).\n4. OUTPUT: Multiple .jinmerge files written to workspace, returning Result<Vec<PathBuf>> with paths to created files."
+                },
+                {
+                  "type": "Subtask",
+                  "id": "P1.M1.T2.S3",
+                  "title": "Update apply command to pause instead of abort",
+                  "status": "Planned",
+                  "story_points": 1,
+                  "dependencies": ["P1.M1.T2.S2"],
+                  "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: Current code returns Err(JinError::Other(...)) at line 86 (plan/architecture/codebase_analysis.md Section 2, Gap #1). PRD requires workflow pause, not failure.\n2. INPUT: Vec<PathBuf> of .jinmerge file paths from S2.\n3. LOGIC: Remove the Err return for conflicts. Instead, display user-friendly message: 'Merge conflicts detected in N files. .jinmerge files created. Resolve conflicts manually, then run \"jin resolve <files>\" to continue.' Exit with Ok(()) after creating files. Do NOT proceed with apply operation.\n4. OUTPUT: Ok(()) returning from execute() after writing conflict files, without applying any changes to workspace."
+                },
+                {
+                  "type": "Subtask",
+                  "id": "P1.M1.T2.S4",
+                  "title": "Create conflict state tracking file",
+                  "status": "Planned",
+                  "story_points": 1,
+                  "dependencies": ["P1.M1.T2.S3"],
+                  "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: Needed for resolve command to know which operation to resume (plan/architecture/codebase_analysis.md Section 2, Gap #1).\n2. INPUT: Vec<PathBuf> of .jinmerge file paths, original apply command args.\n3. LOGIC: Create .jin/apply-in-progress file in JSON format with fields: operation_type (\"apply\"), conflict_files (array of paths), original_args (serialized ApplyArgs), timestamp (ISO 8601). Write to .jin/ directory.\n4. OUTPUT: State file persisted for later resume by resolve command."
                 }
               ]
             },
             {
               "type": "Task",
               "id": "P1.M1.T3",
-              "title": "Layer Type Definitions",
-              "status": "Complete",
-              "description": "Define the 9-layer hierarchy as Rust types with routing logic.",
+              "title": "Implement Resolve Command",
+              "status": "Planned",
+              "description": "Create the jin resolve command that completes the conflict resolution workflow. Users run this command after manually resolving .jinmerge conflicts to continue the interrupted apply operation.",
               "subtasks": [
                 {
                   "type": "Subtask",
                   "id": "P1.M1.T3.S1",
-                  "title": "Define Layer Enum and Paths",
-                  "status": "Complete",
+                  "title": "Add resolve CLI arguments",
+                  "status": "Planned",
+                  "story_points": 1,
+                  "dependencies": [],
+                  "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: Follow clap derive pattern from existing commands (plan/architecture/external_deps.md Section 1.6).\n2. INPUT: User provides paths to resolved files on command line.\n3. LOGIC: Add ResolveArgs struct to src/cli/mod.rs with 'paths: Vec<PathBuf>' field for resolved file paths. Add '--all' flag for resolving all conflicts at once. Derive Parser and Debug traits.\n4. OUTPUT: ResolveArgs struct for use by resolve command implementation."
+                },
+                {
+                  "type": "Subtask",
+                  "id": "P1.M1.T3.S2",
+                  "title": "Implement resolve validation logic",
+                  "status": "Planned",
+                  "story_points": 1,
+                  "dependencies": ["P1.M1.T3.S1", "P1.M1.T1.S3"],
+                  "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: Must validate .jinmerge files are fully resolved (plan/architecture/codebase_analysis.md Section 2, Gap #1).\n2. INPUT: ResolveArgs with file paths, .jin/apply-in-progress state file.\n3. LOGIC: For each path in args.paths, check if .jinmerge file exists. If yes, parse with parse_from_file() and validate no conflict markers remain (search for '<<<<<<<' in file content). If conflict markers still present, return Err. If .jinmerge doesn't exist but path in state file, verify file was modified.\n4. OUTPUT: Result<()> indicating all conflicts resolved, or Err with details of unresolved conflicts."
+                },
+                {
+                  "type": "Subtask",
+                  "id": "P1.M1.T3.S3",
+                  "title": "Resume apply operation after resolution",
+                  "status": "Planned",
                   "story_points": 2,
-                  "dependencies": [
-                    "P1.M1.T2.S1"
-                  ],
-                  "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: See PRD Section 4.1 and src/core/layer.rs.\n2. INPUT: JinError from P1.M1.T2.S1.\n3. LOGIC: Define Layer enum with precedence, ref_path, storage_path methods.\n4. OUTPUT: Layer enum exported from core::layer."
+                  "dependencies": ["P1.M1.T3.S2"],
+                  "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: Must resume the original apply operation from state file (plan/architecture/codebase_analysis.md Section 2, Gap #1).\n2. INPUT: Validated resolved files from S2, .jin/apply-in-progress state file with original args.\n3. LOGIC: Load original ApplyArgs from state file. Call apply::execute() with original args, but skip the conflict detection phase (files already resolved). Remove .jinmerge files after successful apply. Delete .jin/apply-in-progress state file. Display success message.\n4. OUTPUT: Ok(()) after completing apply, returning to normal workflow."
+                },
+                {
+                  "type": "Subtask",
+                  "id": "P1.M1.T3.S4",
+                  "title": "Add resolve command to CLI",
+                  "status": "Planned",
+                  "story_points": 1,
+                  "dependencies": ["P1.M1.T3.S3"],
+                  "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: Add to subcommands list in src/main.rs (plan/architecture/codebase_analysis.md Section 1.1).\n2. INPUT: resolve command implementation exists in src/commands/resolve.rs.\n3. LOGIC: Add Resolve(ResolveArgs) variant to Commands enum in src/cli/mod.rs. Add command registration in src/main.rs with 'resolve' name and description 'Complete conflict resolution workflow'.\n4. OUTPUT: 'jin resolve <paths>' command available to users."
                 }
               ]
             },
             {
               "type": "Task",
               "id": "P1.M1.T4",
-              "title": "Configuration Types",
-              "status": "Complete",
-              "description": "Define configuration structures for Jin global config and project context.",
+              "title": "Update Status Command for Conflict State",
+              "status": "Planned",
+              "description": "Modify jin status to display when there's an in-progress apply operation with pending conflict resolutions. This provides users with visibility into the conflict resolution workflow state.",
               "subtasks": [
                 {
                   "type": "Subtask",
                   "id": "P1.M1.T4.S1",
-                  "title": "Define Config and Context Structs",
-                  "status": "Complete",
-                  "story_points": 2,
-                  "dependencies": [
-                    "P1.M1.T3.S1"
-                  ],
-                  "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: See src/core/config.rs for implementation.\n2. INPUT: Layer enum from P1.M1.T3.S1.\n3. LOGIC: Define JinConfig, ProjectContext with load/save.\n4. OUTPUT: Config types exported from core::config."
+                  "title": "Check for in-progress apply operation",
+                  "status": "Planned",
+                  "story_points": 1,
+                  "dependencies": [],
+                  "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: Status command at src/commands/status.rs needs to detect .jin/apply-in-progress (plan/architecture/codebase_analysis.md Section 2, Gap #1).\n2. INPUT: Current workspace state, .jin directory contents.\n3. LOGIC: In execute() function, check if .jin/apply-in-progress file exists. If yes, parse JSON to get conflict_files list and timestamp. Store for display.\n4. OUTPUT: Option<InProgressApply> struct with conflict info, or None if no in-progress operation."
+                },
+                {
+                  "type": "Subtask",
+                  "id": "P1.M1.T4.S2",
+                  "title": "Display conflict state in status output",
+                  "status": "Planned",
+                  "story_points": 1,
+                  "dependencies": ["P1.M1.T4.S1"],
+                  "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: PRD requires status to show pending resolutions (plan/architecture/codebase_analysis.md Section 2, Gap #1).\n2. INPUT: Option<InProgressApply> from S1 with conflict file paths.\n3. LOGIC: If in-progress apply exists, add section to status output: 'Merge conflicts (N files):' followed by list of conflicted files. Add 'Resolve with: jin resolve <files>' instruction. Show timestamp of when conflicts were detected.\n4. OUTPUT: Enhanced status output including conflict state information."
+                }
+              ]
+            },
+            {
+              "type": "Task",
+              "id": "P1.M1.T5",
+              "title": "Add Integration Tests for Conflict Workflow",
+              "status": "Planned",
+              "description": "Create comprehensive integration tests for the .jinmerge conflict resolution workflow. Tests must cover end-to-end scenarios from conflict detection through resolution.",
+              "subtasks": [
+                {
+                  "type": "Subtask",
+                  "id": "P1.M1.T5.S1",
+                  "title": "Test .jinmerge file creation",
+                  "status": "Planned",
+                  "story_points": 1,
+                  "dependencies": ["P1.M1.T2.S4"],
+                  "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: Use TestFixture pattern from tests/common/fixtures.rs (plan/architecture/test_analysis.md Section 1.1).\n2. INPUT: Two layers with conflicting file contents.\n3. LOGIC: Create test that stages conflicting files to different layers, runs 'jin apply', and verifies .jinmerge files are created in workspace. Assert file format matches PRD spec with layer ref paths. Use absolute paths from fixture, not set_current_dir().\n4. OUTPUT: Passing test verifying .jinmerge file creation and format."
+                },
+                {
+                  "type": "Subtask",
+                  "id": "P1.M1.T5.S2",
+                  "title": "Test resolve command workflow",
+                  "status": "Planned",
+                  "story_points": 1,
+                  "dependencies": ["P1.M1.T5.S1", "P1.M1.T3.S4"],
+                  "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: Test must simulate user manually resolving conflicts (plan/architecture/test_analysis.md Section 1.1).\n2. INPUT: Workspace with .jinmerge files from S1.\n3. LOGIC: Create test that manually edits .jinmerge file to remove conflict markers, then runs 'jin resolve' with the file path. Verify original file is updated with resolved content and .jinmerge file is deleted. Assert state file is cleaned up.\n4. OUTPUT: Passing test verifying complete resolve workflow."
+                },
+                {
+                  "type": "Subtask",
+                  "id": "P1.M1.T5.S3",
+                  "title": "Test status shows conflict state",
+                  "status": "Planned",
+                  "story_points": 1,
+                  "dependencies": ["P1.M1.T5.S1", "P1.M1.T4.S2"],
+                  "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: Use assert_status_has_conflict() helper from tests/common/assertions.rs (plan/architecture/test_analysis.md Section 8.1).\n2. INPUT: Workspace with in-progress apply from S1.\n3. LOGIC: Create test that runs 'jin status' after conflicts are detected and verifies output includes conflict file list and resolve instruction. Parse status output and assert conflict section exists with correct file count.\n4. OUTPUT: Passing test verifying status command integration."
+                },
+                {
+                  "type": "Subtask",
+                  "id": "P1.M1.T5.S4",
+                  "title": "Test error handling for unresolved conflicts",
+                  "status": "Planned",
+                  "story_points": 1,
+                  "dependencies": ["P1.M1.T5.S2"],
+                  "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: Test must validate resolve rejects incomplete resolutions (plan/architecture/test_analysis.md Section 5.2).\n2. INPUT: Workspace with .jinmerge file still containing conflict markers.\n3. LOGIC: Create test that runs 'jin resolve' on file with unresolved conflict markers. Verify command returns Err with helpful error message listing which files still have conflicts. Do NOT modify workspace.\n4. OUTPUT: Passing test validating error handling."
                 }
               ]
             }
@@ -108,87 +226,106 @@
         {
           "type": "Milestone",
           "id": "P1.M2",
-          "title": "Git Layer Integration",
-          "status": "Complete",
-          "description": "Implement the phantom Git layer using libgit2, including repository management, ref operations, and object creation.",
+          "title": "Milestone 1.2: Fetch-Before-Push Enforcement",
+          "status": "Planned",
+          "description": "Implement the PRD-mandated fetch-before-push invariant to prevent data loss in team collaboration scenarios. The push command must automatically fetch from remote and reject pushes when local state is behind remote.",
           "tasks": [
             {
               "type": "Task",
               "id": "P1.M2.T1",
-              "title": "Jin Repository Wrapper",
-              "status": "Complete",
-              "description": "Create a wrapper around git2::Repository for Jin-specific operations.",
+              "title": "Add Automatic Fetch to Push Command",
+              "status": "Planned",
+              "description": "Modify the push command to automatically call fetch before pushing. This ensures the local state is compared against the latest remote state before any push operation.",
               "subtasks": [
                 {
                   "type": "Subtask",
                   "id": "P1.M2.T1.S1",
-                  "title": "Implement JinRepo Struct",
-                  "status": "Complete",
-                  "story_points": 2,
-                  "dependencies": [
-                    "P1.M1.T4.S1"
-                  ],
-                  "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: See src/git/repo.rs.\n2. INPUT: Paths from core::config.\n3. LOGIC: Wrap git2::Repository with open/init methods.\n4. OUTPUT: JinRepo struct exported from git::repo."
+                  "title": "Call fetch at start of push execute",
+                  "status": "Planned",
+                  "story_points": 1,
+                  "dependencies": [],
+                  "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: Current push.rs has NO fetch call (plan/architecture/codebase_analysis.md Section 2, Gap #2). Fetch command at src/commands/fetch.rs can be called directly.\n2. INPUT: PushArgs struct in push::execute() function.\n3. LOGIC: At the very start of push::execute(), after loading JinConfig, call 'super::fetch::execute()?' to fetch from remote. This will update remote tracking refs in the Jin repository. Ensure any fetch errors are propagated to user.\n4. OUTPUT: Updated remote refs in local Jin repository, ready for comparison in S2."
+                },
+                {
+                  "type": "Subtask",
+                  "id": "P1.M2.T1.S2",
+                  "title": "Capture and display fetch results",
+                  "status": "Planned",
+                  "story_points": 1,
+                  "dependencies": ["P1.M2.T1.S1"],
+                  "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: Users should see what was fetched (plan/architecture/codebase_analysis.md Section 2, Gap #2).\n2. INPUT: Result from fetch::execute() call.\n3. LOGIC: Capture the fetch result (updated refs count, file changes). Display brief message: 'Fetched from remote: N layer(s) updated'. Don't show full fetch details (push command has its own output), just confirm fetch succeeded.\n4. OUTPUT: User notification that fetch completed before push proceeds."
                 }
               ]
             },
             {
               "type": "Task",
               "id": "P1.M2.T2",
-              "title": "Reference Management",
-              "status": "Complete",
-              "description": "Implement CRUD operations for Jin's custom ref namespace.",
+              "title": "Implement Local vs Remote Comparison",
+              "status": "Planned",
+              "description": "Add logic to compare local and remote refs after fetching. Detect if local commits are behind remote commits (divergent histories) to prevent data loss.",
               "subtasks": [
                 {
                   "type": "Subtask",
                   "id": "P1.M2.T2.S1",
-                  "title": "Implement Ref Operations",
-                  "status": "Complete",
-                  "story_points": 2,
-                  "dependencies": [
-                    "P1.M2.T1.S1"
-                  ],
-                  "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: See src/git/refs.rs.\n2. INPUT: JinRepo, Layer types.\n3. LOGIC: Implement get/create/update/delete for layer refs.\n4. OUTPUT: Ref operations in git::refs."
+                  "title": "Create ref comparison utility function",
+                  "status": "Planned",
+                  "story_points": 1,
+                  "dependencies": [],
+                  "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: git2 provides graph_descendant_of() for ancestry checking (plan/architecture/external_deps.md Section 4.2).\n2. INPUT: JinRepo instance, local layer ref name (e.g., 'mode/claude'), remote ref name.\n3. LOGIC: Create function is_behind_remote() in src/git/repo.rs or src/commands/push.rs. Use git2::Repository::graph_descendant_of() to check if local commit is ancestor of remote commit. Return Result<bool> where true means local is behind. Handle missing refs gracefully.\n4. OUTPUT: Boolean indicating whether local ref is behind remote ref."
+                },
+                {
+                  "type": "Subtask",
+                  "id": "P1.M2.T2.S2",
+                  "title": "Add DetachedWorkspace error variant",
+                  "status": "Planned",
+                  "story_points": 1,
+                  "dependencies": [],
+                  "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: New error type needed for push rejection (plan/architecture/codebase_analysis.md Section 2, Gap #2). thiserror supports custom errors (plan/architecture/external_deps.md Section 1.4).\n2. INPUT: Layer ref name, local commit SHA, remote commit SHA.\n3. LOGIC: Add PushBehindRemote variant to JinError enum in src/core/error.rs with fields: layer_name (String), local_commit (String), remote_commit (String), hint (String). Implement thiserror derive with error message including hint.\n4. OUTPUT: New error type for use in push command."
+                },
+                {
+                  "type": "Subtask",
+                  "id": "P1.M2.T2.S3",
+                  "title": "Compare refs before pushing",
+                  "status": "Planned",
+                  "story_points": 1,
+                  "dependencies": ["P1.M2.T2.S1", "P1.M2.T2.S2"],
+                  "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: Must check ALL layers being pushed (plan/architecture/codebase_analysis.md Section 2, Gap #2).\n2. INPUT: List of layer refs to push, JinRepo instance, --force flag from PushArgs.\n3. LOGIC: After fetch in S1, for each layer ref to push, call is_behind_remote(). If ANY ref is behind and --force not set, return Err(JinError::PushBehindRemote) with hint 'Run \"jin pull\" to update local state first, or use --force to override'. If --force is set, display warning but allow push.\n4. OUTPUT: Ok(()) if all refs up-to-date or force flag set, Err otherwise."
                 }
               ]
             },
             {
               "type": "Task",
               "id": "P1.M2.T3",
-              "title": "Git Object Creation",
-              "status": "Complete",
-              "description": "Implement blob, tree, and commit creation for layer content.",
+              "title": "Add Integration Tests for Push Enforcement",
+              "status": "Planned",
+                  "description": "Create integration tests for fetch-before-push enforcement covering scenarios where local is behind, ahead, and divergent from remote.",
               "subtasks": [
                 {
                   "type": "Subtask",
                   "id": "P1.M2.T3.S1",
-                  "title": "Implement Object Creation",
-                  "status": "Complete",
-                  "story_points": 2,
-                  "dependencies": [
-                    "P1.M2.T1.S1"
-                  ],
-                  "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: See src/git/objects.rs.\n2. INPUT: JinRepo.\n3. LOGIC: Create blob, tree, commit functions.\n4. OUTPUT: Object creation in git::objects."
-                }
-              ]
-            },
-            {
-              "type": "Task",
-              "id": "P1.M2.T4",
-              "title": "Tree Reading and Walking",
-              "status": "Complete",
-              "description": "Implement tree traversal for reading layer content.",
-              "subtasks": [
+                  "title": "Test push rejected when behind remote",
+                  "status": "Planned",
+                  "story_points": 1,
+                  "dependencies": ["P1.M2.T2.S3"],
+                  "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: Use TestFixture with remote repository setup (plan/architecture/test_analysis.md Section 1.1).\n2. INPUT: Two fixtures: local_repo and remote_repo with shared remote origin.\n3. LOGIC: Create test where remote has newer commit than local. Run 'jin push' and verify command returns Err with PushBehindRemote error. Assert error message includes hint to run 'jin pull'. Verify no push occurred.\n4. OUTPUT: Passing test validating push rejection when behind."
+                },
                 {
                   "type": "Subtask",
-                  "id": "P1.M2.T4.S1",
-                  "title": "Implement Tree Walking",
-                  "status": "Complete",
-                  "story_points": 2,
-                  "dependencies": [
-                    "P1.M2.T3.S1"
-                  ],
-                  "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: See src/git/objects.rs walk_tree function.\n2. INPUT: JinRepo.\n3. LOGIC: Recursively walk tree entries.\n4. OUTPUT: Tree walking in git::objects."
+                  "id": "P1.M2.T3.S2",
+                  "title": "Test push succeeds when force flag set",
+                  "status": "Planned",
+                  "story_points": 1,
+                  "dependencies": ["P1.M2.T3.S1"],
+                  "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: --force flag should override the check (plan/architecture/codebase_analysis.md Section 2, Gap #2).\n2. INPUT: Local repo behind remote with PushArgs.force = true.\n3. LOGIC: Create test where remote is ahead, but push command run with --force flag. Verify fetch still occurs, but push proceeds without error. Assert warning message displayed about forced push.\n4. OUTPUT: Passing test validating force override behavior."
+                },
+                {
+                  "type": "Subtask",
+                  "id": "P1.M2.T3.S3",
+                  "title": "Test push succeeds when up-to-date",
+                  "status": "Planned",
+                  "story_points": 1,
+                  "dependencies": ["P1.M2.T3.S1"],
+                  "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: Normal case should work (plan/architecture/test_analysis.md Section 5.2).\n2. INPUT: Local and remote repos with same commit SHA.\n3. LOGIC: Create test where local is not behind remote (same commit or ahead). Run 'jin push' and verify it succeeds normally. Assert fetch occurs before push. Verify refs updated correctly on remote.\n4. OUTPUT: Passing test for normal push flow."
                 }
               ]
             }
@@ -197,50 +334,169 @@
         {
           "type": "Milestone",
           "id": "P1.M3",
-          "title": "Transaction System",
-          "status": "Complete",
-          "description": "Implement atomic multi-layer commits with failure recovery.",
+          "title": "Milestone 1.3: Detached Workspace State Detection",
+          "status": "Planned",
+          "description": "Implement detection and prevention of detached workspace states. This enforces the PRD non-negotiable invariant that the workspace must always be attached to a valid layer commit.",
           "tasks": [
             {
               "type": "Task",
               "id": "P1.M3.T1",
-              "title": "Transaction Implementation",
-              "status": "Complete",
-              "description": "Implement the atomic transaction system for multi-layer commits.",
+              "title": "Define Detached Workspace State",
+              "status": "Planned",
+              "description": "Add the DetachedWorkspace error type and define what constitutes a detached workspace state in the context of Jin's architecture.",
               "subtasks": [
                 {
                   "type": "Subtask",
                   "id": "P1.M3.T1.S1",
-                  "title": "Define Transaction Types",
-                  "status": "Complete",
+                  "title": "Add DetachedWorkspace error variant",
+                  "status": "Planned",
                   "story_points": 1,
-                  "dependencies": [
-                    "P1.M2.T2.S1",
-                    "P1.M2.T3.S1"
-                  ],
-                  "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: See src/git/transaction.rs.\n2. INPUT: Layer, ref operations, object creation.\n3. LOGIC: Define Transaction, TransactionStatus, LayerUpdate.\n4. OUTPUT: Transaction types in git::transaction."
+                  "dependencies": [],
+                  "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: New error needed for workspace validation (plan/architecture/codebase_analysis.md Section 2, Gap #3). thiserror fully supports custom errors (plan/architecture/external_deps.md Section 1.4).\n2. INPUT: Workspace state details, expected layer ref.\n3. LOGIC: Add DetachedWorkspace variant to JinError enum in src/core/error.rs with fields: workspace_commit (Option<String>), expected_layer_ref (String), recovery_hint (String). Implement thiserror derive with descriptive error message and recovery hint.\n4. OUTPUT: New error type usable across workspace operations."
                 },
                 {
                   "type": "Subtask",
                   "id": "P1.M3.T1.S2",
-                  "title": "Implement Atomic Commit",
-                  "status": "Complete",
+                  "title": "Document detached workspace conditions",
+                  "status": "Planned",
+                  "story_points": 1,
+                  "dependencies": ["P1.M3.T1.S1"],
+                  "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: PRD Section 19.3 and 25 define invariants (plan/architecture/codebase_analysis.md Section 2, Gap #3).\n2. INPUT: PRD text on workspace invariants.\n3. LOGIC: Create documentation in src/staging/workspace.rs describing detached workspace conditions: (1) Workspace files don't match any known layer merge result, (2) Workspace metadata references commits that no longer exist, (3) Active context references deleted modes/scopes. Add rustdoc comments explaining each condition.\n4. OUTPUT: Inline documentation for developers implementing validation."
+                }
+              ]
+            },
+            {
+              "type": "Task",
+              "id": "P1.M3.T2",
+              "title": "Implement Workspace Validation Logic",
+              "status": "Planned",
+              "description": "Create the validation function that checks if the workspace is attached to a valid layer commit. This function will be called before destructive operations.",
+              "subtasks": [
+                {
+                  "type": "Subtask",
+                  "id": "P1.M3.T2.S1",
+                  "title": "Implement validate_workspace_attached function",
+                  "status": "Planned",
                   "story_points": 2,
-                  "dependencies": [
-                    "P1.M3.T1.S1"
-                  ],
-                  "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: See src/git/transaction.rs.\n2. INPUT: Transaction types.\n3. LOGIC: Implement begin/prepare/commit/rollback.\n4. OUTPUT: Complete transaction impl."
+                  "dependencies": ["P1.M3.T1.S2"],
+                  "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: Validation must check workspace state against active context (plan/architecture/codebase_analysis.md Section 2, Gap #3). Use Git detached HEAD detection pattern (plan/architecture/external_deps.md Section 3, Q2).\n2. INPUT: Workspace instance, ProjectContext with active mode/scope/project.\n3. LOGIC: Implement validate_workspace_attached() in src/staging/workspace.rs. Get active layer ref from context (e.g., 'refs/jin/layers/mode/claude'). Get workspace's current commit from .jin/workspace/head. Get layer's current commit from JinRepo. Compare: if workspace_commit != layer_commit, return Err(DetachedWorkspace). Also verify workspace_commit exists in Git object database.\n4. OUTPUT: Result<()> with Ok() if attached, Err(DetachedWorkspace) if detached with recovery hint."
                 },
                 {
                   "type": "Subtask",
-                  "id": "P1.M3.T1.S3",
-                  "title": "Implement Recovery Detection",
-                  "status": "Complete",
-                  "story_points": 2,
-                  "dependencies": [
-                    "P1.M3.T1.S2"
-                  ],
-                  "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: See src/git/transaction.rs.\n2. INPUT: Transaction types.\n3. LOGIC: Find and clean orphan staging refs.\n4. OUTPUT: Recovery functions in git::transaction."
+                  "id": "P1.M3.T2.S2",
+                  "title": "Add workspace metadata validation",
+                  "status": "Planned",
+                  "story_points": 1,
+                  "dependencies": ["P1.M3.T2.S1"],
+                  "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: Metadata must reference valid commits (plan/architecture/codebase_analysis.md Section 2, Gap #3).\n2. INPUT: Workspace metadata from .jin/workspace/metadata.json.\n3. LOGIC: In validate_workspace_attached(), also validate workspace metadata. Parse .jin/workspace/metadata.json and verify all referenced commits exist via repo.find_commit(). If any commit is missing (deleted from history), return Err(DetachedWorkspace) with hint to run 'jin repair'.\n4. OUTPUT: Enhanced validation checking metadata consistency."
+                },
+                {
+                  "type": "Subtask",
+                  "id": "P1.M3.T2.S3",
+                  "title": "Validate active context references",
+                  "status": "Planned",
+                  "story_points": 1,
+                  "dependencies": ["P1.M3.T2.S2"],
+                  "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: Context may reference deleted modes/scopes (plan/architecture/codebase_analysis.md Section 2, Gap #3).\n2. INPUT: ProjectContext with active mode/scope/project.\n3. LOGIC: In validate_workspace_attached(), verify active mode and scope refs exist. Use repo.ref_exists() to check 'refs/jin/modes/{active_mode}' and 'refs/jin/scopes/{active_scope}'. If any ref missing, return Err(DetachedWorkspace) with hint to activate different mode/scope.\n4. OUTPUT: Complete validation covering all three detached conditions."
+                }
+              ]
+            },
+            {
+              "type": "Task",
+              "id": "P1.M3.T3",
+              "title": "Integrate Validation into Destructive Operations",
+              "status": "Planned",
+              "description": "Call workspace validation before operations that could create or exacerbate detached states. This provides early detection and prevents operations on invalid workspaces.",
+              "subtasks": [
+                {
+                  "type": "Subtask",
+                  "id": "P1.M3.T3.S1",
+                  "title": "Add validation to reset --hard command",
+                  "status": "Planned",
+                  "story_points": 1,
+                  "dependencies": ["P1.M3.T2.S3"],
+                  "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: reset --hard is destructive (plan/architecture/codebase_analysis.md Section 2, Gap #3). Command at src/commands/reset.rs.\n2. INPUT: ResetArgs with --hard flag set.\n3. LOGIC: In reset::execute(), before performing hard reset, call workspace::validate_workspace_attached()? to ensure workspace is in valid state. If validation fails, abort reset operation and propagate error to user. This prevents resetting an already-detached workspace.\n4. OUTPUT: Reset command rejects operations on detached workspaces."
+                },
+                {
+                  "type": "Subtask",
+                  "id": "P1.M3.T3.S2",
+                  "title": "Add validation to apply --force command",
+                  "status": "Planned",
+                  "story_points": 1,
+                  "dependencies": ["P1.M3.T3.S1"],
+                  "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: apply --force can overwrite workspace (plan/architecture/codebase_analysis.md Section 2, Gap #3). Command at src/commands/apply.rs.\n2. INPUT: ApplyArgs with --force flag set.\n3. LOGIC: In apply::execute(), when --force flag is set, call workspace::validate_workspace_attached()? before proceeding with force apply. If workspace is detached, return Err with recovery hint instead of forcing operation. This prevents compounding detached states.\n4. OUTPUT: Apply --force validates workspace before making changes."
+                },
+                {
+                  "type": "Subtask",
+                  "id": "P1.M3.T3.S3",
+                  "title": "Add validation to checkout command",
+                  "status": "Planned",
+                  "story_points": 1,
+                  "dependencies": ["P1.M3.T3.S2"],
+                  "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: checkout changes workspace state (plan/architecture/codebase_analysis.md Section 2, Gap #3).\n2. INPUT: CheckoutArgs with target layer ref.\n3. LOGIC: In checkout::execute(), call workspace::validate_workspace_attached()? to ensure current workspace is valid before switching to different layer. If current workspace is detached, abort checkout and direct user to repair.\n4. OUTPUT: Checkout validates current state before switching."
+                }
+              ]
+            },
+            {
+              "type": "Task",
+              "id": "P1.M3.T4",
+              "title": "Add Detached State Detection to Repair Command",
+              "status": "Planned",
+              "description": "Extend the repair command with --check flag to detect and report detached workspace states. This provides users with a diagnostic tool when they encounter detached workspace errors.",
+              "subtasks": [
+                {
+                  "type": "Subtask",
+                  "id": "P1.M3.T4.S1",
+                  "title": "Add --check flag to repair command",
+                  "status": "Planned",
+                  "story_points": 1,
+                  "dependencies": [],
+                  "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: repair command exists at src/commands/repair.rs (plan/architecture/codebase_analysis.md Section 2, Gap #3).\n2. INPUT: RepairArgs struct.\n3. LOGIC: Add 'check: bool' field to RepairArgs in src/cli/mod.rs. Default to false. In repair::execute(), if check is true, run diagnostic checks and report issues without fixing them. Add 'jin repair --check' command to CLI.\n4. OUTPUT: New repair --check command for diagnostics."
+                },
+                {
+                  "type": "Subtask",
+                  "id": "P1.M3.T4.S2",
+                  "title": "Implement detached state check",
+                  "status": "Planned",
+                  "story_points": 1,
+                  "dependencies": ["P1.M3.T4.S1", "P1.M3.T2.S3"],
+                  "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: Reuse validation logic from T2 (plan/architecture/codebase_analysis.md Section 2, Gap #3).\n2. INPUT: Workspace state, active context.\n3. LOGIC: In repair::execute(), when --check flag is set, call workspace::validate_workspace_attached(). If returns Err(DetachedWorkspace), collect error details and add to issues_found list with 'Detached workspace' category. Display check results showing if workspace is attached or detached with recovery hint.\n4. OUTPUT: Repair --check reports detached state with recovery instructions."
+                }
+              ]
+            },
+            {
+              "type": "Task",
+              "id": "P1.M3.T5",
+              "title": "Add Integration Tests for Workspace Validation",
+              "status": "Planned",
+              "description": "Create integration tests for detached workspace detection covering scenarios where workspace becomes detached and validation prevents destructive operations.",
+              "subtasks": [
+                {
+                  "type": "Subtask",
+                  "id": "P1.M3.T5.S1",
+                  "title": "Test validation detects detached workspace",
+                  "status": "Planned",
+                  "story_points": 1,
+                  "dependencies": ["P1.M3.T2.S3"],
+                  "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: Use TestFixture with workspace manipulation (plan/architecture/test_analysis.md Section 1.1).\n2. INPUT: Workspace with manually corrupted .jin/workspace/head file.\n3. LOGIC: Create test that modifies .jin/workspace/head to point to non-existent commit. Then calls workspace::validate_workspace_attached() and asserts it returns Err(DetachedWorkspace). Verify error message contains recovery hint.\n4. OUTPUT: Passing test validating detection logic."
+                },
+                {
+                  "type": "Subtask",
+                  "id": "P1.M3.T5.S2",
+                  "title": "Test reset --hard rejected when detached",
+                  "status": "Planned",
+                  "story_points": 1,
+                  "dependencies": ["P1.M3.T5.S1", "P1.M3.T3.S1"],
+                  "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: Test must use absolute paths (plan/architecture/test_analysis.md Section 5.1).\n2. INPUT: Workspace in detached state, ResetArgs with --hard.\n3. LOGIC: Create test that detaches workspace (corrupts head), then runs 'jin reset --hard mode/claude'. Verify command returns Err(DetachedWorkspace) without modifying workspace. Assert error includes recovery hint.\n4. OUTPUT: Passing test validating reset protection."
+                },
+                {
+                  "type": "Subtask",
+                  "id": "P1.M3.T5.S3",
+                  "title": "Test repair --check detects detached state",
+                  "status": "Planned",
+                  "story_points": 1,
+                  "dependencies": ["P1.M3.T5.S1", "P1.M3.T4.S2"],
+                  "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: Repair test expectations need updates (plan/architecture/test_analysis.md Section 2.5).\n2. INPUT: Workspace in detached state, RepairArgs with --check.\n3. LOGIC: Create test with detached workspace, runs 'jin repair --check'. Verifies command returns Ok(()) but reports '1 issue found' including detached workspace details. Check output contains recovery hint.\n4. OUTPUT: Passing test validating repair diagnostics."
                 }
               ]
             }
@@ -251,34 +507,113 @@
     {
       "type": "Phase",
       "id": "P2",
-      "title": "Merge Engine",
-      "status": "Complete",
-      "description": "Implement the deterministic merge system for structured data formats and text files. This is the algorithmic core of Jin.",
+      "title": "Phase 2: Feature Completeness and Test Suite",
+      "status": "Planned",
+      "description": "Address medium-priority gaps for feature completeness (3-way merge in pull, export committed files, active context notifications) and fix the 12 failing unit tests to achieve 100% test reliability.",
       "milestones": [
         {
           "type": "Milestone",
           "id": "P2.M1",
-          "title": "Merge Value System",
-          "status": "Complete",
-          "description": "Create the unified value representation for all parseable formats.",
+          "title": "Milestone 2.1: 3-Way Merge in Pull Command",
+          "status": "Planned",
+          "description": "Extend the pull command to handle non-fast-forward cases using proper 3-way merge instead of only supporting fast-forward updates. This enables team collaboration scenarios with divergent histories.",
           "tasks": [
             {
               "type": "Task",
               "id": "P2.M1.T1",
-              "title": "MergeValue Type",
-              "status": "Complete",
-              "description": "Define the unified value type for merge operations.",
+              "title": "Detect Fast-Forward vs Divergent Histories",
+              "status": "Planned",
+              "description": "Add logic to detect when a pull operation is fast-forward vs divergent. Divergent histories require 3-way merge instead of simple ref updates.",
               "subtasks": [
                 {
                   "type": "Subtask",
                   "id": "P2.M1.T1.S1",
-                  "title": "Define MergeValue Enum",
-                  "status": "Complete",
+                  "title": "Implement merge base detection",
+                  "status": "Planned",
+                  "story_points": 1,
+                  "dependencies": [],
+                  "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: git2 provides merge_base() for finding common ancestor (plan/architecture/external_deps.md Section 3, Q3). Current pull.rs at line 49 has TODO.\n2. INPUT: JinRepo instance, local layer ref, remote layer ref.\n3. LOGIC: Create function detect_merge_type() in src/commands/pull.rs. Use git2::Repository::merge_base() to find common ancestor of local and remote commits. If merge_base == local commit, it's fast-forward. If merge_base is different, it's divergent (needs 3-way merge).\n4. OUTPUT: MergeType enum (FastForward or Divergent) for use in pull logic."
+                },
+                {
+                  "type": "Subtask",
+                  "id": "P2.M1.T1.S2",
+                  "title": "Add MergeType enum",
+                  "status": "Planned",
+                  "story_points": 1,
+                  "dependencies": ["P2.M1.T1.S1"],
+                  "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: Needed for control flow in pull command (plan/architecture/codebase_analysis.md Section 2, Gap #4).\n2. INPUT: Result from merge_base detection.\n3. LOGIC: Define MergeType enum in src/commands/pull.rs with variants FastForward and Divergent. Implement helper methods is_fast_forward() and needs_merge(). Use to control flow in execute().\n4. OUTPUT: Enum type for merge detection results."
+                }
+              ]
+            },
+            {
+              "type": "Task",
+              "id": "P2.M1.T2",
+              "title": "Implement 3-Way Merge for Divergent Histories",
+              "status": "Planned",
+              "description": "Use the existing text merge infrastructure to perform 3-way merge when histories have diverged. Handle conflicts using the .jinmerge workflow from Phase 1.",
+              "subtasks": [
+                {
+                  "type": "Subtask",
+                  "id": "P2.M1.T2.S1",
+                  "title": "Extract file contents from three commits",
+                  "status": "Planned",
+                  "story_points": 1,
+                  "dependencies": ["P2.M1.T1.S2"],
+                  "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: 3-way merge needs base, local, remote contents (plan/architecture/external_deps.md Section 3, Q3). src/merge/text.rs already has merge_files().\n2. INPUT: Merge base commit, local commit, remote commit, file path.\n3. LOGIC: For each file in layer updates, extract content from three commits: use repo.find_blob() to get file content at base, local, and remote commits. Pass three contents to text_merge::merge_files() which returns MergeResult with merged content or conflicts.\n4. OUTPUT: Vec<MergeResult> for all updated files."
+                },
+                {
+                  "type": "Subtask",
+                  "id": "P2.M1.T2.S2",
+                  "title": "Handle merge conflicts with .jinmerge workflow",
+                  "status": "Planned",
                   "story_points": 2,
-                  "dependencies": [
-                    "P1.M1.T2.S1"
-                  ],
-                  "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: See src/merge/value.rs.\n2. INPUT: JinError.\n3. LOGIC: Define MergeValue with Object(IndexMap), Array, etc.\n4. OUTPUT: MergeValue in merge::value."
+                  "dependencies": ["P2.M1.T2.S1"],
+                  "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: Reuse .jinmerge workflow from P1.M1 (plan/architecture/codebase_analysis.md Section 2, Gap #4).\n2. INPUT: MergeResult with conflicts from text_merge.\n3. LOGIC: When merge_files() returns Conflict variant, use same workflow as apply command: write .jinmerge file with layer ref markers, pause operation, create .jin/pull-in-progress state file. Display message to user about resolving conflicts before running 'jin resolve'.\n4. OUTPUT: .jinmerge files created for pull conflicts, operation paused."
+                },
+                {
+                  "type": "Subtask",
+                  "id": "P2.M1.T2.S3",
+                  "title": "Write merged files to layer",
+                  "status": "Planned",
+                  "story_points": 1,
+                  "dependencies": ["P2.M1.T2.S2"],
+                  "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: For clean merges, write result to layer (plan/architecture/codebase_analysis.md Section 2, Gap #4).\n2. INPUT: MergeResult with Clean variant containing merged content.\n3. LOGIC: When merge_files() returns Clean(content), use LayerTransaction to add the merged file to the appropriate layer. Ensure transaction is atomic across all layer updates. After all files processed, commit transaction.\n4. OUTPUT: Layer updated with merged content, transaction committed."
+                }
+              ]
+            },
+            {
+              "type": "Task",
+              "id": "P2.M1.T3",
+              "title": "Add Integration Tests for 3-Way Merge",
+              "status": "Planned",
+              "description": "Create integration tests for 3-way merge in pull covering fast-forward, divergent clean merge, and divergent with conflicts scenarios.",
+              "subtasks": [
+                {
+                  "type": "Subtask",
+                  "id": "P2.M1.T3.S1",
+                  "title": "Test fast-forward merge still works",
+                  "status": "Planned",
+                  "story_points": 1,
+                  "dependencies": ["P2.M1.T2.S3"],
+                  "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: Regression test for existing functionality (plan/architecture/test_analysis.md Section 5.2).\n2. INPUT: Local repo behind remote (fast-forward scenario).\n3. LOGIC: Create test where remote has new commit on top of local. Run 'jin pull' and verify layer is updated to remote commit. Verify merge was fast-forward (no merge commit created).\n4. OUTPUT: Passing test validating fast-forward behavior unchanged."
+                },
+                {
+                  "type": "Subtask",
+                  "id": "P2.M1.T3.S2",
+                  "title": "Test divergent clean merge",
+                  "status": "Planned",
+                  "story_points": 1,
+                  "dependencies": ["P2.M1.T3.S1"],
+                  "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: Test new 3-way merge capability (plan/architecture/test_analysis.md Section 1.1).\n2. INPUT: Local and remote have diverged from common ancestor with different files.\n3. LOGIC: Create test where local modified file A, remote modified file B (no overlap). Run 'jin pull' and verify both files are present in merged result. Verify layer ref is updated to merge commit.\n4. OUTPUT: Passing test for clean 3-way merge."
+                },
+                {
+                  "type": "Subtask",
+                  "id": "P2.M1.T3.S3",
+                  "title": "Test divergent merge with conflicts",
+                  "status": "Planned",
+                  "story_points": 1,
+                  "dependencies": ["P2.M1.T3.S2"],
+                  "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: Should create .jinmerge files (plan/architecture/codebase_analysis.md Section 2, Gap #4).\n2. INPUT: Local and remote modified same file with conflicting content.\n3. LOGIC: Create test where both local and remote modified same file with different content. Run 'jin pull' and verify .jinmerge file is created. Verify pull operation paused without modifying layer.\n4. OUTPUT: Passing test for conflict handling in pull."
                 }
               ]
             }
@@ -287,27 +622,70 @@
         {
           "type": "Milestone",
           "id": "P2.M2",
-          "title": "Format Parsers",
-          "status": "Complete",
-          "description": "Implement parsers for JSON, YAML, TOML, and INI formats.",
+          "title": "Milestone 2.2: Export Committed Files",
+          "status": "Planned",
+          "description": "Extend the export command to support exporting files that were committed to layers (not just files currently in staging). This uses JinMap for fast lookups of layer contents.",
           "tasks": [
             {
               "type": "Task",
               "id": "P2.M2.T1",
-              "title": "All Format Parsers",
-              "status": "Complete",
-              "description": "Implement JSON, YAML, TOML, INI parsers.",
+              "title": "Query JinMap for Layer Contents",
+              "status": "Planned",
+              "description": "Modify export validation to check both staging index and committed layer contents via JinMap. This allows exporting files without re-staging them.",
               "subtasks": [
                 {
                   "type": "Subtask",
                   "id": "P2.M2.T1.S1",
-                  "title": "Implement Format Parsers",
-                  "status": "Complete",
+                  "title": "Load JinMap for layer lookups",
+                  "status": "Planned",
+                  "story_points": 1,
+                  "dependencies": [],
+                  "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: JinMap at .jin/.jinmap has layer contents (plan/architecture/codebase_analysis.md Section 6). Current export.rs only checks staging.\n2. INPUT: ExportArgs with file paths.\n3. LOGIC: In export::execute(), after loading JinRepo, load JinMap via repo.load_jinmap()?. JinMap provides fast lookup of which files are in which layers without walking Git trees.\n4. OUTPUT: Loaded JinMap instance for querying layer contents."
+                },
+                {
+                  "type": "Subtask",
+                  "id": "P2.M2.T1.S2",
+                  "title": "Check file in committed layer contents",
+                  "status": "Planned",
+                  "story_points": 1,
+                  "dependencies": ["P2.M2.T1.S1"],
+                  "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: Current validate_jin_tracked only checks staging (plan/architecture/codebase_analysis.md Section 2, Gap #5).\n2. INPUT: File path from ExportArgs, JinMap from S1.\n3. LOGIC: Modify validate_jin_tracked() to also check JinMap if file not in staging. Use jinmap.find_layers_with_file(path) to get list of layers containing this file. If file is in any layer (staging or committed), validation passes. If in neither, return Err.\n4. OUTPUT: Enhanced validation that accepts committed files."
+                },
+                {
+                  "type": "Subtask",
+                  "id": "P2.M2.T1.S3",
+                  "title": "Extract committed file content from layer",
+                  "status": "Planned",
                   "story_points": 2,
-                  "dependencies": [
-                    "P2.M1.T1.S1"
-                  ],
-                  "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: See src/merge/ directory.\n2. INPUT: MergeValue.\n3. LOGIC: Implement parse/serialize for each format.\n4. OUTPUT: Parsers in merge module."
+                  "dependencies": ["P2.M2.T1.S2"],
+                  "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: Need to read file from layer Git tree (plan/architecture/codebase_analysis.md Section 6.2).\n2. INPUT: File path, layer ref from JinMap.\n3. LOGIC: When exporting committed file, use repo.read_file_from_layer(path, layer_ref) to get file content from layer's Git tree. This uses git2 to read blob at specified path in layer's commit tree. Return content for export to Git.\n4. OUTPUT: File content from layer commit for export."
+                }
+              ]
+            },
+            {
+              "type": "Task",
+              "id": "P2.M2.T2",
+              "title": "Add Integration Tests for Export Committed Files",
+              "status": "Planned",
+              "description": "Create integration tests for exporting committed files without re-staging. Tests must verify JinMap lookups and layer content extraction.",
+              "subtasks": [
+                {
+                  "type": "Subtask",
+                  "id": "P2.M2.T2.S1",
+                  "title": "Test export committed file without staging",
+                  "status": "Planned",
+                  "story_points": 1,
+                  "dependencies": ["P2.M2.T1.S3"],
+                  "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: Use TestFixture with committed files (plan/architecture/test_analysis.md Section 1.1).\n2. INPUT: Layer with committed file, file not in staging.\n3. LOGIC: Create test that commits file to layer, clears staging index, then runs 'jin export <file>'. Verify export succeeds without staging. Assert file appears in project Git working directory.\n4. OUTPUT: Passing test for committed file export."
+                },
+                {
+                  "type": "Subtask",
+                  "id": "P2.M2.T2.S2",
+                  "title": "Test export rejects untracked files",
+                  "status": "Planned",
+                  "story_points": 1,
+                  "dependencies": ["P2.M2.T2.S1"],
+                  "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: Validation must still reject untracked files (plan/architecture/test_analysis.md Section 5.2).\n2. INPUT: File not in Jin (not in staging or any layer).\n3. LOGIC: Create test that tries to export file never added to Jin. Verify command returns Err with 'file not tracked by Jin' message. Ensure file is not exported to project Git.\n4. OUTPUT: Passing test validating export validation."
                 }
               ]
             }
@@ -316,58 +694,88 @@
         {
           "type": "Milestone",
           "id": "P2.M3",
-          "title": "Deep Merge Algorithm",
-          "status": "Complete",
-          "description": "Implement the core deep merge algorithm with null-deletion and array strategies.",
+          "title": "Milestone 2.3: Active Context Notifications in Fetch",
+          "status": "Planned",
+          "description": "Enhance the fetch command to load ProjectContext and highlight updates affecting the active mode/scope. This improves user experience by calling attention to relevant updates.",
           "tasks": [
             {
               "type": "Task",
               "id": "P2.M3.T1",
-              "title": "Deep Merge Implementation",
-              "status": "Complete",
-              "description": "Implement recursive deep merge with RFC 7396 semantics.",
+              "title": "Load ProjectContext in Fetch Command",
+              "status": "Planned",
+              "description": "Modify the fetch command to load the active ProjectContext at the start. This provides the active mode/scope information for filtering updates.",
               "subtasks": [
                 {
                   "type": "Subtask",
                   "id": "P2.M3.T1.S1",
-                  "title": "Implement Deep Merge",
-                  "status": "Complete",
-                  "story_points": 2,
-                  "dependencies": [
-                    "P2.M1.T1.S1"
-                  ],
-                  "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: See src/merge/deep.rs.\n2. INPUT: MergeValue.\n3. LOGIC: Recursive merge with null-deletion.\n4. OUTPUT: deep_merge in merge::deep."
-                },
-                {
-                  "type": "Subtask",
-                  "id": "P2.M3.T1.S2",
-                  "title": "Implement Array Strategies",
-                  "status": "Complete",
-                  "story_points": 2,
-                  "dependencies": [
-                    "P2.M3.T1.S1"
-                  ],
-                  "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: See src/merge/array.rs.\n2. INPUT: deep_merge.\n3. LOGIC: Keyed array merge, replace strategy.\n4. OUTPUT: Array merge in merge::array."
+                  "title": "Load active context at fetch start",
+                  "status": "Planned",
+                  "story_points": 1,
+                  "dependencies": [],
+                  "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: Current fetch.rs doesn't load context (plan/architecture/codebase_analysis.md Section 2, Gap #6). ProjectContext at .jin/context.\n2. INPUT: Fetch execute() function.\n3. LOGIC: At start of fetch::execute(), call ProjectContext::load()? to get active mode/scope. Handle case where context doesn't exist (use None). Store context for later comparison with updated refs.\n4. OUTPUT: Loaded ProjectContext with active mode/scope for filtering."
                 }
               ]
             },
             {
               "type": "Task",
               "id": "P2.M3.T2",
-              "title": "Layer Merge Orchestration",
-              "status": "Complete",
-              "description": "Merge multiple layers in precedence order.",
+              "title": "Filter and Highlight Active Context Updates",
+              "status": "Planned",
+              "description": "After fetching, compare updated refs against active mode/scope and display prominent notifications for relevant updates.",
               "subtasks": [
                 {
                   "type": "Subtask",
                   "id": "P2.M3.T2.S1",
-                  "title": "Implement Layer Merge",
-                  "status": "Complete",
-                  "story_points": 2,
-                  "dependencies": [
-                    "P2.M3.T1.S2"
-                  ],
-                  "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: See src/merge/layer.rs.\n2. INPUT: Deep merge, parsers.\n3. LOGIC: Sort by precedence, merge sequentially.\n4. OUTPUT: merge_layers in merge::layer."
+                  "title": "Compare updated refs with active context",
+                  "status": "Planned",
+                  "story_points": 1,
+                  "dependencies": ["P2.M3.T1.S1"],
+                  "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: Need to match refs to active mode/scope (plan/architecture/codebase_analysis.md Section 2, Gap #6).\n2. INPUT: List of updated refs from fetch, ProjectContext with active mode/scope.\n3. LOGIC: After fetching refs, iterate through updated_refs list. For each ref, extract layer type (mode/scope/project) and name. Compare against active mode/scope from context. Separate refs into two lists: active_updates (matching context) and other_updates (not matching).\n4. OUTPUT: Two lists of refs: active_updates and other_updates."
+                },
+                {
+                  "type": "Subtask",
+                  "id": "P2.M3.T2.S2",
+                  "title": "Display prominent notification for active updates",
+                  "status": "Planned",
+                  "story_points": 1,
+                  "dependencies": ["P2.M3.T2.S1"],
+                  "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: PRD specifies format with warning emoji (plan/architecture/codebase_analysis.md Section 2, Gap #6).\n2. INPUT: active_updates list from S1.\n3. LOGIC: If active_updates not empty, display prominent section: '⚠️  Updates available for your active context:'. For each ref, show '- {ref_name} (active)'. Add 'Run \"jin pull\" to update.' instruction. Use distinct visual formatting (emoji, indentation).\n4. OUTPUT: User notification highlighting relevant updates."
+                },
+                {
+                  "type": "Subtask",
+                  "id": "P2.M3.T2.S3",
+                  "title": "Display other updates in less prominent section",
+                  "status": "Planned",
+                  "story_points": 1,
+                  "dependencies": ["P2.M3.T2.S2"],
+                  "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: Other updates should be shown separately (plan/architecture/codebase_analysis.md Section 2, Gap #6).\n2. INPUT: other_updates list from S1.\n3. LOGIC: If other_updates not empty, display separate section: 'Other updates:' (without emoji). For each ref, show '- {ref_name} ({file_count} file(s))'. Keep this section visually distinct from active updates.\n4. OUTPUT: Complete fetch output with both sections."
+                }
+              ]
+            },
+            {
+              "type": "Task",
+              "id": "P2.M3.T3",
+              "title": "Add Integration Tests for Active Context Notifications",
+              "status": "Planned",
+              "description": "Create integration tests for fetch command verifying active context updates are highlighted and other updates are shown separately.",
+              "subtasks": [
+                {
+                  "type": "Subtask",
+                  "id": "P2.M3.T3.S1",
+                  "title": "Test fetch highlights active mode updates",
+                  "status": "Planned",
+                  "story_points": 1,
+                  "dependencies": ["P2.M3.T2.S3"],
+                  "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: Use TestFixture with remote and context (plan/architecture/test_analysis.md Section 1.1).\n2. INPUT: Active context with mode=claude, remote has update to mode/claude.\n3. LOGIC: Create test that sets active mode to 'claude', then runs 'jin fetch'. Verify output includes '⚠️  Updates available for your active context:' section with 'mode/claude (active)'. Parse output to confirm format.\n4. OUTPUT: Passing test for active update notification."
+                },
+                {
+                  "type": "Subtask",
+                  "id": "P2.M3.T3.S2",
+                  "title": "Test fetch separates active and other updates",
+                  "status": "Planned",
+                  "story_points": 1,
+                  "dependencies": ["P2.M3.T3.S1"],
+                  "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: Test with multiple updates (plan/architecture/test_analysis.md Section 5.2).\n2. INPUT: Active mode=claude, remote has updates to mode/claude and scope/python.\n3. LOGIC: Create test with two remote updates, one matching active context, one not. Run 'jin fetch' and verify both sections appear: active updates with emoji, other updates without. Assert scope/python appears in 'Other updates' section.\n4. OUTPUT: Passing test for separation of updates."
                 }
               ]
             }
@@ -376,27 +784,133 @@
         {
           "type": "Milestone",
           "id": "P2.M4",
-          "title": "Text Merge",
-          "status": "Complete",
-          "description": "Implement 3-way text merge with conflict detection.",
+          "title": "Milestone 2.4: Fix Failing Unit Tests",
+          "status": "Planned",
+          "description": "Fix the 12 failing unit tests to achieve 100% test reliability. Issues include test isolation problems, Git lock contention, and test expectation mismatches.",
           "tasks": [
             {
               "type": "Task",
               "id": "P2.M4.T1",
-              "title": "3-Way Text Merge",
-              "status": "Complete",
-              "description": "Implement text merge with conflict markers.",
+              "title": "Fix Test Infrastructure Issues",
+              "status": "Planned",
+              "description": "Improve test infrastructure to fix common failure patterns. This includes unifying test setup, adding pre-test cleanup, and using absolute paths consistently.",
               "subtasks": [
                 {
                   "type": "Subtask",
                   "id": "P2.M4.T1.S1",
-                  "title": "Implement Text Merge",
-                  "status": "Complete",
+                  "title": "Create common test setup module",
+                  "status": "Planned",
                   "story_points": 2,
-                  "dependencies": [
-                    "P2.M1.T1.S1"
-                  ],
-                  "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: See src/merge/text.rs.\n2. INPUT: Base, ours, theirs text.\n3. LOGIC: 3-way merge with conflict markers.\n4. OUTPUT: text_merge in merge::text."
+                  "dependencies": [],
+                  "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: Multiple setup_test_env() functions duplicated (plan/architecture/test_analysis.md Section 4.2). Use absolute paths instead of set_current_dir (Section 5.1).\n2. INPUT: Existing setup_test_env() patterns from various command test modules.\n3. LOGIC: Create tests/common/unit_setup.rs with unified setup_unit_test() function. Use absolute paths from TempDir instead of set_current_dir(). Set JIN_DIR to absolute path. Initialize JinRepo and create .jin directory structure. Return UnitTestContext with tempdir, repo, and paths.\n4. OUTPUT: Common test setup module for all unit tests."
+                },
+                {
+                  "type": "Subtask",
+                  "id": "P2.M4.T1.S2",
+                  "title": "Add pre-test Git lock cleanup",
+                  "status": "Planned",
+                  "story_points": 1,
+                  "dependencies": ["P2.M4.T1.S1"],
+                  "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: Git locks leak between tests (plan/architecture/test_analysis.md Section 3.2). Need cleanup before test runs.\n2. INPUT: Test setup function from S1.\n3. LOGIC: In setup_unit_test(), before creating new temp directory, check if JIN_DIR env var is set. If yes, attempt to clean up any stale .git/index.lock or .git/config.lock files in previous JIN_DIR. Use std::fs::remove_file() with error suppression (file may not exist).\n4. OUTPUT: Pre-test cleanup reducing lock contention."
+                },
+                {
+                  "type": "Subtask",
+                  "id": "P2.M4.T1.S3",
+                  "title": "Update all unit tests to use common setup",
+                  "status": "Planned",
+                  "story_points": 2,
+                  "dependencies": ["P2.M4.T1.S2"],
+                  "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: 6+ tests have file system issues from bad setup (plan/architecture/test_analysis.md Section 2.2-2.7).\n2. INPUT: List of test modules with local setup_test_env() functions.\n3. LOGIC: Replace local setup_test_env() in src/commands/{mode.rs,diff.rs,mv.rs,repair.rs,reset.rs,rm.rs} with common tests::common::unit_setup::setup_unit_test(). Update all test functions to use UnitTestContext instead of local TempDir.\n4. OUTPUT: All tests using unified setup infrastructure."
+                }
+              ]
+            },
+            {
+              "type": "Task",
+              "id": "P2.M4.T2",
+              "title": "Fix File System Path Issues",
+              "status": "Planned",
+              "description": "Fix 6 tests failing due to file not found errors. Tests need proper directory creation and absolute path usage.",
+              "subtasks": [
+                {
+                  "type": "Subtask",
+                  "id": "P2.M4.T2.S1",
+                  "title": "Fix diff test_execute_staged_empty",
+                  "status": "Planned",
+                  "story_points": 1,
+                  "dependencies": ["P2.M4.T1.S3"],
+                  "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: Missing staging index file (plan/architecture/test_analysis.md Section 2.2).\n2. INPUT: Test using setup_unit_test().\n3. LOGIC: After test setup, explicitly create .jin/staging/index.json with empty staging index: 'touch .jin/staging/index.json' and write '{}'. Then run diff command. Update test assertions to check for Ok(()) result.\n4. OUTPUT: Passing test for empty staging diff."
+                },
+                {
+                  "type": "Subtask",
+                  "id": "P2.M4.T2.S2",
+                  "title": "Fix mv tests with file creation",
+                  "status": "Planned",
+                  "story_points": 1,
+                  "dependencies": ["P2.M4.T1.S3"],
+                  "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: Tests don't create required files (plan/architecture/test_analysis.md Section 2.4).\n2. INPUT: mv test functions using setup_unit_test().\n3. LOGIC: Before testing mv command, use UnitTestContext.path to create test files with std::fs::write(). Ensure parent directories exist with create_dir_all(). Use absolute paths from context, not relative paths.\n4. OUTPUT: mv tests finding required files."
+                },
+                {
+                  "type": "Subtask",
+                  "id": "P2.M4.T2.S3",
+                  "title": "Fix reset test with layer ref creation",
+                  "status": "Planned",
+                  "story_points": 1,
+                  "dependencies": ["P2.M4.T1.S3"],
+                  "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: reset test expects ref that doesn't exist (plan/architecture/test_analysis.md Section 2.6).\n2. INPUT: reset test function.\n3. LOGIC: Before testing reset, create a layer ref with some content using JinRepo. Commit a file to mode/test-layer, then use that ref in reset command. Update test assertions to verify reset worked correctly.\n4. OUTPUT: reset test with valid layer ref."
+                },
+                {
+                  "type": "Subtask",
+                  "id": "P2.M4.T2.S4",
+                  "title": "Fix rm test with staging setup",
+                  "status": "Planned",
+                  "story_points": 1,
+                  "dependencies": ["P2.M4.T1.S3"],
+                  "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: rm test expects staging state (plan/architecture/test_analysis.md Section 2.7).\n2. INPUT: rm test function.\n3. LOGIC: Before testing rm dry-run, stage a file using add command or direct staging index manipulation. Verify file is staged before running rm. Update assertions to check staging state changes.\n4. OUTPUT: rm test with proper staging setup."
+                }
+              ]
+            },
+            {
+              "type": "Task",
+              "id": "P2.M4.T3",
+              "title": "Fix Git Lock Contention Issues",
+              "status": "Planned",
+              "description": "Fix 4 mode command tests failing due to Git lock contention. Pre-test cleanup and better isolation should resolve these.",
+              "subtasks": [
+                {
+                  "type": "Subtask",
+                  "id": "P2.M4.T3.S1",
+                  "title": "Fix mode command tests",
+                  "status": "Planned",
+                  "story_points": 1,
+                  "dependencies": ["P2.M4.T1.S2"],
+                  "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: Mode tests have Git lock issues (plan/architecture/test_analysis.md Section 2.1).\n2. INPUT: mode tests using setup_unit_test().\n3. LOGIC: Ensure all mode tests use #[serial] attribute to prevent parallel execution. After switching to common setup, pre-test cleanup from T1.S2 should prevent lock leakage. Verify ref paths in assertions match actual implementation.\n4. OUTPUT: Mode tests passing without lock errors."
+                }
+              ]
+            },
+            {
+              "type": "Task",
+              "id": "P2.M4.T4",
+              "title": "Fix Test Expectation Mismatches",
+              "status": "Planned",
+              "description": "Fix 2 repair command tests where expectations don't match implementation behavior. Update tests to match actual implementation or fix implementation if behavior is wrong.",
+              "subtasks": [
+                {
+                  "type": "Subtask",
+                  "id": "P2.M4.T4.S1",
+                  "title": "Fix test_check_staging_index_corrupted",
+                  "status": "Planned",
+                  "story_points": 1,
+                  "dependencies": [],
+                  "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: Test expects 1 issue, gets 0 (plan/architecture/test_analysis.md Section 2.5).\n2. INPUT: Test code with corrupted staging index.\n3. LOGIC: Run the test and capture actual behavior. If check_staging_index() doesn't detect corruption, fix implementation to return issue for JSON parse errors. If implementation is correct (no issue), update test expectation to match actual behavior.\n4. OUTPUT: Test passing with correct expectations."
+                },
+                {
+                  "type": "Subtask",
+                  "id": "P2.M4.T4.S2",
+                  "title": "Fix test_create_default_context",
+                  "status": "Planned",
+                  "story_points": 1,
+                  "dependencies": [],
+                  "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: Context file not created (plan/architecture/test_analysis.md Section 2.5).\n2. INPUT: Test code expecting context creation.\n3. LOGIC: Run test and check if repair --create-context actually creates .jin/context file. If not, check if this is expected behavior (maybe context creation is separate command). Update test assertions to match actual behavior.\n4. OUTPUT: Test aligned with implementation behavior."
                 }
               ]
             }
@@ -407,34 +921,41 @@
     {
       "type": "Phase",
       "id": "P3",
-      "title": "Staging & Commit Pipeline",
-      "status": "Complete",
-      "description": "Implement the staging system for layer routing and the commit pipeline for atomic multi-layer commits.",
+      "title": "Phase 3: Polish and Documentation",
+      "status": "Planned",
+      "description": "Address low-priority gaps including staging index TODOs, JIN_DIR documentation, and any remaining polish items to complete 100% PRD compliance.",
       "milestones": [
         {
           "type": "Milestone",
           "id": "P3.M1",
-          "title": "Staging System",
-          "status": "Complete",
-          "description": "Implement file staging with layer routing.",
+          "title": "Milestone 3.1: Staging Index Optimization",
+          "status": "Planned",
+          "description": "Evaluate staging index TODO comments and implement any required optimizations or validation. Current basic functionality works, but TODOs suggest improvements may be needed.",
           "tasks": [
             {
               "type": "Task",
               "id": "P3.M1.T1",
-              "title": "Staging Implementation",
-              "status": "Complete",
-              "description": "Implement StagedEntry, StagingIndex, and router.",
+              "title": "Evaluate Staging Index TODOs",
+              "status": "Planned",
+              "description": "Investigate the TODO comments in src/staging/index.rs to determine if 'proper loading' and 'proper saving' require implementation changes.",
               "subtasks": [
                 {
                   "type": "Subtask",
                   "id": "P3.M1.T1.S1",
-                  "title": "Implement Staging Types",
-                  "status": "Complete",
+                  "title": "Analyze current load/save implementation",
+                  "status": "Planned",
+                  "story_points": 1,
+                  "dependencies": [],
+                  "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: TODOs at lines 34 and 50 (plan/architecture/codebase_analysis.md Section 2, Gap #7).\n2. INPUT: src/staging/index.rs with TODO comments.\n3. LOGIC: Review current load() and save() implementations. Identify what 'proper' means: validation? atomic writes? error handling? performance? Document current behavior vs desired behavior. Check if tests pass with current implementation.\n4. OUTPUT: Analysis document describing current state and required improvements."
+                },
+                {
+                  "type": "Subtask",
+                  "id": "P3.M1.T1.S2",
+                  "title": "Implement required improvements",
+                  "status": "Planned",
                   "story_points": 2,
-                  "dependencies": [
-                    "P1.M1.T3.S1"
-                  ],
-                  "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: See src/staging/.\n2. INPUT: Layer types.\n3. LOGIC: StagedEntry, StagingIndex, router.\n4. OUTPUT: Staging module complete."
+                  "dependencies": ["P3.M1.T1.S1"],
+                  "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: Based on analysis from S1 (plan/architecture/codebase_analysis.md Section 2, Gap #7).\n2. INPUT: Analysis findings from S1.\n3. LOGIC: If improvements needed, implement: add validation for corrupted index data, use atomic writes (write to temp file then rename), add error recovery, or improve performance. If current implementation is adequate, update TODO comments to explain why 'proper' implementation exists.\n4. OUTPUT: Improved or documented load/save implementation."
                 }
               ]
             }
@@ -443,950 +964,61 @@
         {
           "type": "Milestone",
           "id": "P3.M2",
-          "title": "Commit Pipeline",
-          "status": "Complete",
-          "description": "Implement the orchestrated commit flow.",
+          "title": "Milestone 3.2: JIN_DIR Documentation",
+          "status": "Planned",
+          "description": "Document the JIN_DIR environment variable in user-facing documentation. Add config command to view/set Jin directory location.",
           "tasks": [
             {
               "type": "Task",
               "id": "P3.M2.T1",
-              "title": "Pipeline Implementation",
-              "status": "Complete",
-              "description": "Implement CommitPipeline with validation and jinmap.",
+              "title": "Document JIN_DIR in README",
+              "status": "Planned",
+              "description": "Add documentation to README.md explaining the JIN_DIR environment variable, its default location, and how to customize it.",
               "subtasks": [
                 {
                   "type": "Subtask",
                   "id": "P3.M2.T1.S1",
-                  "title": "Implement Commit Pipeline",
-                  "status": "Complete",
-                  "story_points": 2,
-                  "dependencies": [
-                    "P3.M1.T1.S1",
-                    "P1.M3.T1.S2"
-                  ],
-                  "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: See src/commit/.\n2. INPUT: StagingIndex, Transaction.\n3. LOGIC: Validate, build trees, commit, update jinmap.\n4. OUTPUT: CommitPipeline in commit::pipeline."
-                }
-              ]
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "type": "Phase",
-      "id": "P4",
-      "title": "CLI Commands",
-      "status": "Complete",
-      "description": "Implement all CLI commands by wiring them to existing infrastructure.",
-      "milestones": [
-        {
-          "type": "Milestone",
-          "id": "P4.M1",
-          "title": "CLI Framework",
-          "status": "Complete",
-          "description": "Set up clap-based CLI with all command definitions.",
-          "tasks": [
-            {
-              "type": "Task",
-              "id": "P4.M1.T1",
-              "title": "CLI Structure",
-              "status": "Complete",
-              "description": "Define all commands and subcommands with clap.",
-              "subtasks": [
-                {
-                  "type": "Subtask",
-                  "id": "P4.M1.T1.S1",
-                  "title": "Define CLI Structure",
-                  "status": "Complete",
-                  "story_points": 2,
-                  "dependencies": [
-                    "P1.M1.T1.S2"
-                  ],
-                  "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: See src/cli/mod.rs.\n2. INPUT: Module structure.\n3. LOGIC: Define Cli, Commands enum with all variants.\n4. OUTPUT: CLI definition in cli/mod.rs."
-                }
-              ]
-            }
-          ]
-        },
-        {
-          "type": "Milestone",
-          "id": "P4.M2",
-          "title": "Core Commands",
-          "status": "Complete",
-          "description": "Implement init, add, commit, and status commands.",
-          "tasks": [
-            {
-              "type": "Task",
-              "id": "P4.M2.T1",
-              "title": "Init Command",
-              "status": "Complete",
-              "description": "Initialize Jin in a project directory.",
-              "subtasks": [
-                {
-                  "type": "Subtask",
-                  "id": "P4.M2.T1.S1",
-                  "title": "Implement jin init",
-                  "status": "Complete",
-                  "story_points": 2,
-                  "dependencies": [
-                    "P4.M1.T1.S1",
-                    "P1.M1.T4.S1"
-                  ],
-                  "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: See PRD Section 18.1 and plan/architecture/system_context.md.\n2. INPUT: CLI args from P4.M1.T1.S1, JinConfig/ProjectContext from P1.M1.T4.S1.\n3. LOGIC: Wire InitCommand.execute() to:\n   a. Detect Git project root (error if not in Git repo)\n   b. Create .jin/ directory structure (.jin/context, .jin/workspace/, .jin/staging/)\n   c. Initialize JinRepo at ~/.jin/ if not exists\n   d. Create empty ProjectContext with inferred project name\n   e. Add .jin/ to .gitignore managed block\n   f. Print success message with project name\n4. OUTPUT: Functional `jin init` command. Returns Ok(()) on success."
-                }
-              ]
-            },
-            {
-              "type": "Task",
-              "id": "P4.M2.T2",
-              "title": "Add Command",
-              "status": "Complete",
-              "description": "Stage files to the appropriate layer.",
-              "subtasks": [
-                {
-                  "type": "Subtask",
-                  "id": "P4.M2.T2.S1",
-                  "title": "Implement jin add",
-                  "status": "Complete",
-                  "story_points": 2,
-                  "dependencies": [
-                    "P4.M2.T1.S1",
-                    "P3.M1.T1.S1"
-                  ],
-                  "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: See PRD Section 9 for routing table and src/staging/router.rs.\n2. INPUT: CLI args, StagingIndex from P3.M1.T1.S1, ProjectContext.\n3. LOGIC: Wire AddCommand.execute() to:\n   a. Load ProjectContext to get active mode/scope\n   b. Build RouteOptions from --mode, --scope, --global, --project flags\n   c. Call route_to_layer() to determine target Layer\n   d. For each file path:\n      - Verify file exists and is not tracked by project Git\n      - Read file content and compute hash\n      - Create StagedEntry with layer, path, metadata\n      - Add to StagingIndex\n   e. Add files to .gitignore managed block\n   f. Save StagingIndex\n   g. Print summary: N files staged to layer X\n4. OUTPUT: Functional `jin add <files>` command."
-                }
-              ]
-            },
-            {
-              "type": "Task",
-              "id": "P4.M2.T3",
-              "title": "Commit Command",
-              "status": "Complete",
-              "description": "Commit staged files atomically.",
-              "subtasks": [
-                {
-                  "type": "Subtask",
-                  "id": "P4.M2.T3.S1",
-                  "title": "Implement jin commit",
-                  "status": "Complete",
-                  "story_points": 2,
-                  "dependencies": [
-                    "P4.M2.T2.S1",
-                    "P3.M2.T1.S1"
-                  ],
-                  "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: See PRD Section 6 and src/commit/pipeline.rs.\n2. INPUT: CLI args, CommitPipeline from P3.M2.T1.S1, StagingIndex.\n3. LOGIC: Wire CommitCommand.execute() to:\n   a. Load StagingIndex (error if empty)\n   b. Create CommitPipeline with staged entries\n   c. If --dry-run: print what would be committed, return\n   d. Run pipeline.execute() with commit message\n   e. Handle CommitResult:\n      - Success: print commit summary, layers touched\n      - Failure: print error, rollback happened automatically\n   f. Clear StagingIndex on success\n4. OUTPUT: Functional `jin commit -m \"message\"` command."
-                }
-              ]
-            },
-            {
-              "type": "Task",
-              "id": "P4.M2.T4",
-              "title": "Status Command",
-              "status": "Complete",
-              "description": "Show workspace and staging state.",
-              "subtasks": [
-                {
-                  "type": "Subtask",
-                  "id": "P4.M2.T4.S1",
-                  "title": "Implement jin status",
-                  "status": "Complete",
-                  "story_points": 1,
-                  "dependencies": [
-                    "P4.M2.T1.S1"
-                  ],
-                  "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: See PRD Section 18.6.\n2. INPUT: StagingIndex, ProjectContext, workspace state.\n3. LOGIC: Wire StatusCommand.execute() to:\n   a. Load ProjectContext and print active mode/scope\n   b. Load StagingIndex and list staged files by layer\n   c. Check workspace for modified files (compare to applied state)\n   d. Format output:\n      Active mode: claude\n      Active scope: language:javascript\n      Staged changes:\n        mode/claude/project/myproj:\n          .claude/config.json\n      Workspace changes:\n        (modified) .claude/settings.json\n4. OUTPUT: Functional `jin status` command."
-                }
-              ]
-            }
-          ]
-        },
-        {
-          "type": "Milestone",
-          "id": "P4.M3",
-          "title": "Mode & Scope Commands",
-          "status": "Complete",
-          "description": "Implement mode and scope lifecycle commands.",
-          "tasks": [
-            {
-              "type": "Task",
-              "id": "P4.M3.T1",
-              "title": "Mode Commands",
-              "status": "Complete",
-              "description": "Implement mode create/use/list/delete subcommands.",
-              "subtasks": [
-                {
-                  "type": "Subtask",
-                  "id": "P4.M3.T1.S1",
-                  "title": "Wire Mode Subcommands to CLI",
-                  "status": "Complete",
-                  "story_points": 2,
-                  "dependencies": [
-                    "P4.M2.T4.S1"
-                  ],
-                  "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: See src/commands/mode.rs - helper functions exist.\n2. INPUT: CLI ModeAction enum, existing mode functions.\n3. LOGIC: Wire ModeAction variants to existing functions:\n   a. ModeAction::Create{name} -> create_mode(name)\n   b. ModeAction::Use{name} -> update ProjectContext.mode, call apply\n   c. ModeAction::List -> list_modes()\n   d. ModeAction::Delete{name} -> delete_mode(name)\n   e. ModeAction::Show -> show_mode() current context\n   f. ModeAction::Unset -> clear ProjectContext.mode\n4. OUTPUT: Functional `jin mode create|use|list|delete|show|unset`."
-                }
-              ]
-            },
-            {
-              "type": "Task",
-              "id": "P4.M3.T2",
-              "title": "Scope Commands",
-              "status": "Complete",
-              "description": "Implement scope create/use/list/delete subcommands.",
-              "subtasks": [
-                {
-                  "type": "Subtask",
-                  "id": "P4.M3.T2.S1",
-                  "title": "Wire Scope Subcommands to CLI",
-                  "status": "Complete",
-                  "story_points": 2,
-                  "dependencies": [
-                    "P4.M3.T1.S1"
-                  ],
-                  "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: See src/commands/scope.rs - helper functions exist.\n2. INPUT: CLI ScopeAction enum, existing scope functions.\n3. LOGIC: Wire ScopeAction variants to existing functions:\n   a. ScopeAction::Create{name, mode} -> create_scope(name, mode)\n   b. ScopeAction::Use{name} -> update ProjectContext.scope, call apply\n   c. ScopeAction::List -> list_scopes()\n   d. ScopeAction::Delete{name} -> delete_scope(name)\n   e. ScopeAction::Show -> show_scope() current context\n   f. ScopeAction::Unset -> clear ProjectContext.scope\n4. OUTPUT: Functional `jin scope create|use|list|delete|show|unset`."
-                }
-              ]
-            }
-          ]
-        },
-        {
-          "type": "Milestone",
-          "id": "P4.M4",
-          "title": "Workspace Commands",
-          "status": "Complete",
-          "description": "Implement apply and workspace management.",
-          "tasks": [
-            {
-              "type": "Task",
-              "id": "P4.M4.T1",
-              "title": "Apply Command",
-              "status": "Complete",
-              "description": "Implement jin apply to merge layers into workspace.",
-              "subtasks": [
-                {
-                  "type": "Subtask",
-                  "id": "P4.M4.T1.S1",
-                  "title": "Complete Apply Command Wiring",
-                  "status": "Complete",
-                  "story_points": 1,
-                  "dependencies": [
-                    "P4.M3.T2.S1"
-                  ],
-                  "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: ApplyCommand.execute() exists but needs polish.\n2. INPUT: apply_workspace() from workspace module.\n3. LOGIC: Enhance ApplyCommand:\n   a. Add --force flag handling (skip dirty check)\n   b. Add --dry-run flag (print plan without applying)\n   c. Better output formatting with file list\n   d. Error handling for conflicts\n4. OUTPUT: Polished `jin apply` command."
-                }
-              ]
-            },
-            {
-              "type": "Task",
-              "id": "P4.M4.T2",
-              "title": "Reset Command",
-              "status": "Complete",
-              "description": "Implement jin reset for undoing changes.",
-              "subtasks": [
-                {
-                  "type": "Subtask",
-                  "id": "P4.M4.T2.S1",
-                  "title": "Implement jin reset",
-                  "status": "Complete",
-                  "story_points": 2,
-                  "dependencies": [
-                    "P4.M4.T1.S1"
-                  ],
-                  "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: See PRD Section 18.7 for reset semantics.\n2. INPUT: Git refs, StagingIndex.\n3. LOGIC: Implement reset with layer targeting:\n   a. Parse layer flags (--mode, --scope, --project)\n   b. --soft: keep changes in staging\n   c. --mixed (default): unstage but keep in workspace\n   d. --hard: discard all changes\n   e. Update refs to previous commit\n   f. Re-apply if --hard\n4. OUTPUT: Functional `jin reset [--soft|--mixed|--hard]`."
-                }
-              ]
-            }
-          ]
-        },
-        {
-          "type": "Milestone",
-          "id": "P4.M5",
-          "title": "Utility Commands",
-          "status": "Complete",
-          "description": "Implement diff, log, context, import, export, repair, layers, list.",
-          "tasks": [
-            {
-              "type": "Task",
-              "id": "P4.M5.T1",
-              "title": "Diff Command",
-              "status": "Complete",
-              "description": "Show differences between layers or workspace.",
-              "subtasks": [
-                {
-                  "type": "Subtask",
-                  "id": "P4.M5.T1.S1",
-                  "title": "Wire DiffCommand",
-                  "status": "Complete",
-                  "story_points": 2,
-                  "dependencies": [
-                    "P4.M4.T1.S1"
-                  ],
-                  "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: DiffCommand struct exists in src/commands/diff.rs.\n2. INPUT: Layer refs, workspace files, similar crate.\n3. LOGIC: Wire DiffCommand.execute():\n   a. If --staged: diff staged vs layer current\n   b. If layer specified: show layer content\n   c. Default: diff workspace vs merged layers\n   d. Use similar crate for unified diff\n   e. Color output (green add, red delete)\n4. OUTPUT: Functional `jin diff [layer]`."
-                }
-              ]
-            },
-            {
-              "type": "Task",
-              "id": "P4.M5.T2",
-              "title": "Log Command",
-              "status": "Complete",
-              "description": "Show commit history for layers.",
-              "subtasks": [
-                {
-                  "type": "Subtask",
-                  "id": "P4.M5.T2.S1",
-                  "title": "Wire LogCommand",
-                  "status": "Complete",
-                  "story_points": 1,
-                  "dependencies": [
-                    "P4.M5.T1.S1"
-                  ],
-                  "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: LogCommand struct exists in src/commands/log.rs.\n2. INPUT: Layer refs, git2 commit walking.\n3. LOGIC: Wire LogCommand.execute():\n   a. If layer specified: walk that layer's history\n   b. Default: interleave history from active layers\n   c. Format: short SHA, date, message\n   d. Limit to --count entries\n4. OUTPUT: Functional `jin log [--layer=X] [--count=N]`."
-                }
-              ]
-            },
-            {
-              "type": "Task",
-              "id": "P4.M5.T3",
-              "title": "Context Command",
-              "status": "Complete",
-              "description": "Show/set active context.",
-              "subtasks": [
-                {
-                  "type": "Subtask",
-                  "id": "P4.M5.T3.S1",
-                  "title": "Wire ContextCommand",
-                  "status": "Complete",
-                  "story_points": 1,
-                  "dependencies": [
-                    "P4.M5.T2.S1"
-                  ],
-                  "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: ContextCommand exists in src/commands/context.rs.\n2. INPUT: ProjectContext.\n3. LOGIC: Wire ContextCommand.execute():\n   a. Load and display ProjectContext\n   b. Show: Mode, Scope, Project, last-updated\n4. OUTPUT: Functional `jin context`."
-                }
-              ]
-            },
-            {
-              "type": "Task",
-              "id": "P4.M5.T4",
-              "title": "Import Command",
-              "status": "Complete",
-              "description": "Import Git-tracked files into Jin.",
-              "subtasks": [
-                {
-                  "type": "Subtask",
-                  "id": "P4.M5.T4.S1",
-                  "title": "Wire ImportCommand",
-                  "status": "Complete",
-                  "story_points": 2,
-                  "dependencies": [
-                    "P4.M5.T3.S1"
-                  ],
-                  "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: ImportCommand exists in src/commands/import_cmd.rs.\n2. INPUT: Project Git repo, staging system.\n3. LOGIC: Wire ImportCommand.execute():\n   a. Verify file IS tracked by project Git\n   b. Read file content\n   c. Stage to Jin layer\n   d. Run `git rm --cached <file>`\n   e. Add to .gitignore managed block\n   f. Require --force for modified files\n4. OUTPUT: Functional `jin import <files>`."
-                }
-              ]
-            },
-            {
-              "type": "Task",
-              "id": "P4.M5.T5",
-              "title": "Export Command",
-              "status": "Complete",
-              "description": "Export Jin files back to Git.",
-              "subtasks": [
-                {
-                  "type": "Subtask",
-                  "id": "P4.M5.T5.S1",
-                  "title": "Wire ExportCommand",
-                  "status": "Complete",
-                  "story_points": 1,
-                  "dependencies": [
-                    "P4.M5.T4.S1"
-                  ],
-                  "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: ExportCommand exists in src/commands/export.rs.\n2. INPUT: Workspace files, project Git.\n3. LOGIC: Wire ExportCommand.execute():\n   a. Verify file is in Jin workspace\n   b. Remove from .gitignore managed block\n   c. Run `git add <file>`\n   d. Warn if file differs between layers\n4. OUTPUT: Functional `jin export <files>`."
-                }
-              ]
-            },
-            {
-              "type": "Task",
-              "id": "P4.M5.T6",
-              "title": "Repair Command",
-              "status": "Complete",
-              "description": "Repair Jin state.",
-              "subtasks": [
-                {
-                  "type": "Subtask",
-                  "id": "P4.M5.T6.S1",
-                  "title": "Wire RepairCommand",
-                  "status": "Complete",
-                  "story_points": 2,
-                  "dependencies": [
-                    "P4.M5.T5.S1"
-                  ],
-                  "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: RepairCommand exists in src/commands/repair.rs.\n2. INPUT: Transaction recovery, jinmap recovery.\n3. LOGIC: Wire RepairCommand.execute():\n   a. Clean orphan transaction refs\n   b. Regenerate .jinmap from Git\n   c. Validate/reset ProjectContext\n   d. Re-apply layers to workspace\n   e. Fix .gitignore managed block\n   f. --dry-run shows what would be fixed\n4. OUTPUT: Functional `jin repair [--dry-run]`."
-                }
-              ]
-            },
-            {
-              "type": "Task",
-              "id": "P4.M5.T7",
-              "title": "Layers Command",
-              "status": "Complete",
-              "description": "Show current layer composition.",
-              "subtasks": [
-                {
-                  "type": "Subtask",
-                  "id": "P4.M5.T7.S1",
-                  "title": "Implement jin layers",
-                  "status": "Complete",
-                  "story_points": 1,
-                  "dependencies": [
-                    "P4.M5.T6.S1"
-                  ],
-                  "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: See PRD Section 18.6.\n2. INPUT: Layer refs, active context.\n3. LOGIC: Implement layers command:\n   a. List all 9 layers with status (exists/empty)\n   b. Highlight active layers based on context\n   c. Show merge order (precedence)\n4. OUTPUT: Functional `jin layers`."
-                }
-              ]
-            },
-            {
-              "type": "Task",
-              "id": "P4.M5.T8",
-              "title": "List Command",
-              "status": "Complete",
-              "description": "List available modes/scopes/projects.",
-              "subtasks": [
-                {
-                  "type": "Subtask",
-                  "id": "P4.M5.T8.S1",
-                  "title": "Implement jin list",
-                  "status": "Complete",
-                  "story_points": 1,
-                  "dependencies": [
-                    "P4.M5.T7.S1"
-                  ],
-                  "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: See PRD Section 18.6.\n2. INPUT: Jin repo refs.\n3. LOGIC: Implement list command:\n   a. Enumerate refs/jin/layers/mode/* -> modes\n   b. Enumerate refs/jin/layers/scope/* -> scopes\n   c. Enumerate refs/jin/layers/project/* -> projects\n   d. Format as tree or table\n4. OUTPUT: Functional `jin list`."
-                }
-              ]
-            }
-          ]
-        },
-        {
-          "type": "Milestone",
-          "id": "P4.M6",
-          "title": "Link Command",
-          "status": "Complete",
-          "description": "Implement jin link for remote config repos.",
-          "tasks": [
-            {
-              "type": "Task",
-              "id": "P4.M6.T1",
-              "title": "Link Command",
-              "status": "Complete",
-              "description": "Link to shared Jin config repository.",
-              "subtasks": [
-                {
-                  "type": "Subtask",
-                  "id": "P4.M6.T1.S1",
-                  "title": "Implement jin link",
-                  "status": "Complete",
-                  "story_points": 2,
-                  "dependencies": [
-                    "P4.M5.T8.S1"
-                  ],
-                  "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: See PRD Section 18.1.\n2. INPUT: Remote URL, JinConfig.\n3. LOGIC: Implement link command:\n   a. Parse and validate remote URL\n   b. Add remote to Jin repo config\n   c. Update JinConfig.remote.url\n   d. Optionally fetch immediately\n4. OUTPUT: Functional `jin link <repo-url>`."
-                }
-              ]
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "type": "Phase",
-      "id": "P5",
-      "title": "Synchronization",
-      "status": "Complete",
-      "description": "Implement remote synchronization: fetch, pull, push, and sync commands.",
-      "milestones": [
-        {
-          "type": "Milestone",
-          "id": "P5.M1",
-          "title": "Remote Operations",
-          "status": "Complete",
-          "description": "Implement fetch, pull, push, and sync commands.",
-          "tasks": [
-            {
-              "type": "Task",
-              "id": "P5.M1.T1",
-              "title": "Fetch Command",
-              "status": "Complete",
-              "description": "Fetch updates from remote Jin repo.",
-              "subtasks": [
-                {
-                  "type": "Subtask",
-                  "id": "P5.M1.T1.S1",
-                  "title": "Implement jin fetch",
-                  "status": "Complete",
-                  "story_points": 2,
-                  "dependencies": [
-                    "P4.M6.T1.S1"
-                  ],
-                  "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: See PRD Section 14 for sync rules.\n2. INPUT: JinConfig.remote.url, git2 remote APIs.\n3. LOGIC: Implement fetch command:\n   a. Load JinConfig to get remote URL\n   b. Create git2::Remote for Jin repo\n   c. Configure credential callbacks for SSH/HTTPS\n   d. Fetch refs/jin/* from remote\n   e. Update local refs/jin/remote/* tracking refs\n   f. Report: N refs updated\n   g. Notify if active contexts have updates\n4. OUTPUT: Functional `jin fetch`."
-                }
-              ]
-            },
-            {
-              "type": "Task",
-              "id": "P5.M1.T2",
-              "title": "Pull Command",
-              "status": "Complete",
-              "description": "Merge remote changes into local.",
-              "subtasks": [
-                {
-                  "type": "Subtask",
-                  "id": "P5.M1.T2.S1",
-                  "title": "Implement jin pull",
-                  "status": "Complete",
-                  "story_points": 2,
-                  "dependencies": [
-                    "P5.M1.T1.S1"
-                  ],
-                  "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: See PRD Section 14 - requires clean state.\n2. INPUT: fetch, merge_layers, transaction.\n3. LOGIC: Implement pull command:\n   a. Run fetch first\n   b. For each layer with remote changes:\n      - Try fast-forward if possible\n      - Else: merge remote into local (may conflict)\n   c. Use atomic transaction for all updates\n   d. Re-apply layers to workspace\n   e. Report conflicts if any\n4. OUTPUT: Functional `jin pull`."
-                }
-              ]
-            },
-            {
-              "type": "Task",
-              "id": "P5.M1.T3",
-              "title": "Push Command",
-              "status": "Complete",
-              "description": "Push local changes to remote.",
-              "subtasks": [
-                {
-                  "type": "Subtask",
-                  "id": "P5.M1.T3.S1",
-                  "title": "Implement jin push",
-                  "status": "Complete",
-                  "story_points": 2,
-                  "dependencies": [
-                    "P5.M1.T1.S1"
-                  ],
-                  "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: See PRD Section 14 - requires fetch first.\n2. INPUT: fetch, git2 push APIs.\n3. LOGIC: Implement push command:\n   a. Run fetch (required per PRD)\n   b. Check for conflicts with remote\n   c. Reject if behind remote (must pull first)\n   d. Push refs/jin/layers/* to remote\n   e. --force allows overwrite (with warning)\n   f. Configure credential callbacks\n4. OUTPUT: Functional `jin push [--force]`."
-                }
-              ]
-            },
-            {
-              "type": "Task",
-              "id": "P5.M1.T4",
-              "title": "Sync Command",
-              "status": "Complete",
-              "description": "Convenience wrapper for fetch+pull+push.",
-              "subtasks": [
-                {
-                  "type": "Subtask",
-                  "id": "P5.M1.T4.S1",
-                  "title": "Implement jin sync",
-                  "status": "Complete",
-                  "story_points": 1,
-                  "dependencies": [
-                    "P5.M1.T2.S1",
-                    "P5.M1.T3.S1"
-                  ],
-                  "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: See PRD Section 14.\n2. INPUT: fetch, pull, push commands.\n3. LOGIC: Implement sync command:\n   a. Call fetch\n   b. Call pull\n   c. Call push\n   d. Stop on first error\n   e. Report overall status\n4. OUTPUT: Functional `jin sync`."
-                }
-              ]
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "type": "Phase",
-      "id": "P6",
-      "title": "Polish & Production Readiness",
-      "status": "Complete",
-      "description": "Shell completion, comprehensive testing, documentation, and release preparation.",
-      "milestones": [
-        {
-          "type": "Milestone",
-          "id": "P6.M1",
-          "title": "Shell Completion",
-          "status": "Complete",
-          "description": "Implement shell completion for bash, zsh, fish, powershell.",
-          "tasks": [
-            {
-              "type": "Task",
-              "id": "P6.M1.T1",
-              "title": "Completion Generator",
-              "status": "Complete",
-              "description": "Implement jin completion subcommand.",
-              "subtasks": [
-                {
-                  "type": "Subtask",
-                  "id": "P6.M1.T1.S1",
-                  "title": "Implement Shell Completions",
-                  "status": "Complete",
-                  "story_points": 1,
-                  "dependencies": [
-                    "P5.M1.T4.S1"
-                  ],
-                  "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: Use clap_complete crate.\n2. INPUT: CLI structure.\n3. LOGIC: Implement completion command:\n   a. Add clap_complete dependency\n   b. Shell enum: Bash, Zsh, Fish, PowerShell\n   c. Use clap_complete to generate scripts\n   d. Output to stdout for piping\n4. OUTPUT: Functional `jin completion <shell>`."
-                }
-              ]
-            }
-          ]
-        },
-        {
-          "type": "Milestone",
-          "id": "P6.M2",
-          "title": "Integration Testing",
-          "status": "Complete",
-          "description": "Comprehensive end-to-end test suite.",
-          "tasks": [
-            {
-              "type": "Task",
-              "id": "P6.M2.T1",
-              "title": "CLI Integration Tests",
-              "status": "Complete",
-              "description": "End-to-end tests for all CLI commands.",
-              "subtasks": [
-                {
-                  "type": "Subtask",
-                  "id": "P6.M2.T1.S1",
-                  "title": "Core Workflow Tests",
-                  "status": "Complete",
-                  "story_points": 2,
-                  "dependencies": [
-                    "P6.M1.T1.S1"
-                  ],
-                  "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: Use assert_cmd, predicates.\n2. INPUT: All CLI commands.\n3. LOGIC: Create tests/integration/core_workflow.rs:\n   a. Setup: create temp dir with git repo\n   b. Test jin init in new project\n   c. Test jin add with various flags\n   d. Test jin commit with atomic verify\n   e. Test jin status shows correct state\n   f. Verify file system state after each\n4. OUTPUT: Integration tests in tests/integration/."
-                },
-                {
-                  "type": "Subtask",
-                  "id": "P6.M2.T1.S2",
-                  "title": "Mode/Scope Workflow Tests",
-                  "status": "Complete",
-                  "story_points": 2,
-                  "dependencies": [
-                    "P6.M2.T1.S1"
-                  ],
-                  "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: Test full mode/scope lifecycle.\n2. INPUT: Mode and scope commands.\n3. LOGIC: Create tests/integration/mode_scope.rs:\n   a. Test mode create/use/list/delete\n   b. Test scope create with --mode\n   c. Test context switching\n   d. Verify layer routing for each combination\n   e. Test precedence: mode-scope > scope > mode\n4. OUTPUT: Mode/scope integration tests."
-                },
-                {
-                  "type": "Subtask",
-                  "id": "P6.M2.T1.S3",
-                  "title": "Sync Workflow Tests",
-                  "status": "Complete",
-                  "story_points": 2,
-                  "dependencies": [
-                    "P6.M2.T1.S2"
-                  ],
-                  "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: Test remote operations.\n2. INPUT: Sync commands, local remote setup.\n3. LOGIC: Create tests/integration/sync.rs:\n   a. Setup: two Jin repos (local + remote)\n   b. Test fetch downloads refs\n   c. Test push uploads refs\n   d. Test pull merges changes\n   e. Test sync full cycle\n   f. Test conflict detection\n4. OUTPUT: Sync integration tests."
-                }
-              ]
-            }
-          ]
-        },
-        {
-          "type": "Milestone",
-          "id": "P6.M3",
-          "title": "Documentation",
-          "status": "Complete",
-          "description": "User documentation and README.",
-          "tasks": [
-            {
-              "type": "Task",
-              "id": "P6.M3.T1",
-              "title": "User Documentation",
-              "status": "Complete",
-              "description": "Write comprehensive user guide.",
-              "subtasks": [
-                {
-                  "type": "Subtask",
-                  "id": "P6.M3.T1.S1",
-                  "title": "Write README",
-                  "status": "Complete",
-                  "story_points": 2,
-                  "dependencies": [
-                    "P6.M2.T1.S3"
-                  ],
-                  "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: Based on completed implementation.\n2. INPUT: All implemented commands.\n3. LOGIC: Create README.md:\n   a. Project overview\n   b. Installation instructions\n   c. Quick start guide\n   d. Key concepts (layers, modes, scopes)\n   e. Command reference\n   f. Configuration guide\n   g. Examples\n   h. Contributing guide\n4. OUTPUT: README.md in project root."
-                }
-              ]
-            }
-          ]
-        },
-        {
-          "type": "Milestone",
-          "id": "P6.M4",
-          "title": "Release Preparation",
-          "status": "Complete",
-          "description": "Build configuration and CI/CD.",
-          "tasks": [
-            {
-              "type": "Task",
-              "id": "P6.M4.T1",
-              "title": "Release Configuration",
-              "status": "Complete",
-              "description": "Configure CI and release builds.",
-              "subtasks": [
-                {
-                  "type": "Subtask",
-                  "id": "P6.M4.T1.S1",
-                  "title": "Configure CI/CD",
-                  "status": "Complete",
-                  "story_points": 2,
-                  "dependencies": [
-                    "P6.M3.T1.S1"
-                  ],
-                  "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: Standard Rust CI practices.\n2. INPUT: Complete test suite.\n3. LOGIC: Create GitHub Actions:\n   a. .github/workflows/ci.yml: test, clippy, fmt\n   b. .github/workflows/release.yml: build on tag\n   c. Targets: linux-x64, macos-x64, macos-arm64, windows\n   d. Generate SHA256 checksums\n   e. Create GitHub release with binaries\n4. OUTPUT: CI/CD configuration files."
-                }
-              ]
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "type": "Phase",
-      "id": "P7",
-      "title": "Critical Gap Remediation",
-      "status": "Complete",
-      "description": "Address critical implementation gaps discovered during PRD validation. The commit CLI is a stub (pipeline exists), rm/mv commands are missing, audit logging was never implemented, and .jinmap is not integrated into the commit workflow.",
-      "milestones": [
-        {
-          "type": "Milestone",
-          "id": "P7.M1",
-          "title": "Commit Command Wiring",
-          "status": "Complete",
-          "description": "Wire the existing CommitPipeline to the jin commit CLI command. Infrastructure exists in src/commit/pipeline.rs but commit_cmd.rs is a stub.",
-          "tasks": [
-            {
-              "type": "Task",
-              "id": "P7.M1.T1",
-              "title": "Wire jin commit to CommitPipeline",
-              "status": "Complete",
-              "description": "Connect the stub in commit_cmd.rs to the working CommitPipeline.",
-              "subtasks": [
-                {
-                  "type": "Subtask",
-                  "id": "P7.M1.T1.S1",
-                  "title": "Implement commit CLI wiring",
-                  "status": "Complete",
-                  "story_points": 2,
-                  "dependencies": [],
-                  "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: CommitPipeline at src/commit/pipeline.rs is fully implemented with execute(), dry_run support, and LayerTransaction integration. CLI stub at src/commands/commit_cmd.rs:10-12 just prints 'not yet implemented'.\n2. INPUT: CommitArgs from src/cli/args.rs (message: String, dry_run: bool). StagingIndex::load() from src/staging/index.rs.\n3. LOGIC: Replace stub in commit_cmd::execute():\n   a. Load StagingIndex via StagingIndex::load()\n   b. Validate staging not empty (return error if empty)\n   c. Create CommitPipeline::new(staging)\n   d. Build CommitConfig::new(args.message).dry_run(args.dry_run)\n   e. Call pipeline.execute(&config)\n   f. Match on Result: print commit_hashes, file_count, layers touched\n   g. Handle JinError variants with user-friendly messages\n4. OUTPUT: Functional `jin commit -m \"message\"` command. Exposes no new interfaces - completes the add→commit workflow."
-                }
-              ]
-            }
-          ]
-        },
-        {
-          "type": "Milestone",
-          "id": "P7.M2",
-          "title": "File Operation Commands",
-          "status": "Complete",
-          "description": "Implement jin rm and jin mv commands as specified in PRD Section 18.8 and 21.",
-          "tasks": [
-            {
-              "type": "Task",
-              "id": "P7.M2.T1",
-              "title": "Implement jin rm Command",
-              "status": "Complete",
-              "description": "Add command to remove files from Jin layers with proper staging integration.",
-              "subtasks": [
-                {
-                  "type": "Subtask",
-                  "id": "P7.M2.T1.S1",
-                  "title": "Define rm CLI structure",
-                  "status": "Complete",
-                  "story_points": 1,
-                  "dependencies": [
-                    "P7.M1.T1.S1"
-                  ],
-                  "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: PRD Section 18.8 specifies `jin rm <file>`. Section 21.1 details removal semantics. Existing pattern: AddArgs in src/cli/args.rs has file paths + layer targeting flags.\n2. INPUT: None - this defines new CLI structure.\n3. LOGIC: In src/cli/mod.rs:\n   a. Add `Rm(RmArgs)` variant to Commands enum\n   b. In src/cli/args.rs, define RmArgs struct:\n      - files: Vec<PathBuf> (required, positional)\n      - mode: bool flag for --mode targeting\n      - scope: Option<String> for --scope=X\n      - project: bool flag for --project\n      - force: bool for --force (skip confirmation)\n4. OUTPUT: RmArgs struct and Rm command variant. Consumed by P7.M2.T1.S2."
-                },
-                {
-                  "type": "Subtask",
-                  "id": "P7.M2.T1.S2",
-                  "title": "Implement rm command logic",
-                  "status": "Complete",
-                  "story_points": 2,
-                  "dependencies": [
-                    "P7.M2.T1.S1"
-                  ],
-                  "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: StagedEntry::delete() exists in src/staging/entry.rs. Router in src/staging/router.rs handles layer targeting. Gitignore managed block in src/staging/gitignore.rs.\n2. INPUT: RmArgs from P7.M2.T1.S1. StagingIndex, ProjectContext, route_to_layer().\n3. LOGIC: Create src/commands/rm.rs:\n   a. Load ProjectContext for active mode/scope\n   b. Build RouteOptions from flags, call route_to_layer()\n   c. For each file path:\n      - Verify file exists in target layer (check workspace or layer ref)\n      - Create StagedEntry::delete(path, layer)\n      - Add to StagingIndex\n   d. Save StagingIndex\n   e. Print summary: 'Staged N files for removal from layer X'\n   f. Wire execute() in main.rs Commands::Rm match arm\n4. OUTPUT: Functional `jin rm <files>` command. Removal completes on next commit."
-                }
-              ]
-            },
-            {
-              "type": "Task",
-              "id": "P7.M2.T2",
-              "title": "Implement jin mv Command",
-              "status": "Complete",
-              "description": "Add command to rename/move files within Jin layers.",
-              "subtasks": [
-                {
-                  "type": "Subtask",
-                  "id": "P7.M2.T2.S1",
-                  "title": "Define mv CLI structure",
-                  "status": "Complete",
-                  "story_points": 1,
-                  "dependencies": [
-                    "P7.M2.T1.S2"
-                  ],
-                  "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: PRD Section 18.8 specifies `jin mv <old-path> <new-path>`. Section 21.2 details rename semantics with history preservation.\n2. INPUT: Pattern from RmArgs (P7.M2.T1.S1).\n3. LOGIC: In src/cli/mod.rs and args.rs:\n   a. Add `Mv(MvArgs)` variant to Commands enum\n   b. Define MvArgs struct:\n      - source: PathBuf (required, positional)\n      - dest: PathBuf (required, positional)\n      - mode: bool, scope: Option<String>, project: bool (layer targeting)\n4. OUTPUT: MvArgs struct and Mv command variant. Consumed by P7.M2.T2.S2."
-                },
-                {
-                  "type": "Subtask",
-                  "id": "P7.M2.T2.S2",
-                  "title": "Implement mv command logic",
-                  "status": "Complete",
-                  "story_points": 2,
-                  "dependencies": [
-                    "P7.M2.T2.S1"
-                  ],
-                  "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: Git rename detection works via delete+add with same content hash. Gitignore module has ensure_in_managed_block() and remove_from_managed_block().\n2. INPUT: MvArgs from P7.M2.T2.S1. StagingIndex, route_to_layer(), gitignore functions.\n3. LOGIC: Create src/commands/mv.rs:\n   a. Load ProjectContext, determine target layer\n   b. Verify source exists in layer\n   c. Read source content, compute hash\n   d. Create StagedEntry::delete(source, layer)\n   e. Create StagedEntry::new(dest, layer, hash)\n   f. Add both to StagingIndex\n   g. Update .gitignore: remove old path, add new path\n   h. Save StagingIndex\n   i. Wire in main.rs\n4. OUTPUT: Functional `jin mv <old> <new>`. Rename completes on commit with history preserved via Git detection."
-                }
-              ]
-            }
-          ]
-        },
-        {
-          "type": "Milestone",
-          "id": "P7.M3",
-          "title": "Command Aliases",
-          "status": "Complete",
-          "description": "Add jin modes and jin scopes shorthand commands as specified in PRD Section 13.",
-          "tasks": [
-            {
-              "type": "Task",
-              "id": "P7.M3.T1",
-              "title": "Add modes and scopes Aliases",
-              "status": "Complete",
-              "description": "Add top-level aliases that map to mode list and scope list subcommands.",
-              "subtasks": [
-                {
-                  "type": "Subtask",
-                  "id": "P7.M3.T1.S1",
-                  "title": "Implement modes and scopes commands",
-                  "status": "Complete",
+                  "title": "Add JIN_DIR section to README",
+                  "status": "Planned",
                   "story_points": 1,
                   "dependencies": [],
-                  "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: PRD Section 13.1 shows `jin modes`, Section 13.2 shows `jin scopes`. Existing list_modes() in src/commands/mode.rs:199, list_scopes() in src/commands/scope.rs.\n2. INPUT: None - simple aliases.\n3. LOGIC: In src/cli/mod.rs:\n   a. Add `Modes` variant to Commands enum (no args)\n   b. Add `Scopes` variant to Commands enum (no args)\n   c. In main.rs match:\n      - Commands::Modes => mode::list_modes()\n      - Commands::Scopes => scope::list_scopes()\n4. OUTPUT: `jin modes` and `jin scopes` work as shortcuts for `jin mode list` and `jin scope list`."
+                  "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: PRD Section 19.1 mentions JIN_DIR (plan/architecture/codebase_analysis.md Section 2, Gap #8).\n2. INPUT: README.md file.\n3. LOGIC: Add 'Configuration' section to README with 'JIN_DIR Environment Variable' subsection. Explain: default location (~/.jin/), how to override (export JIN_DIR=/path/to/jin), use cases (multiple Jin repos, per-project Jin), and that tests use it for isolation. Add examples.\n4. OUTPUT: User-facing documentation for JIN_DIR."
                 }
               ]
-            }
-          ]
-        },
-        {
-          "type": "Milestone",
-          "id": "P7.M4",
-          "title": "Audit Logging System",
-          "status": "Complete",
-          "description": "Implement the audit logging system specified in PRD Section 17. Append-only logs in jin/.audit/ tracking all commits.",
-          "tasks": [
+            },
             {
               "type": "Task",
-              "id": "P7.M4.T1",
-              "title": "Create Audit Module",
-              "status": "Complete",
-              "description": "Implement audit logging infrastructure with PRD-compliant format.",
+              "id": "P3.M2.T2",
+              "title": "Add Config Command",
+              "status": "Planned",
+              "description": "Implement a 'jin config' command to view and set Jin configuration options, including the Jin directory location.",
               "subtasks": [
                 {
                   "type": "Subtask",
-                  "id": "P7.M4.T1.S1",
-                  "title": "Define AuditEntry types",
-                  "status": "Complete",
+                  "id": "P3.M2.T2.S1",
+                  "title": "Add config CLI arguments",
+                  "status": "Planned",
                   "story_points": 1,
                   "dependencies": [],
-                  "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: PRD Section 17 specifies audit log format with timestamp, user, project, mode, scope, layer, files, base_commit, merge_commit, and context fields.\n2. INPUT: None - defines new types.\n3. LOGIC: Create src/audit/mod.rs and src/audit/entry.rs:\n   a. Define AuditEntry struct with all PRD fields\n   b. Use chrono for RFC3339 timestamps\n   c. Derive Serialize/Deserialize\n   d. Define AuditContext sub-struct for active_mode, active_scope\n   e. Add to lib.rs: pub mod audit\n4. OUTPUT: AuditEntry struct with new() constructor. Consumed by P7.M4.T1.S2."
+                  "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: Follow clap derive pattern (plan/architecture/external_deps.md Section 1.6).\n2. INPUT: User command line input.\n3. LOGIC: Add ConfigArgs struct to src/cli/mod.rs with optional fields: 'get: Option<String>' for retrieving config values, 'set: Option<Vec<String>>' for setting key=value pairs. Add '--jin-dir <path>' flag for setting Jin directory. Derive Parser.\n4. OUTPUT: ConfigArgs struct for config command."
                 },
                 {
                   "type": "Subtask",
-                  "id": "P7.M4.T1.S2",
-                  "title": "Implement audit file operations",
-                  "status": "Complete",
+                  "id": "P3.M2.T2.S2",
+                  "title": "Implement config get command",
+                  "status": "Planned",
                   "story_points": 1,
-                  "dependencies": [
-                    "P7.M4.T1.S1"
-                  ],
-                  "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: Audit logs live in ~/.jin/.audit/ (global Jin dir). Must be append-only per PRD.\n2. INPUT: AuditEntry from P7.M4.T1.S1. JinConfig for paths.\n3. LOGIC: In src/audit/writer.rs:\n   a. append_entry(entry: &AuditEntry) -> Result<()>\n   b. Determine file path: ~/.jin/.audit/{date}.jsonl\n   c. Create directory if not exists\n   d. Open file in append mode\n   e. Serialize entry to JSON line\n   f. Write with newline\n   g. Flush to ensure durability\n4. OUTPUT: append_entry() function. Consumed by P7.M4.T1.S3."
+                  "dependencies": ["P3.M2.T2.S1"],
+                  "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: Simple key-value lookup (plan/architecture/codebase_analysis.md Section 8.3).\n2. INPUT: ConfigArgs.get field with config key.\n3. LOGIC: In config::execute(), if 'get' is Some(key), retrieve value from JinConfig or environment. For 'jin-dir', get from env::var('JIN_DIR') with default. Display value. If key not recognized, show available keys.\n4. OUTPUT: Config value displayed to user."
                 },
                 {
                   "type": "Subtask",
-                  "id": "P7.M4.T1.S3",
-                  "title": "Integrate audit with CommitPipeline",
-                  "status": "Complete",
-                  "story_points": 1,
-                  "dependencies": [
-                    "P7.M4.T1.S2",
-                    "P7.M1.T1.S1"
-                  ],
-                  "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: CommitPipeline::execute() returns CommitResult with committed_layers, file_count, commit_hashes. Integration point is after successful commit.\n2. INPUT: CommitResult from pipeline, ProjectContext, append_entry() from P7.M4.T1.S2.\n3. LOGIC: In src/commit/pipeline.rs or commit_cmd.rs after successful commit:\n   a. Build AuditEntry from CommitResult and context\n   b. Call audit::append_entry(&entry)\n   c. Log warning if audit fails but don't fail commit (audit is informational)\n4. OUTPUT: All commits automatically logged to ~/.jin/.audit/. No interface change."
-                }
-              ]
-            }
-          ]
-        },
-        {
-          "type": "Milestone",
-          "id": "P7.M5",
-          "title": "JinMap Workflow Integration",
-          "status": "Complete",
-          "description": "Integrate .jinmap updates into commit workflow as specified in PRD Section 16. Currently only used in repair command.",
-          "tasks": [
-            {
-              "type": "Task",
-              "id": "P7.M5.T1",
-              "title": "Implement JinMap Updates",
-              "status": "Complete",
-              "description": "Update .jinmap on commits to track layer-to-file mappings.",
-              "subtasks": [
-                {
-                  "type": "Subtask",
-                  "id": "P7.M5.T1.S1",
-                  "title": "Define JinMap types",
-                  "status": "Complete",
-                  "story_points": 1,
-                  "dependencies": [],
-                  "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: PRD Section 16 shows .jinmap format with version, mappings (layer path -> file list), and meta.generated-by. Currently only stub in repair.rs.\n2. INPUT: None - defines new types.\n3. LOGIC: Create src/core/jinmap.rs:\n   a. Define JinMap struct: version: u32, mappings: HashMap<String, Vec<String>>, meta: JinMapMeta\n   b. Define JinMapMeta: generated_by: String\n   c. Implement load() from .jin/.jinmap (YAML)\n   d. Implement save() with atomic write (temp + rename)\n   e. Add pub mod jinmap to core/mod.rs\n4. OUTPUT: JinMap with load/save. Consumed by P7.M5.T1.S2."
-                },
-                {
-                  "type": "Subtask",
-                  "id": "P7.M5.T1.S2",
-                  "title": "Integrate JinMap with commit",
-                  "status": "Complete",
+                  "id": "P3.M2.T2.S3",
+                  "title": "Implement config set command",
+                  "status": "Planned",
                   "story_points": 2,
-                  "dependencies": [
-                    "P7.M5.T1.S1",
-                    "P7.M1.T1.S1"
-                  ],
-                  "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: PRD states .jinmap is auto-maintained after every commit. Must reflect actual layer contents.\n2. INPUT: CommitResult from pipeline, JinMap from P7.M5.T1.S1, JinRepo for reading layer trees.\n3. LOGIC: In src/commit/pipeline.rs or commit_cmd.rs after successful commit:\n   a. Load existing JinMap or create new\n   b. For each layer in CommitResult.committed_layers:\n      - Get layer ref path\n      - Walk tree to collect all file paths\n      - Update mappings[layer_path] = file_list\n   c. Set meta.generated_by = 'jin'\n   d. Save JinMap\n4. OUTPUT: .jin/.jinmap reflects current layer contents after each commit."
-                }
-              ]
-            }
-          ]
-        },
-        {
-          "type": "Milestone",
-          "id": "P7.M6",
-          "title": "Test Suite Remediation",
-          "status": "Complete",
-          "description": "Fix 31 failing unit tests. Most failures are in mode.rs and scope.rs due to test environment isolation issues.",
-          "tasks": [
-            {
-              "type": "Task",
-              "id": "P7.M6.T1",
-              "title": "Fix Test Environment Issues",
-              "status": "Complete",
-              "description": "Address test isolation, temp directory, and Git lock file issues.",
-              "subtasks": [
-                {
-                  "type": "Subtask",
-                  "id": "P7.M6.T1.S1",
-                  "title": "Fix mode/scope test isolation",
-                  "status": "Complete",
-                  "story_points": 2,
-                  "dependencies": [],
-                  "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: Test failures show: 'failed to lock file /tmp/.tmpXXX/.jin_global/config.lock', 'failed to load object database', ref_exists() returning false unexpectedly. Tests share global state.\n2. INPUT: Failing tests in src/commands/mode.rs and src/commands/scope.rs.\n3. LOGIC: For each failing test:\n   a. Ensure test creates isolated TempDir for ALL Jin paths (not just project)\n   b. Set JIN_DIR env var to temp path before JinRepo operations\n   c. Create fresh Git repo in temp dir, not rely on global\n   d. Clean up lock files in test teardown\n   e. Use test fixtures from tests/common/fixtures.rs\n4. OUTPUT: All 31 failing tests pass. Run `cargo test` to verify."
+                  "dependencies": ["P3.M2.T2.S2"],
+                  "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: JIN_DIR is env var, not file config (plan/architecture/codebase_analysis.md Section 2, Gap #8).\n2. INPUT: ConfigArgs.set field with key=value pairs.\n3. LOGIC: In config::execute(), if 'set' is Some(pairs), parse each pair. For 'jin-dir' key, instruct user to set environment variable (Jin doesn't write to shell profile). For other config, write to .jin/config.json. Show success message.\n4. OUTPUT: Configuration set or user instructed."
                 }
               ]
             }

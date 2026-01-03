@@ -86,7 +86,9 @@ fn test_pull_fast_forward_still_works() -> Result<(), Box<dyn std::error::Error>
         .env("JIN_DIR", jin_dir)
         .assert()
         .success()
-        .stdout(predicates::str::contains("✓ global: Updated (fast-forward)"));
+        .stdout(predicates::str::contains(
+            "✓ global: Updated (fast-forward)",
+        ));
 
     Ok(())
 }
@@ -381,10 +383,12 @@ fn test_pull_divergent_with_conflicts() -> Result<(), Box<dyn std::error::Error>
         .env("JIN_DIR", jin_dir)
         .assert()
         .success()
-        .stdout(predicates::str::contains("! global: Merged with 1 conflicts"))
-        .stdout(
-            predicates::str::contains("config.txt has conflicts (.jinmerge created)"),
-        );
+        .stdout(predicates::str::contains(
+            "! global: Merged with 1 conflicts",
+        ))
+        .stdout(predicates::str::contains(
+            "config.txt has conflicts (.jinmerge created)",
+        ));
 
     // Verify .jinmerge file was created
     let jinmerge_path = remote_fixture.local_path.join("config.txt.jinmerge");

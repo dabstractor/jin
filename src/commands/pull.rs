@@ -11,7 +11,7 @@ use crate::merge::text::{text_merge, TextMergeResult};
 use crate::staging::StagingIndex;
 use git2::Oid;
 use std::collections::{HashMap, HashSet};
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
 /// Execute the pull command
 ///
@@ -418,8 +418,8 @@ fn perform_three_way_merge(
 /// # Returns
 ///
 /// File content as a string, or empty string if file doesn't exist
-fn extract_file_content(repo: &JinRepo, tree_oid: Oid, path: &PathBuf) -> Result<String> {
-    match repo.read_file_from_tree(tree_oid, path.as_path()) {
+fn extract_file_content(repo: &JinRepo, tree_oid: Oid, path: &Path) -> Result<String> {
+    match repo.read_file_from_tree(tree_oid, path) {
         Ok(content) => Ok(String::from_utf8_lossy(&content).to_string()),
         Err(_) => Ok(String::new()), // File doesn't exist in this tree
     }

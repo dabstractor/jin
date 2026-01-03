@@ -713,14 +713,14 @@
               "type": "Task",
               "id": "P2.M2.T1",
               "title": "Query JinMap for Layer Contents",
-              "status": "Planned",
+              "status": "Complete",
               "description": "Modify export validation to check both staging index and committed layer contents via JinMap. This allows exporting files without re-staging them.",
               "subtasks": [
                 {
                   "type": "Subtask",
                   "id": "P2.M2.T1.S1",
                   "title": "Load JinMap for layer lookups",
-                  "status": "Planned",
+                  "status": "Complete",
                   "story_points": 1,
                   "dependencies": [],
                   "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: JinMap at .jin/.jinmap has layer contents (plan/architecture/codebase_analysis.md Section 6). Current export.rs only checks staging.\n2. INPUT: ExportArgs with file paths.\n3. LOGIC: In export::execute(), after loading JinRepo, load JinMap via repo.load_jinmap()?. JinMap provides fast lookup of which files are in which layers without walking Git trees.\n4. OUTPUT: Loaded JinMap instance for querying layer contents."
@@ -729,7 +729,7 @@
                   "type": "Subtask",
                   "id": "P2.M2.T1.S2",
                   "title": "Check file in committed layer contents",
-                  "status": "Planned",
+                  "status": "Complete",
                   "story_points": 1,
                   "dependencies": [
                     "P2.M2.T1.S1"
@@ -740,7 +740,7 @@
                   "type": "Subtask",
                   "id": "P2.M2.T1.S3",
                   "title": "Extract committed file content from layer",
-                  "status": "Planned",
+                  "status": "Complete",
                   "story_points": 2,
                   "dependencies": [
                     "P2.M2.T1.S2"

@@ -2,8 +2,10 @@
 //!
 //! Shows workspace state, active contexts, staged changes, and layer composition.
 
+use crate::commands::apply::PausedApplyState;
 use crate::core::{JinError, Layer, ProjectContext, Result};
 use crate::git::{JinRepo, ObjectOps};
+use crate::merge::jinmerge::JinMergeConflict;
 use crate::staging::StagingIndex;
 use crate::staging::WorkspaceMetadata;
 use std::path::PathBuf;
@@ -15,6 +17,46 @@ enum WorkspaceState {
         modified: Vec<PathBuf>,
         deleted: Vec<PathBuf>,
     },
+}
+
+/// Check for in-progress apply operation with conflicts
+fn check_for_conflicts() -> Option<PausedApplyState> {
+    // Follow pattern from resolve.rs:33-37
+    if !PausedApplyState::exists() {
+        return None;
+    }
+
+    // Graceful degradation: if load fails, return None
+    PausedApplyState::load().ok()
+}
+
+/// Display conflict state from paused apply operation
+fn show_conflict_state(state: &PausedApplyState) -> Result<()> {
+    // Follow pluralization pattern from line 71-73 in status.rs
+    let count = state.conflict_count;
+    println!(
+        "Merge conflicts ({} file{}):",
+        count,
+        if count == 1 { "" } else { "s" }
+    );
+
+    // List each .jinmerge file
+    // CRITICAL: conflict_files contains original paths, convert to .jinmerge paths
+    for original_path in &state.conflict_files {
+        let merge_path = JinMergeConflict::merge_path_for_file(original_path);
+        println!("  {}", merge_path.display());
+    }
+
+    // Show resolve instruction
+    println!("  Resolve with: jin resolve <files>");
+
+    // Show timestamp - use RFC3339 format for ISO 8601
+    println!("  Detected: {}", state.timestamp.to_rfc3339());
+
+    // Blank line for spacing (follow status section pattern)
+    println!();
+
+    Ok(())
 }
 
 /// Execute the status command
@@ -83,6 +125,11 @@ pub fn execute() -> Result<()> {
             println!("Use 'jin diff' to see changes or 'jin add <file>' to stage them.");
             println!();
         }
+    }
+
+    // Check and display conflict state
+    if let Some(conflict_state) = check_for_conflicts() {
+        show_conflict_state(&conflict_state)?;
     }
 
     // Show staged files
@@ -261,5 +308,59 @@ mod tests {
 
         let result = execute();
         assert!(matches!(result, Err(JinError::NotInitialized)));
+    }
+
+    #[test]
+    fn test_check_for_conflicts_no_state() {
+        let temp = TempDir::new().unwrap();
+        std::env::set_current_dir(temp.path()).unwrap();
+
+        // No paused state file exists
+        let result = check_for_conflicts();
+        assert!(result.is_none());
+    }
+
+    #[test]
+    fn test_check_for_conflicts_with_state() {
+        use crate::commands::apply::PausedLayerConfig;
+        use chrono::Utc;
+        use std::fs;
+        use std::path::PathBuf;
+
+        let temp = TempDir::new().unwrap();
+        let temp_path = temp.path();
+        std::env::set_current_dir(temp_path).unwrap();
+
+        // Create .jin directory using absolute path
+        let jin_dir = temp_path.join(".jin");
+        fs::create_dir_all(&jin_dir).unwrap();
+
+        // Create a paused state
+        let state = PausedApplyState {
+            timestamp: Utc::now(),
+            layer_config: PausedLayerConfig {
+                layers: vec!["mode-base".to_string()],
+                mode: Some("test_mode".to_string()),
+                scope: None,
+                project: None,
+            },
+            conflict_files: vec![PathBuf::from("config.json")],
+            applied_files: vec![],
+            conflict_count: 1,
+        };
+
+        // Manually write the state file to .jin/.paused_apply.yaml
+        let state_path = temp_path.join(".jin").join(".paused_apply.yaml");
+        let content = serde_yaml::to_string(&state).unwrap();
+        fs::write(&state_path, content).unwrap();
+
+        // Verify check_for_conflicts returns Some
+        let result = check_for_conflicts();
+        assert!(result.is_some());
+
+        // Verify the state has expected content
+        let loaded_state = result.unwrap();
+        assert_eq!(loaded_state.conflict_count, 1);
+        assert_eq!(loaded_state.conflict_files.len(), 1);
     }
 }

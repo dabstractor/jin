@@ -869,3 +869,185 @@ fn test_completion_help() {
         .stdout(predicate::str::contains("fish"))
         .stdout(predicate::str::contains("powershell"));
 }
+
+// ============================================================
+// Status Command - Conflict State Integration Tests
+// ============================================================
+
+#[test]
+fn test_status_no_conflicts_normal_display() {
+    use tempfile::TempDir;
+    let temp = TempDir::new().unwrap();
+
+    // Use temp path for unique JIN_DIR
+    let jin_dir = temp.path().join(".jin_global");
+
+    // Initialize Jin
+    jin()
+        .arg("init")
+        .current_dir(temp.path())
+        .env("JIN_DIR", &jin_dir)
+        .assert()
+        .success();
+
+    // Create and activate a mode
+    let mode_name = format!("test_mode_no_conflict_{}", std::process::id());
+
+    jin()
+        .args(["mode", "create", &mode_name])
+        .env("JIN_DIR", &jin_dir)
+        .assert()
+        .success();
+
+    jin()
+        .args(["mode", "use", &mode_name])
+        .current_dir(temp.path())
+        .env("JIN_DIR", &jin_dir)
+        .assert()
+        .success();
+
+    // Check status does NOT show conflict section
+    jin()
+        .arg("status")
+        .current_dir(temp.path())
+        .env("JIN_DIR", &jin_dir)
+        .assert()
+        .success()
+        .stdout(predicate::str::contains("Jin status:"))
+        .stdout(predicate::str::contains("Mode:"))
+        .stdout(predicate::str::contains(&mode_name))
+        .stdout(predicate::str::contains("Workspace state: Clean"))
+        .stdout(predicate::str::contains("Merge conflicts").not());
+}
+
+#[test]
+fn test_status_shows_conflict_state() {
+    use std::fs;
+    use tempfile::TempDir;
+    let temp = TempDir::new().unwrap();
+
+    // Use temp path for unique JIN_DIR
+    let jin_dir = temp.path().join(".jin_global");
+
+    // Initialize Jin
+    jin()
+        .arg("init")
+        .current_dir(temp.path())
+        .env("JIN_DIR", &jin_dir)
+        .assert()
+        .success();
+
+    // Create and activate a mode
+    let mode_name = format!("test_mode_conflict_{}", std::process::id());
+
+    jin()
+        .args(["mode", "create", &mode_name])
+        .env("JIN_DIR", &jin_dir)
+        .assert()
+        .success();
+
+    jin()
+        .args(["mode", "use", &mode_name])
+        .current_dir(temp.path())
+        .env("JIN_DIR", &jin_dir)
+        .assert()
+        .success();
+
+    // Create and stage a file
+    let test_file = temp.path().join("config.json");
+    fs::write(&test_file, r#"{"test": "value1"}"#).unwrap();
+
+    jin()
+        .args(["add", "config.json", "--mode"])
+        .current_dir(temp.path())
+        .env("JIN_DIR", &jin_dir)
+        .assert()
+        .success();
+
+    jin()
+        .args(["commit", "-m", "First commit"])
+        .current_dir(temp.path())
+        .env("JIN_DIR", &jin_dir)
+        .assert()
+        .success();
+
+    // Create a second mode with conflicting content
+    let mode_name2 = format!("test_mode_conflict2_{}", std::process::id());
+
+    jin()
+        .args(["mode", "create", &mode_name2])
+        .env("JIN_DIR", &jin_dir)
+        .assert()
+        .success();
+
+    // Deactivate first mode
+    jin()
+        .args(["mode", "unset"])
+        .current_dir(temp.path())
+        .env("JIN_DIR", &jin_dir)
+        .assert()
+        .success();
+
+    // Activate second mode
+    jin()
+        .args(["mode", "use", &mode_name2])
+        .current_dir(temp.path())
+        .env("JIN_DIR", &jin_dir)
+        .assert()
+        .success();
+
+    // Modify the file with conflicting content
+    fs::write(&test_file, r#"{"test": "value2"}"#).unwrap();
+
+    jin()
+        .args(["add", "config.json", "--mode"])
+        .current_dir(temp.path())
+        .env("JIN_DIR", &jin_dir)
+        .assert()
+        .success();
+
+    jin()
+        .args(["commit", "-m", "Second commit"])
+        .current_dir(temp.path())
+        .env("JIN_DIR", &jin_dir)
+        .assert()
+        .success();
+
+    // Manually create a paused state to simulate conflict scenario
+    // (In a real scenario, jin apply would create this)
+    let jin_dir_local = temp.path().join(".jin");
+    fs::create_dir_all(&jin_dir_local).unwrap();
+
+    let paused_state_content = r#"
+timestamp: "2024-01-03T14:30:00Z"
+layer_config:
+  layers:
+    - "mode-base"
+  mode: null
+  scope: null
+  project: null
+conflict_files:
+  - "config.json"
+applied_files: []
+conflict_count: 1
+"#;
+
+    fs::write(
+        jin_dir_local.join(".paused_apply.yaml"),
+        paused_state_content,
+    )
+    .unwrap();
+
+    // Check status shows conflicts
+    jin()
+        .arg("status")
+        .current_dir(temp.path())
+        .env("JIN_DIR", &jin_dir)
+        .assert()
+        .success()
+        .stdout(predicate::str::contains("Merge conflicts"))
+        .stdout(predicate::str::contains("1 file"))
+        .stdout(predicate::str::contains("config.json.jinmerge"))
+        .stdout(predicate::str::contains("Resolve with: jin resolve"))
+        .stdout(predicate::str::contains("Detected:"));
+}

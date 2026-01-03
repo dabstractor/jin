@@ -174,14 +174,14 @@
               "type": "Task",
               "id": "P1.M1.T4",
               "title": "Update Status Command for Conflict State",
-              "status": "Planned",
+              "status": "Complete",
               "description": "Modify jin status to display when there's an in-progress apply operation with pending conflict resolutions. This provides users with visibility into the conflict resolution workflow state.",
               "subtasks": [
                 {
                   "type": "Subtask",
                   "id": "P1.M1.T4.S1",
                   "title": "Check for in-progress apply operation",
-                  "status": "Planned",
+                  "status": "Complete",
                   "story_points": 1,
                   "dependencies": [],
                   "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: Status command at src/commands/status.rs needs to detect .jin/apply-in-progress (plan/architecture/codebase_analysis.md Section 2, Gap #1).\n2. INPUT: Current workspace state, .jin directory contents.\n3. LOGIC: In execute() function, check if .jin/apply-in-progress file exists. If yes, parse JSON to get conflict_files list and timestamp. Store for display.\n4. OUTPUT: Option<InProgressApply> struct with conflict info, or None if no in-progress operation."
@@ -190,7 +190,7 @@
                   "type": "Subtask",
                   "id": "P1.M1.T4.S2",
                   "title": "Display conflict state in status output",
-                  "status": "Planned",
+                  "status": "Complete",
                   "story_points": 1,
                   "dependencies": [
                     "P1.M1.T4.S1"

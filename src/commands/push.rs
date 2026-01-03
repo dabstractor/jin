@@ -139,10 +139,9 @@ fn capture_remote_refs(jin_repo: &JinRepo) -> Result<std::collections::HashSet<S
 
     // List remote-tracking refs to see what actually exists on remote
     // The refspec copies remote refs to local, but also creates remote-tracking refs
-    let remote_tracking_refs = match jin_repo.list_refs("refs/remotes/origin/refs/jin/layers/*") {
-        Ok(refs) => refs,
-        Err(_) => Vec::new(), // No remote-tracking refs means remote is empty
-    };
+    let remote_tracking_refs = jin_repo
+        .list_refs("refs/remotes/origin/refs/jin/layers/*")
+        .unwrap_or_default();
 
     for ref_name in remote_tracking_refs {
         // Skip user-local layer

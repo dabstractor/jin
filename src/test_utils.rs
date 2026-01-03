@@ -1,29 +1,82 @@
-//! Common test utilities for Jin integration tests
+//! Test utilities for Jin unit tests
 //!
-//! This module provides shared fixtures and assertions used across
-//! integration test files.
+//! This module provides shared test setup for unit tests across the codebase.
 
-pub mod assertions;
-pub mod fixtures;
-pub mod git_helpers;
+use std::path::{Path, PathBuf};
 
-use crate::common::git_helpers::cleanup_before_test;
-use std::path::PathBuf;
-use tempfile::TempDir;
+#[cfg(test)]
+pub use tempfile::TempDir;
+
+/// Clean up Git locks BEFORE running a test
+///
+/// This function should be called at the START of test setup to ensure
+/// no stale locks from previous test runs cause failures.
+#[cfg(test)]
+fn cleanup_git_locks(repo_path: &Path) {
+    let git_dir = repo_path.join(".git");
+    if !git_dir.exists() {
+        return;
+    }
+
+    // Clean common lock files
+    let _ = std::fs::remove_file(git_dir.join("index.lock"));
+    let _ = std::fs::remove_file(git_dir.join("HEAD.lock"));
+    let _ = std::fs::remove_file(git_dir.join("config.lock"));
+    let _ = std::fs::remove_file(git_dir.join("packed-refs.lock"));
+}
+
+/// Clean up Git locks before running a test
+#[cfg(test)]
+fn cleanup_before_test(jin_dir: &Path) {
+    // Clean up JIN_DIR locks
+    let _ = cleanup_git_locks(jin_dir);
+
+    // Clean up current directory's .git locks
+    if let Ok(current_dir) = std::env::current_dir() {
+        let _ = cleanup_git_locks(&current_dir);
+    }
+}
 
 /// Test context for unit tests
 ///
 /// Provides all paths and context needed for unit tests.
 /// CRITICAL: Keep _temp_dir in scope to prevent premature cleanup.
+///
+/// This context automatically restores the original directory and environment
+/// when dropped, ensuring tests don't interfere with each other.
+#[cfg(test)]
 pub struct UnitTestContext {
     /// Temporary directory (must be kept in scope)
     _temp_dir: TempDir,
+    /// Original directory (for restoration on drop, if valid)
+    _original_dir: Option<PathBuf>,
+    /// Original JIN_DIR value (for restoration on drop)
+    _original_jin_dir: Option<String>,
     /// Absolute path to test project directory
     pub project_path: PathBuf,
     /// Absolute path to isolated JIN_DIR
     pub jin_dir: PathBuf,
 }
 
+#[cfg(test)]
+impl Drop for UnitTestContext {
+    fn drop(&mut self) {
+        // Restore original directory only if it was valid and exists
+        if let Some(ref dir) = self._original_dir {
+            if dir.exists() {
+                let _ = std::env::set_current_dir(dir);
+            }
+        }
+
+        // Restore original JIN_DIR
+        match &self._original_jin_dir {
+            Some(val) => std::env::set_var("JIN_DIR", val),
+            None => std::env::remove_var("JIN_DIR"),
+        }
+    }
+}
+
+#[cfg(test)]
 impl UnitTestContext {
     /// Get the absolute path to .jin directory
     pub fn jin_path(&self) -> PathBuf {
@@ -54,6 +107,7 @@ impl UnitTestContext {
 /// - Keep the returned UnitTestContext in scope (use let _ctx = ...)
 /// - All paths are absolute, avoiding current_dir() issues
 /// - Creates .jin directory structure for tests that need it
+/// - Automatically restores original directory/JIN_DIR on drop
 ///
 /// # Example
 /// ```rust
@@ -66,12 +120,16 @@ impl UnitTestContext {
 ///     std::fs::write(&context_path, "mode: test").unwrap();
 /// }
 /// ```
+#[cfg(test)]
 pub fn setup_unit_test() -> UnitTestContext {
     use crate::core::config::ProjectContext;
     use crate::git::repo::JinRepo;
 
-    // CRITICAL: Clean up locks BEFORE creating new test environment
-    cleanup_before_test(None);
+    // Save original environment state
+    // NOTE: current_dir() may fail if previous test cleaned up a temp directory
+    // In that case, we won't try to restore (None means no valid restore point)
+    let original_dir = std::env::current_dir().ok();
+    let original_jin_dir = std::env::var("JIN_DIR").ok();
 
     // Create temporary directory for isolated test
     let temp_dir = TempDir::new().expect("Failed to create temp dir");
@@ -80,6 +138,9 @@ pub fn setup_unit_test() -> UnitTestContext {
 
     // CRITICAL: Set JIN_DIR before any Jin operations
     std::env::set_var("JIN_DIR", &jin_dir);
+
+    // CRITICAL: Clean up locks from previous test runs
+    cleanup_before_test(&jin_dir);
 
     // CRITICAL: Set current directory for tests that expect it
     // (Tests must use #[serial] attribute to prevent conflicts)
@@ -102,6 +163,8 @@ pub fn setup_unit_test() -> UnitTestContext {
 
     UnitTestContext {
         _temp_dir: temp_dir,
+        _original_dir: original_dir,
+        _original_jin_dir: original_jin_dir,
         project_path,
         jin_dir,
     }

@@ -250,13 +250,8 @@ mod tests {
 
     #[test]
     fn test_unstage_file_not_in_staging() {
-        let temp = TempDir::new().unwrap();
-        let project_path = temp.path();
-
-        // Initialize jin project
-        std::env::set_current_dir(project_path).unwrap();
-        let context = ProjectContext::default();
-        context.save().unwrap();
+        let ctx = crate::test_utils::setup_unit_test();
+        let project_path = &ctx.project_path;
 
         let mut staging = StagingIndex::new();
         let args = RmArgs {
@@ -276,13 +271,8 @@ mod tests {
 
     #[test]
     fn test_unstage_file_success() {
-        let temp = TempDir::new().unwrap();
-        let project_path = temp.path();
-
-        // Initialize jin project
-        std::env::set_current_dir(project_path).unwrap();
-        let context = ProjectContext::default();
-        context.save().unwrap();
+        let ctx = crate::test_utils::setup_unit_test();
+        let project_path = &ctx.project_path;
 
         // Create a test file
         let test_file = project_path.join("test.json");
@@ -324,13 +314,8 @@ mod tests {
 
     #[test]
     fn test_unstage_file_with_force() {
-        let temp = TempDir::new().unwrap();
-        let project_path = temp.path();
-
-        // Initialize jin project
-        std::env::set_current_dir(project_path).unwrap();
-        let context = ProjectContext::default();
-        context.save().unwrap();
+        let ctx = crate::test_utils::setup_unit_test();
+        let project_path = &ctx.project_path;
 
         // Create a test file
         let test_file = project_path.join("test.json");
@@ -372,13 +357,8 @@ mod tests {
 
     #[test]
     fn test_execute_dry_run() {
-        let temp = TempDir::new().unwrap();
-        let project_path = temp.path();
-
-        // Initialize jin project
-        std::env::set_current_dir(project_path).unwrap();
-        let context = ProjectContext::default();
-        context.save().unwrap();
+        let ctx = crate::test_utils::setup_unit_test();
+        let project_path = &ctx.project_path;
 
         // Create and stage a test file (use absolute path like other tests)
         let test_file = project_path.join("test.json");
@@ -416,12 +396,8 @@ mod tests {
 
     #[test]
     fn test_execute_project_without_mode() {
-        let temp = TempDir::new().unwrap();
-        let project_path = temp.path();
-        std::env::set_current_dir(project_path).unwrap();
-
-        let context = ProjectContext::default();
-        context.save().unwrap();
+        let ctx = crate::test_utils::setup_unit_test();
+        let project_path = &ctx.project_path;
 
         let args = RmArgs {
             files: vec!["file.txt".to_string()],
@@ -438,12 +414,8 @@ mod tests {
 
     #[test]
     fn test_execute_global_with_mode() {
-        let temp = TempDir::new().unwrap();
-        let project_path = temp.path();
-        std::env::set_current_dir(project_path).unwrap();
-
-        let context = ProjectContext::default();
-        context.save().unwrap();
+        let ctx = crate::test_utils::setup_unit_test();
+        let project_path = &ctx.project_path;
 
         let args = RmArgs {
             files: vec!["file.txt".to_string()],

@@ -271,32 +271,6 @@ fn unset() -> Result<()> {
 mod tests {
     use super::*;
     use serial_test::serial;
-    use tempfile::TempDir;
-
-    /// Setup isolated test environment
-    ///
-    /// NOTE: These tests are marked with #[serial] to prevent parallel execution
-    /// due to shared environment variables (JIN_DIR, current directory).
-    fn setup_test_env() -> TempDir {
-        let temp = TempDir::new().unwrap();
-
-        // Set JIN_DIR to an isolated directory for this test
-        let jin_dir = temp.path().join(".jin_global");
-        std::env::set_var("JIN_DIR", &jin_dir);
-
-        // Change to temp directory for project context
-        std::env::set_current_dir(temp.path()).unwrap();
-
-        // Initialize the bare Jin repo first
-        let _ = JinRepo::open_or_create();
-
-        // Initialize .jin directory and context
-        let _ = std::fs::create_dir(".jin");
-        let context = ProjectContext::default();
-        context.save().unwrap();
-
-        temp
-    }
 
     #[test]
     fn test_validate_mode_name_valid() {
@@ -328,7 +302,7 @@ mod tests {
     #[test]
     #[serial]
     fn test_create_mode() {
-        let _temp = setup_test_env();
+        let _ctx = crate::test_utils::setup_unit_test();
         let result = create("testmode");
         assert!(result.is_ok());
 
@@ -340,7 +314,7 @@ mod tests {
     #[test]
     #[serial]
     fn test_create_mode_duplicate() {
-        let _temp = setup_test_env();
+        let _ctx = crate::test_utils::setup_unit_test();
         create("testmode").unwrap();
 
         // Try to create again
@@ -351,7 +325,7 @@ mod tests {
     #[test]
     #[serial]
     fn test_use_mode() {
-        let _temp = setup_test_env();
+        let _ctx = crate::test_utils::setup_unit_test();
         create("testmode").unwrap();
 
         let result = use_mode("testmode");
@@ -365,7 +339,7 @@ mod tests {
     #[test]
     #[serial]
     fn test_use_mode_nonexistent() {
-        let _temp = setup_test_env();
+        let _ctx = crate::test_utils::setup_unit_test();
         let result = use_mode("nonexistent");
         assert!(matches!(result, Err(JinError::NotFound(_))));
     }
@@ -373,7 +347,7 @@ mod tests {
     #[test]
     #[serial]
     fn test_list_empty() {
-        let _temp = setup_test_env();
+        let _ctx = crate::test_utils::setup_unit_test();
         let result = list();
         assert!(result.is_ok());
     }
@@ -381,7 +355,7 @@ mod tests {
     #[test]
     #[serial]
     fn test_list_with_modes() {
-        let _temp = setup_test_env();
+        let _ctx = crate::test_utils::setup_unit_test();
         create("mode1").unwrap();
         create("mode2").unwrap();
         use_mode("mode1").unwrap();
@@ -393,7 +367,7 @@ mod tests {
     #[test]
     #[serial]
     fn test_show_no_mode() {
-        let _temp = setup_test_env();
+        let _ctx = crate::test_utils::setup_unit_test();
         let result = show();
         assert!(result.is_ok());
     }
@@ -401,7 +375,7 @@ mod tests {
     #[test]
     #[serial]
     fn test_show_with_mode() {
-        let _temp = setup_test_env();
+        let _ctx = crate::test_utils::setup_unit_test();
         create("testmode").unwrap();
         use_mode("testmode").unwrap();
 
@@ -412,7 +386,7 @@ mod tests {
     #[test]
     #[serial]
     fn test_unset() {
-        let _temp = setup_test_env();
+        let _ctx = crate::test_utils::setup_unit_test();
         create("testmode").unwrap();
         use_mode("testmode").unwrap();
 
@@ -427,7 +401,7 @@ mod tests {
     #[test]
     #[serial]
     fn test_unset_no_mode() {
-        let _temp = setup_test_env();
+        let _ctx = crate::test_utils::setup_unit_test();
         let result = unset();
         assert!(result.is_ok());
     }
@@ -435,7 +409,7 @@ mod tests {
     #[test]
     #[serial]
     fn test_delete_mode() {
-        let _temp = setup_test_env();
+        let _ctx = crate::test_utils::setup_unit_test();
         create("testmode").unwrap();
 
         let result = delete("testmode");
@@ -449,7 +423,7 @@ mod tests {
     #[test]
     #[serial]
     fn test_delete_active_mode() {
-        let _temp = setup_test_env();
+        let _ctx = crate::test_utils::setup_unit_test();
         create("testmode").unwrap();
         use_mode("testmode").unwrap();
 
@@ -464,7 +438,7 @@ mod tests {
     #[test]
     #[serial]
     fn test_delete_nonexistent() {
-        let _temp = setup_test_env();
+        let _ctx = crate::test_utils::setup_unit_test();
         let result = delete("nonexistent");
         assert!(matches!(result, Err(JinError::NotFound(_))));
     }

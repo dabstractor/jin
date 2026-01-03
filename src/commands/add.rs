@@ -226,17 +226,11 @@ mod tests {
     #[test]
     #[serial]
     fn test_validate_file_success() {
-        let temp = TempDir::new().unwrap();
-        let file = temp.path().join("test.json");
+        let ctx = crate::test_utils::setup_unit_test();
+        let file = ctx.project_path.join("test.json");
         std::fs::write(&file, b"{}").unwrap();
 
-        // Change to temp directory (no Git repo)
-        let original_dir = std::env::current_dir().unwrap();
-        std::env::set_current_dir(temp.path()).unwrap();
-
         let result = validate_file(&file);
-
-        std::env::set_current_dir(original_dir).unwrap();
         assert!(result.is_ok());
     }
 
@@ -257,25 +251,14 @@ mod tests {
     #[test]
     #[serial]
     fn test_stage_file_creates_blob() {
-        let temp = TempDir::new().unwrap();
+        let ctx = crate::test_utils::setup_unit_test();
+        let repo = JinRepo::open_or_create().unwrap();
 
-        // Set JIN_DIR to an isolated directory for this test
-        let jin_repo_path = temp.path().join(".jin-repo");
-        std::env::set_var("JIN_DIR", &jin_repo_path);
-
-        let repo = JinRepo::create_at(&jin_repo_path).unwrap();
-
-        let file = temp.path().join("test.json");
+        let file = ctx.project_path.join("test.json");
         std::fs::write(&file, b"{\"key\": \"value\"}").unwrap();
-
-        // Change to temp directory (no Git repo)
-        let original_dir = std::env::current_dir().unwrap();
-        std::env::set_current_dir(temp.path()).unwrap();
 
         let mut staging = StagingIndex::new();
         let result = stage_file(&file, Layer::ProjectBase, &repo, &mut staging);
-
-        std::env::set_current_dir(original_dir).unwrap();
 
         assert!(result.is_ok());
         assert_eq!(staging.len(), 1);

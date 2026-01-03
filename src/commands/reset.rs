@@ -388,17 +388,8 @@ mod tests {
 
     #[test]
     fn test_reset_hard_with_force() {
-        let temp = TempDir::new().unwrap();
-        let project_path = temp.path();
-
-        // Initialize jin project
-        std::env::set_current_dir(project_path).unwrap();
-        let context = ProjectContext::default();
-        context.save().unwrap();
-
-        // Create the Jin repository (required for validation)
-        let jin_dir = project_path.join(".jin");
-        crate::git::JinRepo::create_at(&jin_dir).unwrap();
+        let ctx = crate::test_utils::setup_unit_test();
+        let project_path = &ctx.project_path;
 
         // Create a test file
         let test_file = project_path.join("test.json");

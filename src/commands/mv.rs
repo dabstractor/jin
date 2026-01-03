@@ -331,13 +331,8 @@ mod tests {
 
     #[test]
     fn test_move_file_not_staged() {
-        let temp = TempDir::new().unwrap();
-        let project_path = temp.path();
-
-        // Initialize jin project
-        std::env::set_current_dir(project_path).unwrap();
-        let context = ProjectContext::default();
-        context.save().unwrap();
+        let ctx = crate::test_utils::setup_unit_test();
+        let project_path = &ctx.project_path;
 
         let mut staging = StagingIndex::new();
         let args = MvArgs {
@@ -358,13 +353,8 @@ mod tests {
 
     #[test]
     fn test_move_file_destination_exists() {
-        let temp = TempDir::new().unwrap();
-        let project_path = temp.path();
-
-        // Initialize jin project
-        std::env::set_current_dir(project_path).unwrap();
-        let context = ProjectContext::default();
-        context.save().unwrap();
+        let ctx = crate::test_utils::setup_unit_test();
+        let project_path = &ctx.project_path;
 
         let mut staging = StagingIndex::new();
 
@@ -393,15 +383,8 @@ mod tests {
 
     #[test]
     fn test_execute_project_without_mode() {
-        let temp = TempDir::new().unwrap();
-        let project_path = temp.path();
-        std::env::set_current_dir(project_path).unwrap();
-
-        // Ensure .jin directory exists
-        std::fs::create_dir_all(".jin").unwrap();
-
-        let context = ProjectContext::default();
-        context.save().unwrap();
+        let ctx = crate::test_utils::setup_unit_test();
+        let project_path = &ctx.project_path;
 
         let args = MvArgs {
             files: vec!["src.txt".to_string(), "dst.txt".to_string()],
@@ -418,15 +401,8 @@ mod tests {
 
     #[test]
     fn test_execute_global_with_mode() {
-        let temp = TempDir::new().unwrap();
-        let project_path = temp.path();
-        std::env::set_current_dir(project_path).unwrap();
-
-        // Ensure .jin directory exists
-        std::fs::create_dir_all(".jin").unwrap();
-
-        let context = ProjectContext::default();
-        context.save().unwrap();
+        let ctx = crate::test_utils::setup_unit_test();
+        let project_path = &ctx.project_path;
 
         let args = MvArgs {
             files: vec!["src.txt".to_string(), "dst.txt".to_string()],
@@ -443,16 +419,8 @@ mod tests {
 
     #[test]
     fn test_move_file_success() {
-        let temp = TempDir::new().unwrap();
-        let project_path = temp.path();
-
-        // Initialize jin project
-        std::env::set_current_dir(project_path).unwrap();
-        let context = ProjectContext::default();
-        context.save().unwrap();
-
-        // Ensure staging directory exists
-        std::fs::create_dir_all(".jin/staging").unwrap();
+        let ctx = crate::test_utils::setup_unit_test();
+        let project_path = &ctx.project_path;
 
         let mut staging = StagingIndex::new();
 
@@ -488,24 +456,12 @@ mod tests {
 
     #[test]
     fn test_execute_dry_run() {
-        let temp = TempDir::new().unwrap();
-        let project_path = temp.path();
-
-        // Initialize jin project
-        std::env::set_current_dir(project_path).unwrap();
-
-        // Ensure .jin directory exists
-        std::fs::create_dir_all(".jin").unwrap();
-
-        let context = ProjectContext::default();
-        context.save().unwrap();
+        let ctx = crate::test_utils::setup_unit_test();
+        let project_path = &ctx.project_path;
 
         // Create a test file (no need to stage it for dry-run test)
         let test_file = project_path.join("test.json");
         std::fs::write(&test_file, r#"{"test": true}"#).unwrap();
-
-        // Ensure staging directory exists
-        std::fs::create_dir_all(".jin/staging").unwrap();
 
         // Clear any existing staging index to avoid test pollution
         let _ = StagingIndex::load().map(|mut s| {

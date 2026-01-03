@@ -21,6 +21,10 @@ pub mod git;
 pub mod merge;
 pub mod staging;
 
+// Test utilities (only available when building tests)
+#[cfg(test)]
+pub mod test_utils;
+
 // Re-export commonly used types
 pub use core::error::{JinError, Result};
 pub use core::layer::Layer;

@@ -893,14 +893,14 @@
               "type": "Task",
               "id": "P2.M4.T1",
               "title": "Fix Test Infrastructure Issues",
-              "status": "Planned",
+              "status": "Complete",
               "description": "Improve test infrastructure to fix common failure patterns. This includes unifying test setup, adding pre-test cleanup, and using absolute paths consistently.",
               "subtasks": [
                 {
                   "type": "Subtask",
                   "id": "P2.M4.T1.S1",
                   "title": "Create common test setup module",
-                  "status": "Planned",
+                  "status": "Complete",
                   "story_points": 2,
                   "dependencies": [],
                   "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: Multiple setup_test_env() functions duplicated (plan/architecture/test_analysis.md Section 4.2). Use absolute paths instead of set_current_dir (Section 5.1).\n2. INPUT: Existing setup_test_env() patterns from various command test modules.\n3. LOGIC: Create tests/common/unit_setup.rs with unified setup_unit_test() function. Use absolute paths from TempDir instead of set_current_dir(). Set JIN_DIR to absolute path. Initialize JinRepo and create .jin directory structure. Return UnitTestContext with tempdir, repo, and paths.\n4. OUTPUT: Common test setup module for all unit tests."
@@ -909,7 +909,7 @@
                   "type": "Subtask",
                   "id": "P2.M4.T1.S2",
                   "title": "Add pre-test Git lock cleanup",
-                  "status": "Planned",
+                  "status": "Complete",
                   "story_points": 1,
                   "dependencies": [
                     "P2.M4.T1.S1"
@@ -920,7 +920,7 @@
                   "type": "Subtask",
                   "id": "P2.M4.T1.S3",
                   "title": "Update all unit tests to use common setup",
-                  "status": "Planned",
+                  "status": "Complete",
                   "story_points": 2,
                   "dependencies": [
                     "P2.M4.T1.S2"

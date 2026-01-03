@@ -458,19 +458,8 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_parse_layer_name() {
-        assert!(matches!(
-            parse_layer_name("global-base"),
-            Ok(Layer::GlobalBase)
-        ));
-        assert!(matches!(parse_layer_name("mode-base"), Ok(Layer::ModeBase)));
-        assert!(parse_layer_name("invalid").is_err());
-    }
-
-    #[test]
     fn test_execute_not_initialized() {
-        use tempfile::TempDir;
-        let temp = TempDir::new().unwrap();
+        let temp = tempfile::TempDir::new().unwrap();
         std::env::set_current_dir(temp.path()).unwrap();
 
         let args = DiffArgs {
@@ -485,19 +474,8 @@ mod tests {
 
     #[test]
     fn test_execute_staged_empty() {
-        use tempfile::TempDir;
-        let temp = TempDir::new().unwrap();
-
-        // Set JIN_DIR to an isolated directory for this test
-        let jin_dir = temp.path().join(".jin_global");
-        std::env::set_var("JIN_DIR", &jin_dir);
-
-        std::env::set_current_dir(temp.path()).unwrap();
-
-        // Initialize .jin directory
-        std::fs::create_dir(".jin").unwrap();
-        let context = ProjectContext::default();
-        context.save().unwrap();
+        // setup_unit_test() already creates the staging index
+        let _ctx = crate::test_utils::setup_unit_test();
 
         let args = DiffArgs {
             layer1: None,
@@ -507,5 +485,15 @@ mod tests {
 
         let result = execute(args);
         assert!(result.is_ok());
+    }
+
+    #[test]
+    fn test_parse_layer_name() {
+        assert!(matches!(
+            parse_layer_name("global-base"),
+            Ok(Layer::GlobalBase)
+        ));
+        assert!(matches!(parse_layer_name("mode-base"), Ok(Layer::ModeBase)));
+        assert!(parse_layer_name("invalid").is_err());
     }
 }

@@ -28,7 +28,7 @@ fn test_layer_routing_mode_base() -> Result<(), Box<dyn std::error::Error>> {
     fixture.set_jin_dir();
 
     // Initialize project
-    jin_init(project_path)?;
+    jin_init(project_path, None)?;
 
     let mode_name = format!("test_mode_{}", unique_test_id());
     create_mode(&mode_name, Some(jin_dir))?;
@@ -75,7 +75,7 @@ fn test_layer_routing_mode_project() -> Result<(), Box<dyn std::error::Error>> {
     let jin_dir = fixture.jin_dir.as_ref().unwrap();
 
     fixture.set_jin_dir();
-    jin_init(project_path)?;
+    jin_init(project_path, None)?;
 
     let mode_name = format!("test_mode_{}", unique_test_id());
     create_mode(&mode_name, Some(jin_dir))?;
@@ -130,7 +130,7 @@ fn test_layer_routing_mode_scope() -> Result<(), Box<dyn std::error::Error>> {
     let jin_dir = fixture.jin_dir.as_ref().unwrap();
 
     fixture.set_jin_dir();
-    jin_init(project_path)?;
+    jin_init(project_path, None)?;
 
     let mode_name = format!("test_mode_{}", unique_test_id());
     let scope_name = format!("env:test_{}", unique_test_id());
@@ -192,7 +192,7 @@ fn test_layer_routing_mode_scope_project() -> Result<(), Box<dyn std::error::Err
     let jin_dir = fixture.jin_dir.as_ref().unwrap();
 
     fixture.set_jin_dir();
-    jin_init(project_path)?;
+    jin_init(project_path, None)?;
 
     let mode_name = format!("test_mode_{}", unique_test_id());
     let scope_name = format!("env:test_{}", unique_test_id());
@@ -262,7 +262,7 @@ fn test_layer_precedence_higher_wins() -> Result<(), Box<dyn std::error::Error>>
     let jin_dir = fixture.jin_dir.as_ref().unwrap();
 
     fixture.set_jin_dir();
-    jin_init(project_path)?;
+    jin_init(project_path, None)?;
 
     let mode_name = format!("test_mode_{}", unique_test_id());
     create_mode(&mode_name, Some(jin_dir))?;
@@ -345,7 +345,7 @@ fn test_mode_scope_deep_merge() -> Result<(), Box<dyn std::error::Error>> {
     let jin_dir = fixture.jin_dir.as_ref().unwrap();
 
     fixture.set_jin_dir();
-    jin_init(project_path)?;
+    jin_init(project_path, None)?;
 
     let mode_name = format!("test_mode_{}", unique_test_id());
     create_mode(&mode_name, Some(jin_dir))?;
@@ -444,7 +444,7 @@ fn test_layer_routing_global_base() -> Result<(), Box<dyn std::error::Error>> {
     let jin_dir = fixture.jin_dir.as_ref().unwrap();
 
     fixture.set_jin_dir();
-    jin_init(project_path)?;
+    jin_init(project_path, None)?;
 
     // Add file to global layer
     fs::write(project_path.join("global.json"), r#"{"layer": "global"}"#)?;
@@ -477,7 +477,7 @@ fn test_layer_routing_project_base() -> Result<(), Box<dyn std::error::Error>> {
     let jin_dir = fixture.jin_dir.as_ref().unwrap();
 
     fixture.set_jin_dir();
-    jin_init(project_path)?;
+    jin_init(project_path, None)?;
 
     // Add file to project layer (no flags)
     fs::write(project_path.join("project.json"), r#"{"layer": "project"}"#)?;
@@ -515,7 +515,7 @@ fn test_scope_requires_mode_error() -> Result<(), Box<dyn std::error::Error>> {
     let jin_dir = fixture.jin_dir.as_ref().unwrap();
 
     fixture.set_jin_dir();
-    jin_init(project_path)?;
+    jin_init(project_path, None)?;
 
     let mode_name = format!("test_mode_{}", unique_test_id());
     let scope_name = format!("env:test_{}", unique_test_id());
@@ -561,7 +561,7 @@ fn test_multiple_modes_isolated() -> Result<(), Box<dyn std::error::Error>> {
     let jin_dir = fixture.jin_dir.as_ref().unwrap();
 
     fixture.set_jin_dir();
-    jin_init(project_path)?;
+    jin_init(project_path, None)?;
 
     let mode_a = format!("mode_a_{}", unique_test_id());
     let mode_b = format!("mode_b_{}", unique_test_id());

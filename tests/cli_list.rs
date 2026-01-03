@@ -15,7 +15,7 @@ fn test_list_empty_repository() {
     let jin_dir = fixture.path().join(".jin");
 
     // Initialize the Jin repository
-    jin_init(fixture.path()).unwrap();
+    jin_init(fixture.path(), None).unwrap();
 
     jin()
         .arg("list")
@@ -39,7 +39,7 @@ fn test_list_with_modes() {
     let jin_dir = fixture.path().join(".jin");
 
     // Initialize the Jin repository
-    jin_init(fixture.path()).unwrap();
+    jin_init(fixture.path(), None).unwrap();
 
     // Create and activate a mode
     jin()
@@ -92,7 +92,7 @@ fn test_list_with_all_categories() {
     let jin_dir = fixture.path().join(".jin");
 
     // Initialize project context
-    jin_init(fixture.path()).unwrap();
+    jin_init(fixture.path(), None).unwrap();
 
     // Create a mode and add files to it
     jin()
@@ -227,7 +227,7 @@ fn test_list_shows_usage_hints() {
     let jin_dir = fixture.path().join(".jin");
 
     // Initialize the Jin repository
-    jin_init(fixture.path()).unwrap();
+    jin_init(fixture.path(), None).unwrap();
 
     // Create a mode with files
     jin()
@@ -283,7 +283,7 @@ fn test_list_with_mode_bound_scopes() {
     let jin_dir = fixture.path().join(".jin");
 
     // Initialize the Jin repository
-    jin_init(fixture.path()).unwrap();
+    jin_init(fixture.path(), None).unwrap();
 
     // Create a mode
     jin()
@@ -371,7 +371,7 @@ fn test_list_empty_categories_hidden() {
     let jin_dir = fixture.path().join(".jin");
 
     // Initialize the Jin repository
-    jin_init(fixture.path()).unwrap();
+    jin_init(fixture.path(), None).unwrap();
 
     // Create only modes (no scopes or projects)
     jin()

@@ -19,7 +19,7 @@ fn test_commit_is_atomic() -> Result<(), Box<dyn std::error::Error>> {
     let jin_dir = fixture.jin_dir.as_ref().unwrap();
 
     fixture.set_jin_dir();
-    jin_init(project_path)?;
+    jin_init(project_path, None)?;
 
     let mode_name = format!("atomic_{}", unique_test_id());
     create_mode(&mode_name, Some(jin_dir))?;
@@ -79,7 +79,7 @@ fn test_failed_commit_rolls_back() -> Result<(), Box<dyn std::error::Error>> {
     let jin_dir = fixture.jin_dir.as_ref().unwrap();
 
     fixture.set_jin_dir();
-    jin_init(project_path)?;
+    jin_init(project_path, None)?;
 
     // Stage file
     fs::write(project_path.join("test.txt"), "content")?;
@@ -125,7 +125,7 @@ fn test_multi_layer_commit_atomic() -> Result<(), Box<dyn std::error::Error>> {
     let jin_dir = fixture.jin_dir.as_ref().unwrap();
 
     fixture.set_jin_dir();
-    jin_init(project_path)?;
+    jin_init(project_path, None)?;
 
     let mode_name = format!("multi_{}", unique_test_id());
     create_mode(&mode_name, Some(jin_dir))?;
@@ -192,7 +192,7 @@ fn test_state_consistent_after_failure() -> Result<(), Box<dyn std::error::Error
     let jin_dir = fixture.jin_dir.as_ref().unwrap();
 
     fixture.set_jin_dir();
-    jin_init(project_path)?;
+    jin_init(project_path, None)?;
 
     // Create valid state
     fs::write(project_path.join("file.txt"), "content")?;
@@ -284,7 +284,7 @@ fn test_apply_atomic_workspace_update() -> Result<(), Box<dyn std::error::Error>
     let jin_dir = fixture.jin_dir.as_ref().unwrap();
 
     fixture.set_jin_dir();
-    jin_init(project_path)?;
+    jin_init(project_path, None)?;
 
     let mode_name = format!("apply_atomic_{}", unique_test_id());
     create_mode(&mode_name, Some(jin_dir))?;

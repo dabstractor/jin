@@ -11,6 +11,9 @@ use std::path::PathBuf;
 mod common;
 use common::fixtures::TestFixture;
 
+// Use serial_test to ensure tests that use std::env::set_current_dir run sequentially
+use serial_test::serial;
+
 /// Helper to create a layer reference in the Jin repository
 fn create_layer_ref(
     jin_dir: &PathBuf,
@@ -74,6 +77,7 @@ fn setup_tracked_file(
 // ============================================================================
 
 #[test]
+#[serial]
 fn test_reset_hard_rejected_when_files_modified() {
     // Test that reset --hard is rejected when workspace files are modified externally
     let fixture = TestFixture::new().unwrap();
@@ -124,6 +128,7 @@ fn test_reset_hard_rejected_when_files_modified() {
 }
 
 #[test]
+#[serial]
 fn test_reset_hard_rejected_when_layer_refs_missing() {
     // Test that reset --hard is rejected when layer refs are missing
     let fixture = TestFixture::new().unwrap();
@@ -183,6 +188,7 @@ fn test_reset_hard_rejected_when_layer_refs_missing() {
 }
 
 #[test]
+#[serial]
 fn test_reset_hard_rejected_when_context_invalid() {
     // Test that reset --hard is rejected when active context references deleted mode/scope
     let fixture = TestFixture::new().unwrap();
@@ -245,6 +251,7 @@ fn test_reset_hard_rejected_when_context_invalid() {
 }
 
 #[test]
+#[serial]
 fn test_reset_soft_skips_validation() {
     // Test that reset --soft does NOT validate (not destructive)
     let fixture = TestFixture::new().unwrap();
@@ -283,6 +290,7 @@ fn test_reset_soft_skips_validation() {
 }
 
 #[test]
+#[serial]
 fn test_reset_mixed_skips_validation() {
     // Test that reset --mixed does NOT validate (not destructive)
     let fixture = TestFixture::new().unwrap();
@@ -325,6 +333,7 @@ fn test_reset_mixed_skips_validation() {
 // ============================================================================
 
 #[test]
+#[serial]
 fn test_apply_force_rejected_when_files_modified() {
     // Test that apply --force is rejected when workspace files are modified externally
     let fixture = TestFixture::new().unwrap();
@@ -369,6 +378,7 @@ fn test_apply_force_rejected_when_files_modified() {
 }
 
 #[test]
+#[serial]
 fn test_apply_force_rejected_when_layer_refs_missing() {
     // Test that apply --force is rejected when layer refs are missing
     let fixture = TestFixture::new().unwrap();
@@ -422,6 +432,7 @@ fn test_apply_force_rejected_when_layer_refs_missing() {
 }
 
 #[test]
+#[serial]
 fn test_apply_force_rejected_when_context_invalid() {
     // Test that apply --force is rejected when active context references deleted mode/scope
     let fixture = TestFixture::new().unwrap();
@@ -478,6 +489,7 @@ fn test_apply_force_rejected_when_context_invalid() {
 }
 
 #[test]
+#[serial]
 fn test_apply_without_force_skips_validation() {
     // Test that apply without --force does NOT validate (restores workspace, not destructive)
     let fixture = TestFixture::new().unwrap();
@@ -526,6 +538,7 @@ fn test_apply_without_force_skips_validation() {
 // ============================================================================
 
 #[test]
+#[serial]
 fn test_reset_hard_error_includes_recovery_hint() {
     // Test that reset --hard errors include actionable recovery hints
     let fixture = TestFixture::new().unwrap();
@@ -575,6 +588,7 @@ fn test_reset_hard_error_includes_recovery_hint() {
 }
 
 #[test]
+#[serial]
 fn test_apply_force_error_includes_recovery_hint() {
     // Test that apply --force errors include actionable recovery hints
     let fixture = TestFixture::new().unwrap();
@@ -622,6 +636,7 @@ fn test_apply_force_error_includes_recovery_hint() {
 // ============================================================================
 
 #[test]
+#[serial]
 fn test_reset_hard_allows_fresh_workspace() {
     // Test that reset --hard passes validation on fresh workspace (no metadata)
     let fixture = TestFixture::new().unwrap();
@@ -659,6 +674,7 @@ fn test_reset_hard_allows_fresh_workspace() {
 }
 
 #[test]
+#[serial]
 fn test_apply_force_allows_fresh_workspace() {
     // Test that apply --force passes validation on fresh workspace (no metadata)
     let fixture = TestFixture::new().unwrap();

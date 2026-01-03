@@ -49,7 +49,7 @@ fn test_mode_create_and_use() -> Result<(), Box<dyn std::error::Error>> {
     let jin_dir = fixture.jin_dir.as_ref().unwrap();
 
     fixture.set_jin_dir();
-    jin_init(project_path)?;
+    jin_init(project_path, None)?;
 
     // Create unique mode name to avoid conflicts
     let mode_name = format!("test_mode_{}", unique_test_id());
@@ -83,7 +83,7 @@ fn test_add_files_to_mode_layer() -> Result<(), Box<dyn std::error::Error>> {
     let jin_dir = fixture.jin_dir.as_ref().unwrap();
 
     fixture.set_jin_dir();
-    jin_init(project_path)?;
+    jin_init(project_path, None)?;
 
     // Create and use mode
     let mode_name = format!("test_mode_{}", unique_test_id());
@@ -122,7 +122,7 @@ fn test_commit_creates_layer_commit() -> Result<(), Box<dyn std::error::Error>> 
     let jin_dir = fixture.jin_dir.as_ref().unwrap();
 
     fixture.set_jin_dir();
-    jin_init(project_path)?;
+    jin_init(project_path, None)?;
 
     // Create and use mode
     let mode_name = format!("test_mode_{}", unique_test_id());
@@ -171,7 +171,7 @@ fn test_apply_merges_to_workspace() -> Result<(), Box<dyn std::error::Error>> {
     let jin_dir = fixture.jin_dir.as_ref().unwrap();
 
     fixture.set_jin_dir();
-    jin_init(project_path)?;
+    jin_init(project_path, None)?;
 
     // Create and use mode
     let mode_name = format!("test_mode_{}", unique_test_id());
@@ -326,7 +326,7 @@ fn test_add_to_project_base_layer() -> Result<(), Box<dyn std::error::Error>> {
     let jin_dir = fixture.jin_dir.as_ref().unwrap();
 
     fixture.set_jin_dir();
-    jin_init(project_path)?;
+    jin_init(project_path, None)?;
 
     // Create test file
     fs::write(project_path.join("readme.md"), "# Project\n")?;
@@ -360,7 +360,7 @@ fn test_add_nonexistent_file_error() -> Result<(), Box<dyn std::error::Error>> {
     let jin_dir = fixture.jin_dir.as_ref().unwrap();
 
     fixture.set_jin_dir();
-    jin_init(project_path)?;
+    jin_init(project_path, None)?;
 
     // Try to add non-existent file
     jin()
@@ -384,7 +384,7 @@ fn test_commit_no_staged_changes_error() -> Result<(), Box<dyn std::error::Error
     let jin_dir = fixture.jin_dir.as_ref().unwrap();
 
     fixture.set_jin_dir();
-    jin_init(project_path)?;
+    jin_init(project_path, None)?;
 
     // Try to commit without staging anything
     let result = jin()
@@ -415,7 +415,7 @@ fn test_mode_use_nonexistent_error() -> Result<(), Box<dyn std::error::Error>> {
     let jin_dir = fixture.jin_dir.as_ref().unwrap();
 
     fixture.set_jin_dir();
-    jin_init(project_path)?;
+    jin_init(project_path, None)?;
 
     // Try to use non-existent mode
     jin()
@@ -437,7 +437,7 @@ fn test_init_already_initialized() -> Result<(), Box<dyn std::error::Error>> {
     let jin_dir = fixture.jin_dir.as_ref().unwrap();
 
     fixture.set_jin_dir();
-    jin_init(project_path)?;
+    jin_init(project_path, None)?;
 
     // Try to init again
     let result = jin()

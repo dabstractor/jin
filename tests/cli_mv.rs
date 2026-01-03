@@ -102,7 +102,7 @@ fn test_mv_with_layer_flags() {
     let fixture = TestFixture::new().unwrap();
     let jin_dir = fixture.jin_dir.as_ref().unwrap();
     fixture.set_jin_dir();
-    jin_init(fixture.path()).unwrap();
+    jin_init(fixture.path(), None).unwrap();
 
     // Create a mode
     create_mode("testmode", Some(jin_dir)).unwrap();

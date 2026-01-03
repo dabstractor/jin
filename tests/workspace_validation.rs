@@ -13,6 +13,9 @@ use std::path::PathBuf;
 mod common;
 use common::fixtures::TestFixture;
 
+// Use serial_test to ensure tests that use std::env::set_current_dir run sequentially
+use serial_test::serial;
+
 /// Helper to create a layer reference in the Jin repository
 ///
 /// For nested refs like "refs/jin/layers/mode/test/scope/backend",
@@ -42,6 +45,7 @@ fn create_layer_ref(
 }
 
 #[test]
+#[serial]
 fn test_validation_passes_for_clean_workspace() {
     // Test that validation passes when workspace is clean and attached
     let fixture = TestFixture::new().unwrap();
@@ -62,6 +66,7 @@ fn test_validation_passes_for_clean_workspace() {
 }
 
 #[test]
+#[serial]
 fn test_validation_allows_fresh_workspace() {
     // Test that validation returns Ok(()) when no metadata exists
     let fixture = TestFixture::new().unwrap();
@@ -84,6 +89,7 @@ fn test_validation_allows_fresh_workspace() {
 }
 
 #[test]
+#[serial]
 fn test_validation_detects_deleted_mode() {
     // Condition 3: Active context references deleted mode
     let fixture = TestFixture::new().unwrap();
@@ -145,6 +151,7 @@ fn test_validation_detects_deleted_mode() {
 }
 
 #[test]
+#[serial]
 fn test_validation_detects_deleted_scope() {
     // Condition 3: Active context references deleted scope
     let fixture = TestFixture::new().unwrap();
@@ -206,6 +213,7 @@ fn test_validation_detects_deleted_scope() {
 }
 
 #[test]
+#[serial]
 fn test_validation_detects_modified_files() {
     // Condition 1: Workspace files modified outside of Jin operations
     let fixture = TestFixture::new().unwrap();
@@ -260,6 +268,7 @@ fn test_validation_detects_modified_files() {
 }
 
 #[test]
+#[serial]
 fn test_validation_detects_deleted_files() {
     // Condition 1: Workspace files deleted externally
     let fixture = TestFixture::new().unwrap();
@@ -311,6 +320,7 @@ fn test_validation_detects_deleted_files() {
 }
 
 #[test]
+#[serial]
 fn test_validation_detects_missing_layer_refs() {
     // Condition 2: Workspace metadata references non-existent layer commits
     let fixture = TestFixture::new().unwrap();
@@ -352,6 +362,7 @@ fn test_validation_detects_missing_layer_refs() {
 }
 
 #[test]
+#[serial]
 fn test_validation_with_multiple_layers_all_exist() {
     // Test validation passes when multiple layers all exist
     let fixture = TestFixture::new().unwrap();
@@ -387,6 +398,7 @@ fn test_validation_with_multiple_layers_all_exist() {
 }
 
 #[test]
+#[serial]
 fn test_validation_with_some_layers_missing() {
     // Test validation fails when some referenced layers don't exist
     let fixture = TestFixture::new().unwrap();
@@ -433,6 +445,7 @@ fn test_validation_with_some_layers_missing() {
 }
 
 #[test]
+#[serial]
 fn test_validation_error_messages_include_recovery_hints() {
     // Test that DetachedWorkspace errors include actionable recovery hints
     let fixture = TestFixture::new().unwrap();
@@ -487,6 +500,7 @@ fn test_validation_error_messages_include_recovery_hints() {
 }
 
 #[test]
+#[serial]
 fn test_validation_order_checks_file_mismatch_first() {
     // Verify that file mismatch (Condition 1) is checked before other conditions
     let fixture = TestFixture::new().unwrap();

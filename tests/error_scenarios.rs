@@ -18,7 +18,7 @@ fn test_handles_corrupted_staging_index() -> Result<(), Box<dyn std::error::Erro
     let jin_dir = fixture.jin_dir.as_ref().unwrap();
 
     fixture.set_jin_dir();
-    jin_init(project_path)?;
+    jin_init(project_path, None)?;
 
     // Create valid state
     fs::write(project_path.join("file.txt"), "content")?;
@@ -59,7 +59,7 @@ fn test_repair_fixes_corrupted_index() -> Result<(), Box<dyn std::error::Error>>
     let jin_dir = fixture.jin_dir.as_ref().unwrap();
 
     fixture.set_jin_dir();
-    jin_init(project_path)?;
+    jin_init(project_path, None)?;
 
     // Create and corrupt staging index
     fs::write(project_path.join("test.txt"), "content")?;
@@ -102,7 +102,7 @@ fn test_repair_dry_run() -> Result<(), Box<dyn std::error::Error>> {
     let jin_dir = fixture.jin_dir.as_ref().unwrap();
 
     fixture.set_jin_dir();
-    jin_init(project_path)?;
+    jin_init(project_path, None)?;
 
     // Corrupt staging index
     let staging_index = project_path.join(".jin/staging/index.json");
@@ -136,7 +136,7 @@ fn test_handles_missing_mode() -> Result<(), Box<dyn std::error::Error>> {
     let jin_dir = fixture.jin_dir.as_ref().unwrap();
 
     fixture.set_jin_dir();
-    jin_init(project_path)?;
+    jin_init(project_path, None)?;
 
     // Try to add with --mode flag without active mode
     fs::write(project_path.join("test.txt"), "content")?;
@@ -164,7 +164,7 @@ fn test_add_git_tracked_file_error() -> Result<(), Box<dyn std::error::Error>> {
     let jin_dir = fixture.jin_dir.as_ref().unwrap();
 
     fixture.set_jin_dir();
-    jin_init(project_path)?;
+    jin_init(project_path, None)?;
 
     // Initialize Git repo in project
     let git_repo = git2::Repository::init(project_path)?;
@@ -203,7 +203,7 @@ fn test_add_directory_error() -> Result<(), Box<dyn std::error::Error>> {
     let jin_dir = fixture.jin_dir.as_ref().unwrap();
 
     fixture.set_jin_dir();
-    jin_init(project_path)?;
+    jin_init(project_path, None)?;
 
     // Create directory with a file inside
     fs::create_dir_all(project_path.join("testdir"))?;
@@ -229,7 +229,7 @@ fn test_add_symlink_error() -> Result<(), Box<dyn std::error::Error>> {
     let jin_dir = fixture.jin_dir.as_ref().unwrap();
 
     fixture.set_jin_dir();
-    jin_init(project_path)?;
+    jin_init(project_path, None)?;
 
     // Create file and symlink
     fs::write(project_path.join("target.txt"), "target")?;
@@ -273,7 +273,7 @@ fn test_handles_permission_denied() -> Result<(), Box<dyn std::error::Error>> {
     let jin_dir = fixture.jin_dir.as_ref().unwrap();
 
     fixture.set_jin_dir();
-    jin_init(project_path)?;
+    jin_init(project_path, None)?;
 
     // Create file
     let protected_file = project_path.join("protected.txt");
@@ -319,7 +319,7 @@ fn test_export_non_jin_tracked_error() -> Result<(), Box<dyn std::error::Error>>
     let jin_dir = fixture.jin_dir.as_ref().unwrap();
 
     fixture.set_jin_dir();
-    jin_init(project_path)?;
+    jin_init(project_path, None)?;
 
     // Try to export file that's not Jin-tracked
     jin()
@@ -345,7 +345,7 @@ fn test_import_non_git_tracked_error() -> Result<(), Box<dyn std::error::Error>>
     let jin_dir = fixture.jin_dir.as_ref().unwrap();
 
     fixture.set_jin_dir();
-    jin_init(project_path)?;
+    jin_init(project_path, None)?;
 
     // Initialize Git repo
     let git_repo = git2::Repository::init(project_path)?;
@@ -380,7 +380,7 @@ fn test_apply_dirty_workspace_error() -> Result<(), Box<dyn std::error::Error>> 
     let jin_dir = fixture.jin_dir.as_ref().unwrap();
 
     fixture.set_jin_dir();
-    jin_init(project_path)?;
+    jin_init(project_path, None)?;
 
     let mode_name = format!("apply_dirty_{}", unique_test_id());
     create_mode(&mode_name, Some(jin_dir))?;
@@ -450,7 +450,7 @@ fn test_reset_invalid_layer_error() -> Result<(), Box<dyn std::error::Error>> {
     let jin_dir = fixture.jin_dir.as_ref().unwrap();
 
     fixture.set_jin_dir();
-    jin_init(project_path)?;
+    jin_init(project_path, None)?;
 
     // Try to reset from non-existent layer
     let result = jin()
@@ -546,7 +546,7 @@ fn test_commit_recovery_after_error() -> Result<(), Box<dyn std::error::Error>> 
     let jin_dir = fixture.jin_dir.as_ref().unwrap();
 
     fixture.set_jin_dir();
-    jin_init(project_path)?;
+    jin_init(project_path, None)?;
 
     // Stage file
     fs::write(project_path.join("test.txt"), "content")?;
@@ -600,7 +600,7 @@ fn test_commit_empty_message_error() -> Result<(), Box<dyn std::error::Error>> {
     let jin_dir = fixture.jin_dir.as_ref().unwrap();
 
     fixture.set_jin_dir();
-    jin_init(project_path)?;
+    jin_init(project_path, None)?;
 
     // Stage file
     fs::write(project_path.join("test.txt"), "content")?;

@@ -20,11 +20,14 @@ pub fn execute(args: PushArgs) -> Result<()> {
         "No remote configured. Run 'jin link <url>'.".into(),
     ))?;
 
-    // 2. Open repository
+    // 2. Fetch remote state first
+    super::fetch::execute()?;
+
+    // 3. Open repository
     let jin_repo = JinRepo::open_or_create()?;
     let repo = jin_repo.inner();
 
-    // 3. Find the remote
+    // 4. Find the remote
     let mut remote = repo.find_remote("origin").map_err(|e| {
         if e.code() == ErrorCode::NotFound {
             JinError::Config(
@@ -35,7 +38,7 @@ pub fn execute(args: PushArgs) -> Result<()> {
         }
     })?;
 
-    // 4. Detect modified layers (exclude user-local)
+    // 5. Detect modified layers (exclude user-local)
     let modified_refs = detect_modified_layers(&jin_repo)?;
 
     if modified_refs.is_empty() {
@@ -43,7 +46,7 @@ pub fn execute(args: PushArgs) -> Result<()> {
         return Ok(());
     }
 
-    // 5. Build refspecs for push
+    // 6. Build refspecs for push
     let refspecs: Vec<String> = modified_refs
         .iter()
         .map(|ref_name| {
@@ -55,16 +58,16 @@ pub fn execute(args: PushArgs) -> Result<()> {
         })
         .collect();
 
-    // 6. Warn on force push
+    // 7. Warn on force push
     if args.force {
         println!("WARNING: Force push will overwrite remote changes!");
         println!("This may cause data loss for other team members.");
     }
 
-    // 7. Setup push options
+    // 8. Setup push options
     let mut push_opts = build_push_options()?;
 
-    // 8. Perform push
+    // 9. Perform push
     println!("Pushing to origin ({})...", remote_config.url);
 
     let refspec_refs: Vec<&str> = refspecs.iter().map(|s| s.as_str()).collect();

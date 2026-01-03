@@ -267,14 +267,14 @@
               "type": "Task",
               "id": "P1.M2.T1",
               "title": "Add Automatic Fetch to Push Command",
-              "status": "Planned",
+              "status": "Complete",
               "description": "Modify the push command to automatically call fetch before pushing. This ensures the local state is compared against the latest remote state before any push operation.",
               "subtasks": [
                 {
                   "type": "Subtask",
                   "id": "P1.M2.T1.S1",
                   "title": "Call fetch at start of push execute",
-                  "status": "Planned",
+                  "status": "Complete",
                   "story_points": 1,
                   "dependencies": [],
                   "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: Current push.rs has NO fetch call (plan/architecture/codebase_analysis.md Section 2, Gap #2). Fetch command at src/commands/fetch.rs can be called directly.\n2. INPUT: PushArgs struct in push::execute() function.\n3. LOGIC: At the very start of push::execute(), after loading JinConfig, call 'super::fetch::execute()?' to fetch from remote. This will update remote tracking refs in the Jin repository. Ensure any fetch errors are propagated to user.\n4. OUTPUT: Updated remote refs in local Jin repository, ready for comparison in S2."
@@ -283,7 +283,7 @@
                   "type": "Subtask",
                   "id": "P1.M2.T1.S2",
                   "title": "Capture and display fetch results",
-                  "status": "Planned",
+                  "status": "Complete",
                   "story_points": 1,
                   "dependencies": [
                     "P1.M2.T1.S1"

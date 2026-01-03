@@ -213,7 +213,6 @@ pub fn create_commit_in_repo(
 
 /// Get the jin binary command for testing
 pub fn jin() -> Command {
-    
     Command::new(env!("CARGO_BIN_EXE_jin"))
 }
 

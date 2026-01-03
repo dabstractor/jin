@@ -35,6 +35,24 @@ WARNING: --force may cause data loss!"
     )]
     BehindRemote { layer: String },
 
+    /// Detached workspace state - workspace doesn't match any valid layer configuration
+    #[error(
+        "Workspace is in a detached state.\n\
+{details}\n\
+\n\
+Recovery: {recovery_hint}"
+    )]
+    DetachedWorkspace {
+        /// The commit hash the workspace is currently on (if detectable)
+        workspace_commit: Option<String>,
+        /// The layer ref that was expected based on active context
+        expected_layer_ref: String,
+        /// Human-readable explanation of why detachment occurred
+        details: String,
+        /// Actionable recovery suggestion
+        recovery_hint: String,
+    },
+
     /// Transaction failures
     #[error("Transaction failed: {0}")]
     Transaction(String),
@@ -149,5 +167,50 @@ mod tests {
             err.to_string(),
             "Staging failed for file.json: cannot read file"
         );
+    }
+
+    #[test]
+    fn test_detached_workspace_error() {
+        let err = JinError::DetachedWorkspace {
+            workspace_commit: Some("abc123def".to_string()),
+            expected_layer_ref: "refs/jin/layers/modes/claude/scopes/default".to_string(),
+            details: "Workspace files have been modified outside of Jin operations".to_string(),
+            recovery_hint: "Run 'jin reset --hard refs/jin/layers/modes/claude/scopes/default' to restore".to_string(),
+        };
+        let msg = err.to_string();
+        assert!(msg.contains("Workspace is in a detached state."));
+        assert!(msg.contains("Workspace files have been modified outside of Jin operations"));
+        assert!(msg.contains("Recovery:"));
+        assert!(msg.contains("Run 'jin reset --hard refs/jin/layers/modes/claude/scopes/default' to restore"));
+    }
+
+    #[test]
+    fn test_detached_workspace_error_no_commit() {
+        let err = JinError::DetachedWorkspace {
+            workspace_commit: None,
+            expected_layer_ref: "<unknown>".to_string(),
+            details: "Workspace metadata references commits that no longer exist".to_string(),
+            recovery_hint: "Run 'jin apply' to rebuild from current active context".to_string(),
+        };
+        let msg = err.to_string();
+        assert!(msg.contains("Workspace is in a detached state."));
+        assert!(msg.contains("Workspace metadata references commits that no longer exist"));
+        assert!(msg.contains("Recovery:"));
+        assert!(msg.contains("Run 'jin apply' to rebuild from current active context"));
+    }
+
+    #[test]
+    fn test_detached_workspace_error_deleted_mode() {
+        let err = JinError::DetachedWorkspace {
+            workspace_commit: Some("xyz789".to_string()),
+            expected_layer_ref: "mode:production".to_string(),
+            details: "Active context references deleted mode: production".to_string(),
+            recovery_hint: "Run 'jin mode activate <valid-mode>' to set a new active mode".to_string(),
+        };
+        let msg = err.to_string();
+        assert!(msg.contains("Workspace is in a detached state."));
+        assert!(msg.contains("Active context references deleted mode: production"));
+        assert!(msg.contains("Recovery:"));
+        assert!(msg.contains("Run 'jin mode activate <valid-mode>' to set a new active mode"));
     }
 }

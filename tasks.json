@@ -386,14 +386,14 @@
               "type": "Task",
               "id": "P1.M3.T1",
               "title": "Define Detached Workspace State",
-              "status": "Planned",
+              "status": "Complete",
               "description": "Add the DetachedWorkspace error type and define what constitutes a detached workspace state in the context of Jin's architecture.",
               "subtasks": [
                 {
                   "type": "Subtask",
                   "id": "P1.M3.T1.S1",
                   "title": "Add DetachedWorkspace error variant",
-                  "status": "Planned",
+                  "status": "Complete",
                   "story_points": 1,
                   "dependencies": [],
                   "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: New error needed for workspace validation (plan/architecture/codebase_analysis.md Section 2, Gap #3). thiserror fully supports custom errors (plan/architecture/external_deps.md Section 1.4).\n2. INPUT: Workspace state details, expected layer ref.\n3. LOGIC: Add DetachedWorkspace variant to JinError enum in src/core/error.rs with fields: workspace_commit (Option<String>), expected_layer_ref (String), recovery_hint (String). Implement thiserror derive with descriptive error message and recovery hint.\n4. OUTPUT: New error type usable across workspace operations."
@@ -402,7 +402,7 @@
                   "type": "Subtask",
                   "id": "P1.M3.T1.S2",
                   "title": "Document detached workspace conditions",
-                  "status": "Planned",
+                  "status": "Complete",
                   "story_points": 1,
                   "dependencies": [
                     "P1.M3.T1.S1"

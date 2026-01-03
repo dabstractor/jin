@@ -67,8 +67,8 @@ impl UnitTestContext {
 /// }
 /// ```
 pub fn setup_unit_test() -> UnitTestContext {
-    use crate::core::config::ProjectContext;
-    use crate::git::repo::JinRepo;
+    use jin::core::config::ProjectContext;
+    use jin::git::repo::JinRepo;
 
     // CRITICAL: Clean up locks BEFORE creating new test environment
     cleanup_before_test(None);

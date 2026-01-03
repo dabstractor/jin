@@ -139,22 +139,32 @@ pub fn setup_unit_test() -> UnitTestContext {
     // CRITICAL: Set JIN_DIR before any Jin operations
     std::env::set_var("JIN_DIR", &jin_dir);
 
+    // CRITICAL: Create jin_dir directory explicitly using absolute path
+    // This ensures the directory exists before JinRepo tries to use it
+    std::fs::create_dir_all(&jin_dir).expect("Failed to create JIN_DIR");
+
     // CRITICAL: Clean up locks from previous test runs
     cleanup_before_test(&jin_dir);
 
-    // CRITICAL: Set current directory for tests that expect it
-    // (Tests must use #[serial] attribute to prevent conflicts)
-    std::env::set_current_dir(&project_path).expect("Failed to set current directory");
-
-    // Initialize Jin repository
+    // Initialize Jin repository (before setting current directory)
     let _ = JinRepo::open_or_create();
 
-    // Create .jin directory structure
-    std::fs::create_dir_all(".jin").expect("Failed to create .jin directory");
+    // CRITICAL: Create .jin directory structure using absolute path
+    // Do this BEFORE setting current directory to avoid relative path issues
+    let jin_path = project_path.join(".jin");
+    std::fs::create_dir_all(&jin_path).expect("Failed to create .jin directory");
 
-    // Create and save default context
+    // Create and save default context manually using absolute path
+    // This avoids issues with ProjectContext::save() using relative paths
     let context = ProjectContext::default();
-    context.save().expect("Failed to save context");
+    let context_path = jin_path.join("context");
+    let content = serde_yaml::to_string(&context).expect("Failed to serialize context");
+    std::fs::write(&context_path, content).expect("Failed to save context");
+
+    // CRITICAL: Set current directory for tests that expect it
+    // (Tests must use #[serial] attribute to prevent conflicts)
+    // We do this AFTER creating all directories using absolute paths
+    std::env::set_current_dir(&project_path).expect("Failed to set current directory");
 
     // Create empty staging index (many tests expect this to exist)
     let staging_dir = project_path.join(".jin/staging");

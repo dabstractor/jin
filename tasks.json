@@ -933,14 +933,14 @@
               "type": "Task",
               "id": "P2.M4.T2",
               "title": "Fix File System Path Issues",
-              "status": "Planned",
+              "status": "Complete",
               "description": "Fix 6 tests failing due to file not found errors. Tests need proper directory creation and absolute path usage.",
               "subtasks": [
                 {
                   "type": "Subtask",
                   "id": "P2.M4.T2.S1",
                   "title": "Fix diff test_execute_staged_empty",
-                  "status": "Planned",
+                  "status": "Complete",
                   "story_points": 1,
                   "dependencies": [
                     "P2.M4.T1.S3"
@@ -951,7 +951,7 @@
                   "type": "Subtask",
                   "id": "P2.M4.T2.S2",
                   "title": "Fix mv tests with file creation",
-                  "status": "Planned",
+                  "status": "Complete",
                   "story_points": 1,
                   "dependencies": [
                     "P2.M4.T1.S3"
@@ -962,7 +962,7 @@
                   "type": "Subtask",
                   "id": "P2.M4.T2.S3",
                   "title": "Fix reset test with layer ref creation",
-                  "status": "Planned",
+                  "status": "Complete",
                   "story_points": 1,
                   "dependencies": [
                     "P2.M4.T1.S3"
@@ -973,7 +973,7 @@
                   "type": "Subtask",
                   "id": "P2.M4.T2.S4",
                   "title": "Fix rm test with staging setup",
-                  "status": "Planned",
+                  "status": "Complete",
                   "story_points": 1,
                   "dependencies": [
                     "P2.M4.T1.S3"

@@ -4,6 +4,7 @@
 //! Requires clean workspace (no uncommitted changes).
 
 use crate::core::{JinError, Layer, Result};
+use crate::git::merge::{detect_merge_type, MergeType};
 use crate::git::{JinRepo, LayerTransaction, RefOps};
 use crate::staging::StagingIndex;
 use std::collections::HashMap;
@@ -46,25 +47,55 @@ pub fn execute() -> Result<()> {
     // 6. Add each update to the transaction
     let mut merge_count = 0;
     for (ref_path, update_info) in &updates {
-        // For now, we do a simple fast-forward update
-        // TODO: Implement proper 3-way merge for non-fast-forward cases
-        tx.add_layer_update(
-            update_info.layer,
-            update_info.mode.as_deref(),
-            update_info.scope.as_deref(),
-            update_info.project.as_deref(),
-            update_info.remote_oid,
-        )?;
-
-        println!("  ✓ {}: Updated", format_ref_path(ref_path));
-        merge_count += 1;
+        match update_info.merge_type {
+            MergeType::UpToDate => {
+                // Already up to date - skip
+                continue;
+            }
+            MergeType::FastForward => {
+                // Simple fast-forward update (existing behavior)
+                tx.add_layer_update(
+                    update_info.layer,
+                    update_info.mode.as_deref(),
+                    update_info.scope.as_deref(),
+                    update_info.project.as_deref(),
+                    update_info.remote_oid,
+                )?;
+                println!("  ✓ {}: Updated (fast-forward)", format_ref_path(ref_path));
+                merge_count += 1;
+            }
+            MergeType::LocalAhead => {
+                // Local is ahead of remote - no action needed for pull
+                println!(
+                    "  − {}: Local is ahead of remote",
+                    format_ref_path(ref_path)
+                );
+            }
+            MergeType::Divergent => {
+                // TODO: P2.M1.T2 will implement 3-way merge for divergent histories
+                // For now, skip with a warning message
+                println!(
+                    "  ! {}: Divergent history - 3-way merge not yet implemented (see P2.M1.T2)",
+                    format_ref_path(ref_path)
+                );
+            }
+        }
     }
 
     // 7. Commit transaction (atomic)
     tx.commit()?;
 
-    println!("\nSuccessfully merged {} layer(s)", merge_count);
-    println!("Run 'jin apply' to update workspace files");
+    // Only show success message if we actually merged something
+    if merge_count > 0 {
+        println!("\nSuccessfully merged {} layer(s)", merge_count);
+        println!("Run 'jin apply' to update workspace files");
+    } else if updates.is_empty() {
+        // This shouldn't happen since we return early above, but keep for safety
+        println!("Already up to date");
+    } else {
+        // Had updates but none were fast-forward (e.g., all local ahead or divergent)
+        println!("\nNo layers merged");
+    }
 
     Ok(())
 }
@@ -79,6 +110,7 @@ struct LayerUpdateInfo {
     #[allow(dead_code)]
     local_oid: Option<git2::Oid>,
     remote_oid: git2::Oid,
+    merge_type: MergeType,
 }
 
 /// Detect which layers have remote updates
@@ -103,10 +135,17 @@ fn detect_updates(jin_repo: &JinRepo) -> Result<HashMap<String, LayerUpdateInfo>
             None
         };
 
-        // Determine if update is needed
-        let needs_update = match local_oid {
-            Some(local) => local != remote_oid,
-            None => true, // New layer from remote
+        // Determine merge type
+        // For new layers (no local_oid), treat as FastForward
+        let merge_type = match local_oid {
+            Some(local) => detect_merge_type(jin_repo, local, remote_oid)?,
+            None => MergeType::FastForward,
+        };
+
+        // Determine if update is needed based on merge type
+        let needs_update = match merge_type {
+            MergeType::UpToDate => false,
+            MergeType::FastForward | MergeType::Divergent | MergeType::LocalAhead => true,
         };
 
         if needs_update {
@@ -122,6 +161,7 @@ fn detect_updates(jin_repo: &JinRepo) -> Result<HashMap<String, LayerUpdateInfo>
                     project,
                     local_oid,
                     remote_oid,
+                    merge_type,
                 },
             );
         }

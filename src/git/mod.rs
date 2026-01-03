@@ -8,6 +8,7 @@
 //! - [`JinTransaction`]: Transaction wrapper for atomic reference updates
 //! - [`remote`]: Remote operation utilities for fetch, pull, push
 
+pub mod merge;
 pub mod objects;
 pub mod refs;
 pub mod remote;
@@ -15,6 +16,7 @@ pub mod repo;
 pub mod transaction;
 pub mod tree;
 
+pub use merge::{detect_merge_type, MergeType};
 pub use objects::{EntryMode, ObjectOps, TreeEntry};
 pub use refs::RefOps;
 pub use repo::JinRepo;

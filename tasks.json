@@ -591,14 +591,14 @@
               "type": "Task",
               "id": "P2.M1.T1",
               "title": "Detect Fast-Forward vs Divergent Histories",
-              "status": "Planned",
+              "status": "Complete",
               "description": "Add logic to detect when a pull operation is fast-forward vs divergent. Divergent histories require 3-way merge instead of simple ref updates.",
               "subtasks": [
                 {
                   "type": "Subtask",
                   "id": "P2.M1.T1.S1",
                   "title": "Implement merge base detection",
-                  "status": "Planned",
+                  "status": "Complete",
                   "story_points": 1,
                   "dependencies": [],
                   "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: git2 provides merge_base() for finding common ancestor (plan/architecture/external_deps.md Section 3, Q3). Current pull.rs at line 49 has TODO.\n2. INPUT: JinRepo instance, local layer ref, remote layer ref.\n3. LOGIC: Create function detect_merge_type() in src/commands/pull.rs. Use git2::Repository::merge_base() to find common ancestor of local and remote commits. If merge_base == local commit, it's fast-forward. If merge_base is different, it's divergent (needs 3-way merge).\n4. OUTPUT: MergeType enum (FastForward or Divergent) for use in pull logic."
@@ -607,7 +607,7 @@
                   "type": "Subtask",
                   "id": "P2.M1.T1.S2",
                   "title": "Add MergeType enum",
-                  "status": "Planned",
+                  "status": "Complete",
                   "story_points": 1,
                   "dependencies": [
                     "P2.M1.T1.S1"

@@ -999,6 +999,59 @@ fn test_link_force_replaces_existing() -> Result<(), Box<dyn std::error::Error>>
     Ok(())
 }
 
+/// Test fetch loads context with graceful fallback (P2.M3.T1)
+///
+/// Verifies that fetch command loads ProjectContext at startup:
+/// - When context exists (.jin/context present), fetch succeeds
+/// - When context doesn't exist, fetch still works with default context
+/// - Context is available for filtering operations in P2.M3.T2
+#[test]
+fn test_fetch_loads_context() -> Result<(), Box<dyn std::error::Error>> {
+    let remote_fixture = setup_jin_with_remote()?;
+    let jin_dir = remote_fixture.jin_dir.as_ref().unwrap();
+
+    // Test 1: Fetch with initialized context (should succeed)
+    jin()
+        .args(["link", remote_fixture.remote_path.to_str().unwrap()])
+        .current_dir(&remote_fixture.local_path)
+        .env("JIN_DIR", jin_dir)
+        .assert()
+        .success();
+
+    // Fetch should work with initialized context
+    jin()
+        .arg("fetch")
+        .current_dir(&remote_fixture.local_path)
+        .env("JIN_DIR", jin_dir)
+        .assert()
+        .success();
+
+    // Test 2: Fetch without initialized context (should still succeed with fallback)
+    let fixture2 = setup_test_repo()?;
+
+    // Link to remote
+    jin()
+        .args(["link", remote_fixture.remote_path.to_str().unwrap()])
+        .current_dir(fixture2.path())
+        .env("JIN_DIR", fixture2.jin_dir.as_ref().unwrap())
+        .assert()
+        .success();
+
+    // Remove context file to simulate uninitialized project
+    let context_path = fixture2.path().join(".jin").join("context");
+    fs::remove_file(&context_path).ok(); // Ignore error if doesn't exist
+
+    // Fetch should still work (graceful fallback to default context)
+    jin()
+        .arg("fetch")
+        .current_dir(fixture2.path())
+        .env("JIN_DIR", fixture2.jin_dir.as_ref().unwrap())
+        .assert()
+        .success();
+
+    Ok(())
+}
+
 /// Test that sync works with empty remote
 #[test]
 fn test_sync_empty_remote() -> Result<(), Box<dyn std::error::Error>> {

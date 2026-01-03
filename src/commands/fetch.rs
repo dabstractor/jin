@@ -3,7 +3,7 @@
 //! Downloads remote layer refs without modifying workspace or active layers.
 //! This is a safe, read-only operation from the user's perspective.
 
-use crate::core::{JinConfig, JinError, Result};
+use crate::core::{JinConfig, JinError, ProjectContext, Result};
 use crate::git::remote::build_fetch_options;
 use crate::git::{JinRepo, RefOps};
 use git2::ErrorCode;
@@ -19,6 +19,13 @@ pub fn execute() -> Result<()> {
     let remote_config = config.remote.ok_or(JinError::Config(
         "No remote configured. Run 'jin link <url>'.".into(),
     ))?;
+
+    // 1.5. Load project context with graceful fallback for uninitialized projects
+    let context = match ProjectContext::load() {
+        Ok(ctx) => ctx,
+        Err(JinError::NotInitialized) => ProjectContext::default(),
+        Err(e) => return Err(e),
+    };
 
     // 2. Open Jin repository
     let jin_repo = JinRepo::open_or_create()?;
@@ -61,13 +68,16 @@ pub fn execute() -> Result<()> {
     }
 
     // 6. Report available updates
-    report_updates(&jin_repo)?;
+    report_updates(&jin_repo, &context)?;
 
     Ok(())
 }
 
 /// Report available updates by comparing local and remote refs
-fn report_updates(jin_repo: &JinRepo) -> Result<()> {
+fn report_updates(jin_repo: &JinRepo, context: &ProjectContext) -> Result<()> {
+    // Store context for P2.M3.T2 filtering (suppress unused warning until then)
+    let _context = context;
+
     // Get all remote refs in Jin namespace
     let remote_refs = jin_repo.list_refs("refs/jin/layers/*")?;
 

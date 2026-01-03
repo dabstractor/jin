@@ -21,6 +21,7 @@
 //! ```
 
 pub mod deep;
+pub mod jinmerge;
 pub mod layer;
 pub mod text;
 pub mod value;
@@ -39,6 +40,9 @@ pub use text::{
     has_conflict_markers, parse_conflicts, text_merge, text_merge_with_config, ConflictRegion,
     TextMergeConfig, TextMergeResult,
 };
+
+// JinMerge conflict files
+pub use jinmerge::{JinMergeConflict, JinMergeRegion, JINMERGE_HEADER};
 
 // Value type
 pub use value::MergeValue;

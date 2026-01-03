@@ -61,10 +61,7 @@ pub fn cleanup_git_locks(repo_path: &Path) -> Result<(), Box<dyn std::error::Err
 
     // Clean other common lock files
     // Ignore errors for files that may not exist
-    let lock_files = &[
-        "refs/heads/main.lock",
-        "refs/heads/master.lock",
-    ];
+    let lock_files = &["refs/heads/main.lock", "refs/heads/master.lock"];
 
     for lock_file in lock_files {
         let lock_path = git_dir.join(lock_file);

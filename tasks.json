@@ -415,14 +415,14 @@
               "type": "Task",
               "id": "P1.M3.T2",
               "title": "Implement Workspace Validation Logic",
-              "status": "Planned",
+              "status": "Complete",
               "description": "Create the validation function that checks if the workspace is attached to a valid layer commit. This function will be called before destructive operations.",
               "subtasks": [
                 {
                   "type": "Subtask",
                   "id": "P1.M3.T2.S1",
                   "title": "Implement validate_workspace_attached function",
-                  "status": "Planned",
+                  "status": "Complete",
                   "story_points": 2,
                   "dependencies": [
                     "P1.M3.T1.S2"
@@ -433,7 +433,7 @@
                   "type": "Subtask",
                   "id": "P1.M3.T2.S2",
                   "title": "Add workspace metadata validation",
-                  "status": "Planned",
+                  "status": "Complete",
                   "story_points": 1,
                   "dependencies": [
                     "P1.M3.T2.S1"
@@ -444,7 +444,7 @@
                   "type": "Subtask",
                   "id": "P1.M3.T2.S3",
                   "title": "Validate active context references",
-                  "status": "Planned",
+                  "status": "Complete",
                   "story_points": 1,
                   "dependencies": [
                     "P1.M3.T2.S2"

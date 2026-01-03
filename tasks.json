@@ -260,7 +260,7 @@
           "type": "Milestone",
           "id": "P1.M2",
           "title": "Milestone 1.2: Fetch-Before-Push Enforcement",
-          "status": "Planned",
+          "status": "Complete",
           "description": "Implement the PRD-mandated fetch-before-push invariant to prevent data loss in team collaboration scenarios. The push command must automatically fetch from remote and reject pushes when local state is behind remote.",
           "tasks": [
             {
@@ -335,14 +335,14 @@
               "type": "Task",
               "id": "P1.M2.T3",
               "title": "Add Integration Tests for Push Enforcement",
-              "status": "Planned",
+              "status": "Complete",
               "description": "Create integration tests for fetch-before-push enforcement covering scenarios where local is behind, ahead, and divergent from remote.",
               "subtasks": [
                 {
                   "type": "Subtask",
                   "id": "P1.M2.T3.S1",
                   "title": "Test push rejected when behind remote",
-                  "status": "Planned",
+                  "status": "Complete",
                   "story_points": 1,
                   "dependencies": [
                     "P1.M2.T2.S3"
@@ -353,7 +353,7 @@
                   "type": "Subtask",
                   "id": "P1.M2.T3.S2",
                   "title": "Test push succeeds when force flag set",
-                  "status": "Planned",
+                  "status": "Complete",
                   "story_points": 1,
                   "dependencies": [
                     "P1.M2.T3.S1"
@@ -364,7 +364,7 @@
                   "type": "Subtask",
                   "id": "P1.M2.T3.S3",
                   "title": "Test push succeeds when up-to-date",
-                  "status": "Planned",
+                  "status": "Complete",
                   "story_points": 1,
                   "dependencies": [
                     "P1.M2.T3.S1"

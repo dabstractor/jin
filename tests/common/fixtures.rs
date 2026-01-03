@@ -70,6 +70,8 @@ pub struct RemoteFixture {
     pub local_path: PathBuf,
     /// Path to the remote bare repository
     pub remote_path: PathBuf,
+    /// Isolated Jin directory for test isolation
+    pub jin_dir: Option<PathBuf>,
 }
 
 impl RemoteFixture {
@@ -78,6 +80,7 @@ impl RemoteFixture {
         let tempdir = TempDir::new()?;
         let local_path = tempdir.path().join("local");
         let remote_path = tempdir.path().join("remote");
+        let jin_dir = Some(tempdir.path().join(".jin_global")); // Isolated Jin directory
 
         fs::create_dir(&local_path)?;
         fs::create_dir(&remote_path)?;
@@ -86,6 +89,7 @@ impl RemoteFixture {
             _tempdir: tempdir,
             local_path,
             remote_path,
+            jin_dir,
         })
     }
 }
@@ -95,6 +99,11 @@ impl Drop for RemoteFixture {
         // CRITICAL: Clean up Git locks before temp dir is deleted
         let _ = crate::common::git_helpers::cleanup_git_locks(&self.local_path);
         let _ = crate::common::git_helpers::cleanup_git_locks(&self.remote_path);
+
+        // Also clean up Jin directory locks if it exists
+        if let Some(ref jin_dir) = self.jin_dir {
+            let _ = crate::common::git_helpers::cleanup_git_locks(jin_dir);
+        }
     }
 }
 
@@ -102,12 +111,21 @@ impl Drop for RemoteFixture {
 ///
 /// Runs `jin init` and verifies success.
 /// Also initializes a Git repository in the project directory for tests.
-pub fn jin_init(path: &Path) -> Result<(), Box<dyn std::error::Error>> {
+///
+/// # Arguments
+/// * `path` - Path to the project directory
+/// * `jin_dir` - Optional path to isolated Jin directory for test isolation
+pub fn jin_init(path: &Path, jin_dir: Option<&PathBuf>) -> Result<(), Box<dyn std::error::Error>> {
     // Initialize Git repository in project directory first
     // This is needed for tests that use create_commit_in_repo
     git2::Repository::init(path)?;
 
-    jin().arg("init").current_dir(path).assert().success();
+    let mut binding = jin();
+    let mut cmd = binding.arg("init").current_dir(path);
+    if let Some(jin_dir) = jin_dir {
+        cmd = cmd.env("JIN_DIR", jin_dir);
+    }
+    cmd.assert().success();
     Ok(())
 }
 
@@ -118,8 +136,8 @@ pub fn jin_init(path: &Path) -> Result<(), Box<dyn std::error::Error>> {
 /// CRITICAL: This function sets JIN_DIR for test isolation.
 pub fn setup_test_repo() -> Result<TestFixture, Box<dyn std::error::Error>> {
     let fixture = TestFixture::new()?;
-    fixture.set_jin_dir();
-    jin_init(fixture.path())?;
+    let jin_dir = fixture.jin_dir.as_ref().unwrap();
+    jin_init(fixture.path(), Some(jin_dir))?;
     Ok(fixture)
 }
 
@@ -129,11 +147,15 @@ pub fn setup_test_repo() -> Result<TestFixture, Box<dyn std::error::Error>> {
 /// - Local repository with Jin initialized
 /// - Bare remote repository
 /// - Remote NOT yet linked (caller should use `jin link`)
+/// - Isolated JIN_DIR for test isolation
+///
+/// CRITICAL: Tests must pass .env("JIN_DIR", fixture.jin_dir.as_ref().unwrap())
+/// to all jin() commands for proper test isolation.
 pub fn setup_jin_with_remote() -> Result<RemoteFixture, Box<dyn std::error::Error>> {
     let fixture = RemoteFixture::new()?;
 
-    // Initialize Jin in local directory
-    jin_init(&fixture.local_path)?;
+    // Initialize Jin in local directory with isolated JIN_DIR
+    jin_init(&fixture.local_path, fixture.jin_dir.as_ref())?;
 
     // Initialize bare Git repository as remote
     git2::Repository::init_bare(&fixture.remote_path)?;

@@ -740,6 +740,7 @@ fn check_workspace_attachment(args: &RepairArgs, issues_found: &mut Vec<String>)
 #[cfg(test)]
 mod tests {
     use super::*;
+    use serial_test::serial;
     use tempfile::TempDir;
 
     /// Scope guard that restores the original directory when dropped
@@ -776,6 +777,7 @@ mod tests {
     }
 
     #[test]
+    #[serial]
     fn test_execute_dry_run() {
         let _guard = DirGuard::new(setup_isolated_test());
 
@@ -788,6 +790,7 @@ mod tests {
     }
 
     #[test]
+    #[serial]
     fn test_execute_no_issues() {
         let _guard = DirGuard::new(setup_isolated_test());
 
@@ -800,6 +803,7 @@ mod tests {
     }
 
     #[test]
+    #[serial]
     fn test_check_staging_index_missing() {
         let _guard = DirGuard::new(setup_isolated_test());
 
@@ -817,6 +821,7 @@ mod tests {
     }
 
     #[test]
+    #[serial]
     fn test_check_staging_index_corrupted() {
         let temp = TempDir::new().unwrap();
 
@@ -855,6 +860,7 @@ mod tests {
     }
 
     #[test]
+    #[serial]
     fn test_rebuild_staging_index() {
         let temp = TempDir::new().unwrap();
 
@@ -879,6 +885,7 @@ mod tests {
     }
 
     #[test]
+    #[serial]
     fn test_check_jinmap_valid_yaml() {
         let temp = TempDir::new().unwrap();
 
@@ -908,6 +915,7 @@ mod tests {
     }
 
     #[test]
+    #[serial]
     fn test_check_jinmap_invalid_yaml() {
         let temp = TempDir::new().unwrap();
 
@@ -934,6 +942,7 @@ mod tests {
     }
 
     #[test]
+    #[serial]
     fn test_check_workspace_metadata_missing() {
         let _guard = DirGuard::new(TempDir::new().unwrap());
 
@@ -951,6 +960,7 @@ mod tests {
     }
 
     #[test]
+    #[serial]
     fn test_rebuild_workspace_metadata() {
         let temp = setup_isolated_test();
 
@@ -980,6 +990,7 @@ mod tests {
     }
 
     #[test]
+    #[serial]
     fn test_create_default_context() {
         let temp = setup_isolated_test();
 

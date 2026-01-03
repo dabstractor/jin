@@ -1044,21 +1044,21 @@
           "type": "Milestone",
           "id": "P3.M1",
           "title": "Milestone 3.1: Staging Index Optimization",
-          "status": "Planned",
+          "status": "Complete",
           "description": "Evaluate staging index TODO comments and implement any required optimizations or validation. Current basic functionality works, but TODOs suggest improvements may be needed.",
           "tasks": [
             {
               "type": "Task",
               "id": "P3.M1.T1",
               "title": "Evaluate Staging Index TODOs",
-              "status": "Planned",
+              "status": "Complete",
               "description": "Investigate the TODO comments in src/staging/index.rs to determine if 'proper loading' and 'proper saving' require implementation changes.",
               "subtasks": [
                 {
                   "type": "Subtask",
                   "id": "P3.M1.T1.S1",
                   "title": "Analyze current load/save implementation",
-                  "status": "Planned",
+                  "status": "Complete",
                   "story_points": 1,
                   "dependencies": [],
                   "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: TODOs at lines 34 and 50 (plan/architecture/codebase_analysis.md Section 2, Gap #7).\n2. INPUT: src/staging/index.rs with TODO comments.\n3. LOGIC: Review current load() and save() implementations. Identify what 'proper' means: validation? atomic writes? error handling? performance? Document current behavior vs desired behavior. Check if tests pass with current implementation.\n4. OUTPUT: Analysis document describing current state and required improvements."
@@ -1067,7 +1067,7 @@
                   "type": "Subtask",
                   "id": "P3.M1.T1.S2",
                   "title": "Implement required improvements",
-                  "status": "Planned",
+                  "status": "Complete",
                   "story_points": 2,
                   "dependencies": [
                     "P3.M1.T1.S1"

@@ -30,12 +30,10 @@ impl StagingIndex {
     }
 
     /// Load the staging index from disk
-    ///
-    /// TODO: Implement proper loading in later milestone
     pub fn load() -> Result<Self> {
         let path = Self::default_path();
         if path.exists() {
-            let content = std::fs::read_to_string(&path)?;
+            let content = std::fs::read_to_string(&path).map_err(JinError::Io)?;
             serde_json::from_str(&content).map_err(|e| JinError::Parse {
                 format: "JSON".to_string(),
                 message: e.to_string(),
@@ -47,17 +45,22 @@ impl StagingIndex {
 
     /// Save the staging index to disk
     ///
-    /// TODO: Implement proper saving in later milestone
+    /// Uses atomic write pattern: write to temp file, then rename.
     pub fn save(&self) -> Result<()> {
         let path = Self::default_path();
         if let Some(parent) = path.parent() {
-            std::fs::create_dir_all(parent)?;
+            std::fs::create_dir_all(parent).map_err(JinError::Io)?;
         }
         let content = serde_json::to_string_pretty(self).map_err(|e| JinError::Parse {
             format: "JSON".to_string(),
             message: e.to_string(),
         })?;
-        std::fs::write(path, content)?;
+
+        // Atomic write pattern - use temp file in same directory
+        let temp_path = path.with_extension("tmp");
+        std::fs::write(&temp_path, content).map_err(JinError::Io)?;
+        std::fs::rename(&temp_path, &path).map_err(JinError::Io)?;
+
         Ok(())
     }
 

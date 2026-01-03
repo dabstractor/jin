@@ -7,7 +7,7 @@ use crate::core::{JinError, ProjectContext, Result};
 use crate::git::{JinRepo, ObjectOps, RefOps, TreeOps};
 use crate::merge::jinmerge::JinMergeConflict;
 use crate::merge::{get_applicable_layers, merge_layers, FileFormat, LayerMergeConfig};
-use crate::staging::{ensure_in_managed_block, WorkspaceMetadata};
+use crate::staging::{ensure_in_managed_block, validate_workspace_attached, WorkspaceMetadata};
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
@@ -110,10 +110,16 @@ pub fn execute(args: ApplyArgs) -> Result<()> {
         ));
     }
 
-    // 3. Open repository (must already exist)
-    let repo = JinRepo::open()?;
+    // 2.5. Validate workspace state before destructive apply (only with --force)
+    let repo = if args.force {
+        let r = JinRepo::open()?;
+        validate_workspace_attached(&context, &r)?;
+        r
+    } else {
+        JinRepo::open()?
+    };
 
-    // 4. Determine applicable layers
+    // 3. Determine applicable layers
     let layers = get_applicable_layers(
         context.mode.as_deref(),
         context.scope.as_deref(),

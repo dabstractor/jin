@@ -4,7 +4,8 @@
 
 use crate::cli::ResetArgs;
 use crate::core::{JinError, Layer, ProjectContext, Result};
-use crate::staging::{remove_from_managed_block, StagedEntry, StagingIndex};
+use crate::git::JinRepo;
+use crate::staging::{remove_from_managed_block, StagedEntry, StagingIndex, validate_workspace_attached};
 use std::io::{self, Write};
 
 /// Reset mode enumeration
@@ -51,6 +52,14 @@ pub fn execute(args: ResetArgs) -> Result<()> {
 
     // 3. Determine target layer
     let layer = determine_target_layer(&args, &context)?;
+
+    // 3.5. Validate workspace is attached before destructive operation
+    // CRITICAL: Only validate for Hard mode (destructive)
+    // CRITICAL: Validation happens BEFORE confirmation prompt - don't prompt if operation will be rejected
+    if mode == ResetMode::Hard {
+        let repo = JinRepo::open()?;
+        validate_workspace_attached(&context, &repo)?;
+    }
 
     // 4. Load staging
     let mut staging = StagingIndex::load().unwrap_or_else(|_| StagingIndex::new());
@@ -384,6 +393,10 @@ mod tests {
         std::env::set_current_dir(project_path).unwrap();
         let context = ProjectContext::default();
         context.save().unwrap();
+
+        // Create the Jin repository (required for validation)
+        let jin_dir = project_path.join(".jin");
+        crate::git::JinRepo::create_at(&jin_dir).unwrap();
 
         // Create a test file
         let test_file = project_path.join("test.json");

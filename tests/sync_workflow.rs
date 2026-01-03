@@ -1073,3 +1073,327 @@ fn test_sync_empty_remote() -> Result<(), Box<dyn std::error::Error>> {
 
     Ok(())
 }
+
+/// Test fetch highlights active mode updates (P2.M3.T2)
+///
+/// Verifies that fetch command shows active mode updates prominently:
+/// - Updates to active mode are shown in "Updates for your active context" section
+/// - Other mode updates are shown in "Other updates" section
+#[test]
+fn test_fetch_highlights_active_mode_updates() -> Result<(), Box<dyn std::error::Error>> {
+    let remote_fixture = setup_jin_with_remote()?;
+    let jin_dir = remote_fixture.jin_dir.as_ref().unwrap();
+    let mode_name = format!("active_test_{}", unique_test_id());
+    let other_mode = format!("other_mode_{}", unique_test_id());
+
+    // Setup: Create commits in remote for two modes
+    let temp_workspace = TestFixture::new()?;
+    let temp_jin_dir = temp_workspace.jin_dir.as_ref().unwrap();
+    jin_init(temp_workspace.path(), Some(temp_jin_dir))?;
+
+    // Create and populate active mode
+    create_mode(&mode_name, Some(temp_jin_dir))?;
+    jin()
+        .args(["mode", "use", &mode_name])
+        .current_dir(temp_workspace.path())
+        .env("JIN_DIR", temp_jin_dir)
+        .assert()
+        .success();
+
+    fs::write(
+        temp_workspace.path().join("active_file.txt"),
+        "active mode content",
+    )?;
+    jin()
+        .args(["add", "active_file.txt", "--mode"])
+        .current_dir(temp_workspace.path())
+        .env("JIN_DIR", temp_jin_dir)
+        .assert()
+        .success();
+    jin()
+        .args(["commit", "-m", "Add active mode file"])
+        .current_dir(temp_workspace.path())
+        .env("JIN_DIR", temp_jin_dir)
+        .assert()
+        .success();
+
+    // Create and populate other mode
+    create_mode(&other_mode, Some(temp_jin_dir))?;
+    jin()
+        .args(["mode", "use", &other_mode])
+        .current_dir(temp_workspace.path())
+        .env("JIN_DIR", temp_jin_dir)
+        .assert()
+        .success();
+
+    fs::write(
+        temp_workspace.path().join("other_file.txt"),
+        "other mode content",
+    )?;
+    jin()
+        .args(["add", "other_file.txt", "--mode"])
+        .current_dir(temp_workspace.path())
+        .env("JIN_DIR", temp_jin_dir)
+        .assert()
+        .success();
+    jin()
+        .args(["commit", "-m", "Add other mode file"])
+        .current_dir(temp_workspace.path())
+        .env("JIN_DIR", temp_jin_dir)
+        .assert()
+        .success();
+
+    // Push to remote
+    jin()
+        .args([
+            "link",
+            remote_fixture.remote_path.to_str().unwrap(),
+            "--force",
+        ])
+        .current_dir(temp_workspace.path())
+        .env("JIN_DIR", temp_jin_dir)
+        .assert()
+        .success();
+    jin()
+        .arg("push")
+        .current_dir(temp_workspace.path())
+        .env("JIN_DIR", temp_jin_dir)
+        .assert()
+        .success();
+
+    // In local repo, set active mode and fetch
+    jin()
+        .args(["link", remote_fixture.remote_path.to_str().unwrap()])
+        .current_dir(&remote_fixture.local_path)
+        .env("JIN_DIR", jin_dir)
+        .assert()
+        .success();
+
+    // Create the active mode in local repo
+    create_mode(&mode_name, Some(jin_dir))?;
+    jin()
+        .args(["mode", "use", &mode_name])
+        .current_dir(&remote_fixture.local_path)
+        .env("JIN_DIR", jin_dir)
+        .assert()
+        .success();
+
+    // Fetch and verify active mode is highlighted
+    jin()
+        .arg("fetch")
+        .current_dir(&remote_fixture.local_path)
+        .env("JIN_DIR", jin_dir)
+        .assert()
+        .success()
+        .stdout(predicate::str::contains("Updates for your active context"))
+        .stdout(predicate::str::contains(format!("mode: {}", mode_name)));
+
+    Ok(())
+}
+
+/// Test fetch separates active and other updates (P2.M3.T2)
+///
+/// Verifies that fetch command properly separates updates:
+/// - Active context updates shown in first section
+/// - Other updates shown in "Other updates" section
+/// - Clear visual separation between sections
+#[test]
+fn test_fetch_separates_active_and_other_updates() -> Result<(), Box<dyn std::error::Error>> {
+    let remote_fixture = setup_jin_with_remote()?;
+    let jin_dir = remote_fixture.jin_dir.as_ref().unwrap();
+    let active_mode = format!("active_sep_{}", unique_test_id());
+    let other_mode = format!("other_sep_{}", unique_test_id());
+
+    // Setup: Create commits in remote for two modes
+    let temp_workspace = TestFixture::new()?;
+    let temp_jin_dir = temp_workspace.jin_dir.as_ref().unwrap();
+    jin_init(temp_workspace.path(), Some(temp_jin_dir))?;
+
+    // Create and populate active mode
+    create_mode(&active_mode, Some(temp_jin_dir))?;
+    jin()
+        .args(["mode", "use", &active_mode])
+        .current_dir(temp_workspace.path())
+        .env("JIN_DIR", temp_jin_dir)
+        .assert()
+        .success();
+
+    fs::write(temp_workspace.path().join("active.txt"), "active content")?;
+    jin()
+        .args(["add", "active.txt", "--mode"])
+        .current_dir(temp_workspace.path())
+        .env("JIN_DIR", temp_jin_dir)
+        .assert()
+        .success();
+    jin()
+        .args(["commit", "-m", "Active mode commit"])
+        .current_dir(temp_workspace.path())
+        .env("JIN_DIR", temp_jin_dir)
+        .assert()
+        .success();
+
+    // Create and populate other mode
+    create_mode(&other_mode, Some(temp_jin_dir))?;
+    jin()
+        .args(["mode", "use", &other_mode])
+        .current_dir(temp_workspace.path())
+        .env("JIN_DIR", temp_jin_dir)
+        .assert()
+        .success();
+
+    fs::write(temp_workspace.path().join("other.txt"), "other content")?;
+    jin()
+        .args(["add", "other.txt", "--mode"])
+        .current_dir(temp_workspace.path())
+        .env("JIN_DIR", temp_jin_dir)
+        .assert()
+        .success();
+    jin()
+        .args(["commit", "-m", "Other mode commit"])
+        .current_dir(temp_workspace.path())
+        .env("JIN_DIR", temp_jin_dir)
+        .assert()
+        .success();
+
+    // Push to remote
+    jin()
+        .args([
+            "link",
+            remote_fixture.remote_path.to_str().unwrap(),
+            "--force",
+        ])
+        .current_dir(temp_workspace.path())
+        .env("JIN_DIR", temp_jin_dir)
+        .assert()
+        .success();
+    jin()
+        .arg("push")
+        .current_dir(temp_workspace.path())
+        .env("JIN_DIR", temp_jin_dir)
+        .assert()
+        .success();
+
+    // In local repo, set active mode and fetch
+    jin()
+        .args(["link", remote_fixture.remote_path.to_str().unwrap()])
+        .current_dir(&remote_fixture.local_path)
+        .env("JIN_DIR", jin_dir)
+        .assert()
+        .success();
+
+    create_mode(&active_mode, Some(jin_dir))?;
+    jin()
+        .args(["mode", "use", &active_mode])
+        .current_dir(&remote_fixture.local_path)
+        .env("JIN_DIR", jin_dir)
+        .assert()
+        .success();
+
+    // Fetch and verify separation
+    let result = jin()
+        .arg("fetch")
+        .current_dir(&remote_fixture.local_path)
+        .env("JIN_DIR", jin_dir)
+        .assert()
+        .success();
+
+    let stdout = String::from_utf8_lossy(&result.get_output().stdout);
+
+    // Should have both sections
+    assert!(stdout.contains("Updates for your active context"));
+    assert!(stdout.contains("Other updates"));
+
+    // Active mode should be in active context section
+    assert!(stdout.contains(&format!("mode/{}", active_mode)));
+
+    // Other mode should be in other updates section
+    assert!(stdout.contains(&format!("mode/{}", other_mode)));
+
+    Ok(())
+}
+
+/// Test fetch with default context (P2.M3.T2)
+///
+/// Verifies that fetch command works with default context:
+/// - When no active mode/scope is set, all updates shown in "Other updates"
+/// - No "Updates for your active context" section shown
+#[test]
+fn test_fetch_with_default_context() -> Result<(), Box<dyn std::error::Error>> {
+    let remote_fixture = setup_jin_with_remote()?;
+    let jin_dir = remote_fixture.jin_dir.as_ref().unwrap();
+    let mode_name = format!("default_ctx_{}", unique_test_id());
+
+    // Setup: Create commits in remote
+    let temp_workspace = TestFixture::new()?;
+    let temp_jin_dir = temp_workspace.jin_dir.as_ref().unwrap();
+    jin_init(temp_workspace.path(), Some(temp_jin_dir))?;
+
+    create_mode(&mode_name, Some(temp_jin_dir))?;
+    jin()
+        .args(["mode", "use", &mode_name])
+        .current_dir(temp_workspace.path())
+        .env("JIN_DIR", temp_jin_dir)
+        .assert()
+        .success();
+
+    fs::write(temp_workspace.path().join("file.txt"), "content")?;
+    jin()
+        .args(["add", "file.txt", "--mode"])
+        .current_dir(temp_workspace.path())
+        .env("JIN_DIR", temp_jin_dir)
+        .assert()
+        .success();
+    jin()
+        .args(["commit", "-m", "Commit"])
+        .current_dir(temp_workspace.path())
+        .env("JIN_DIR", temp_jin_dir)
+        .assert()
+        .success();
+
+    jin()
+        .args([
+            "link",
+            remote_fixture.remote_path.to_str().unwrap(),
+            "--force",
+        ])
+        .current_dir(temp_workspace.path())
+        .env("JIN_DIR", temp_jin_dir)
+        .assert()
+        .success();
+    jin()
+        .arg("push")
+        .current_dir(temp_workspace.path())
+        .env("JIN_DIR", temp_jin_dir)
+        .assert()
+        .success();
+
+    // In local repo, fetch without setting any active mode
+    jin()
+        .args(["link", remote_fixture.remote_path.to_str().unwrap()])
+        .current_dir(&remote_fixture.local_path)
+        .env("JIN_DIR", jin_dir)
+        .assert()
+        .success();
+
+    // Remove context to ensure default context is used
+    let context_path = remote_fixture.local_path.join(".jin").join("context");
+    fs::remove_file(&context_path).ok();
+
+    // Fetch with default context
+    let result = jin()
+        .arg("fetch")
+        .current_dir(&remote_fixture.local_path)
+        .env("JIN_DIR", jin_dir)
+        .assert()
+        .success();
+
+    let stdout = String::from_utf8_lossy(&result.get_output().stdout);
+
+    // Should NOT have active context section (no mode/scope set)
+    assert!(!stdout.contains("Updates for your active context"));
+
+    // Should have updates in "Other updates" section
+    assert!(stdout.contains("Other updates"));
+
+    Ok(())
+}

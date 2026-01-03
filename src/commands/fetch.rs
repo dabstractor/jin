@@ -75,9 +75,6 @@ pub fn execute() -> Result<()> {
 
 /// Report available updates by comparing local and remote refs
 fn report_updates(jin_repo: &JinRepo, context: &ProjectContext) -> Result<()> {
-    // Store context for P2.M3.T2 filtering (suppress unused warning until then)
-    let _context = context;
-
     // Get all remote refs in Jin namespace
     let remote_refs = jin_repo.list_refs("refs/jin/layers/*")?;
 
@@ -134,16 +131,51 @@ fn report_updates(jin_repo: &JinRepo, context: &ProjectContext) -> Result<()> {
     // Print results
     if updates.is_empty() {
         println!("Already up to date");
-    } else {
-        println!("\nUpdates available:");
-        let mut categories: Vec<_> = updates.keys().collect();
-        categories.sort();
+        return Ok(());
+    }
 
-        for category in categories {
-            let info = &updates[category];
-            println!("  - {} ({} file(s))", info.refs[0], info.refs.len());
+    // Split into active and other updates based on context
+    let mut active_updates: HashMap<String, UpdateInfo> = HashMap::new();
+    let mut other_updates: HashMap<String, UpdateInfo> = HashMap::new();
+
+    for (category, info) in updates {
+        // Check if any ref in this category is relevant to active context
+        let is_relevant = info
+            .refs
+            .iter()
+            .any(|ref_path| is_ref_relevant_to_context(ref_path, context));
+
+        if is_relevant {
+            active_updates.insert(category, info);
+        } else {
+            other_updates.insert(category, info);
         }
+    }
 
+    // Build section title with context info
+    let active_title = if let (Some(mode), Some(scope)) = (&context.mode, &context.scope) {
+        format!(
+            "Updates for your active context (mode: {}, scope: {}):",
+            mode, scope
+        )
+    } else if let Some(mode) = &context.mode {
+        format!("Updates for your active context (mode: {}):", mode)
+    } else if let Some(scope) = &context.scope {
+        format!("Updates for your active context (scope: {}):", scope)
+    } else {
+        "Updates for your active context:".to_string()
+    };
+
+    // Display active updates section
+    format_update_section(&active_title, &active_updates);
+
+    // Display other updates section
+    if !other_updates.is_empty() {
+        format_update_section("Other updates:", &other_updates);
+    }
+
+    // Show next steps if any updates exist
+    if !active_updates.is_empty() || !other_updates.is_empty() {
         println!("\nRun 'jin pull' to merge updates");
     }
 
@@ -169,6 +201,76 @@ fn categorize_layer(path: &str) -> String {
         Some(&"project") if parts.len() >= 2 => format!("{}/{}", parts[0], parts[1]),
         Some(&"global") => "global".to_string(),
         _ => path.to_string(),
+    }
+}
+
+/// Check if a ref path is relevant to the active context
+///
+/// A ref is relevant if:
+/// - It matches the active mode (e.g., "mode/claude" when mode is "claude")
+/// - It matches the active scope with mode (e.g., "mode/claude/scope/js" when mode="claude", scope="js")
+/// - It matches the active scope without mode (e.g., "scope/js" when mode=None, scope="js")
+/// - Global refs are always relevant
+fn is_ref_relevant_to_context(ref_path: &str, context: &ProjectContext) -> bool {
+    // Strip prefix to get layer path
+    let layer_path = match ref_path.strip_prefix("refs/jin/layers/") {
+        Some(path) => path,
+        None => return false,
+    };
+
+    // Global is always relevant
+    if layer_path == "global" {
+        return true;
+    }
+
+    // Parse the path components
+    let parts: Vec<&str> = layer_path.split('/').collect();
+
+    match parts.as_slice() {
+        // Mode-scope refs: Check if matches both active mode and scope
+        ["mode", mode, "scope", scope, ..] => {
+            context.mode.as_deref() == Some(*mode) && context.scope.as_deref() == Some(*scope)
+        }
+
+        // Mode refs: Check if matches active mode
+        ["mode", mode, ..] => context.mode.as_deref() == Some(*mode),
+
+        // Untethered scope refs: Only relevant if no active mode
+        ["scope", scope, ..] => context.mode.is_none() && context.scope.as_deref() == Some(*scope),
+
+        // Project refs: Not relevant to mode/scope context
+        ["project", ..] => false,
+
+        // Other patterns: Not relevant to context
+        _ => false,
+    }
+}
+
+/// Format and display a section of updates with header
+///
+/// # Arguments
+/// * `title` - Section header to display
+/// * `updates` - HashMap of updates to display
+fn format_update_section(title: &str, updates: &HashMap<String, UpdateInfo>) {
+    if updates.is_empty() {
+        // For active context section, show "no updates" message
+        if title.contains("active context") {
+            println!("{}", title);
+        }
+        return;
+    }
+
+    // Print section header
+    println!();
+    println!("{}", title);
+
+    // Sort and display updates
+    let mut categories: Vec<_> = updates.keys().collect();
+    categories.sort();
+
+    for category in categories {
+        let info = &updates[category];
+        println!("  - {} ({} file(s))", info.refs[0], info.refs.len());
     }
 }
 

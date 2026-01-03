@@ -811,14 +811,14 @@
               "type": "Task",
               "id": "P2.M3.T2",
               "title": "Filter and Highlight Active Context Updates",
-              "status": "Planned",
+              "status": "Complete",
               "description": "After fetching, compare updated refs against active mode/scope and display prominent notifications for relevant updates.",
               "subtasks": [
                 {
                   "type": "Subtask",
                   "id": "P2.M3.T2.S1",
                   "title": "Compare updated refs with active context",
-                  "status": "Planned",
+                  "status": "Complete",
                   "story_points": 1,
                   "dependencies": [
                     "P2.M3.T1.S1"
@@ -829,7 +829,7 @@
                   "type": "Subtask",
                   "id": "P2.M3.T2.S2",
                   "title": "Display prominent notification for active updates",
-                  "status": "Planned",
+                  "status": "Complete",
                   "story_points": 1,
                   "dependencies": [
                     "P2.M3.T2.S1"
@@ -840,7 +840,7 @@
                   "type": "Subtask",
                   "id": "P2.M3.T2.S3",
                   "title": "Display other updates in less prominent section",
-                  "status": "Planned",
+                  "status": "Complete",
                   "story_points": 1,
                   "dependencies": [
                     "P2.M3.T2.S2"

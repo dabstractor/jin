@@ -219,7 +219,7 @@ mod tests {
     #[test]
     fn test_validate_file_is_directory() {
         let temp = TempDir::new().unwrap();
-        let result = validate_file(&temp.path().to_path_buf());
+        let result = validate_file(temp.path());
         assert!(result.is_err());
     }
 

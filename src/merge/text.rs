@@ -761,7 +761,7 @@ mod tests {
         let result = parse_conflicts(content);
         // First region should parse correctly, the second <<<<<<< without closing is detected
         // Actually, this will fail because the second region is incomplete
-        assert!(result.is_err() || result.unwrap().len() >= 1);
+        assert!(result.is_err() || !result.unwrap().is_empty());
     }
 
     // ========== Helper Function Tests ==========

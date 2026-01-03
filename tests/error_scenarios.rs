@@ -8,7 +8,6 @@ use std::fs;
 use std::os::unix::fs::PermissionsExt;
 
 mod common;
-use common::assertions::*;
 use common::fixtures::*;
 
 /// Test handling of corrupted staging index

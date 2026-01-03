@@ -355,7 +355,7 @@ mod tests {
     #[test]
     fn test_validate_import_file_is_directory() {
         let temp = TempDir::new().unwrap();
-        let result = validate_import_file(&temp.path().to_path_buf(), false);
+        let result = validate_import_file(temp.path(), false);
         assert!(result.is_err());
     }
 

@@ -87,7 +87,7 @@ fn clean_lock_files_recursive(dir: &Path) -> Result<(), Box<dyn std::error::Erro
 
         if path.is_dir() {
             clean_lock_files_recursive(&path)?;
-        } else if path.extension().map_or(false, |ext| ext == "lock") {
+        } else if path.extension().is_some_and(|ext| ext == "lock") {
             let _ = fs::remove_file(&path); // Ignore errors
         }
     }

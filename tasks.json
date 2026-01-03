@@ -11,7 +11,7 @@
           "type": "Milestone",
           "id": "P1.M1",
           "title": "Milestone 1.1: .jinmerge Conflict Resolution Workflow",
-          "status": "Planned",
+          "status": "Complete",
           "description": "Implement the PRD-mandated .jinmerge file format for conflict resolution. This replaces the current abort-on-conflict behavior with a Git-style conflict resolution workflow that allows users to manually resolve merge conflicts before completing the apply operation.",
           "tasks": [
             {
@@ -203,14 +203,14 @@
               "type": "Task",
               "id": "P1.M1.T5",
               "title": "Add Integration Tests for Conflict Workflow",
-              "status": "Planned",
+              "status": "Complete",
               "description": "Create comprehensive integration tests for the .jinmerge conflict resolution workflow. Tests must cover end-to-end scenarios from conflict detection through resolution.",
               "subtasks": [
                 {
                   "type": "Subtask",
                   "id": "P1.M1.T5.S1",
                   "title": "Test .jinmerge file creation",
-                  "status": "Planned",
+                  "status": "Complete",
                   "story_points": 1,
                   "dependencies": [
                     "P1.M1.T2.S4"
@@ -221,7 +221,7 @@
                   "type": "Subtask",
                   "id": "P1.M1.T5.S2",
                   "title": "Test resolve command workflow",
-                  "status": "Planned",
+                  "status": "Complete",
                   "story_points": 1,
                   "dependencies": [
                     "P1.M1.T5.S1",
@@ -233,7 +233,7 @@
                   "type": "Subtask",
                   "id": "P1.M1.T5.S3",
                   "title": "Test status shows conflict state",
-                  "status": "Planned",
+                  "status": "Complete",
                   "story_points": 1,
                   "dependencies": [
                     "P1.M1.T5.S1",
@@ -245,7 +245,7 @@
                   "type": "Subtask",
                   "id": "P1.M1.T5.S4",
                   "title": "Test error handling for unresolved conflicts",
-                  "status": "Planned",
+                  "status": "Complete",
                   "story_points": 1,
                   "dependencies": [
                     "P1.M1.T5.S2"

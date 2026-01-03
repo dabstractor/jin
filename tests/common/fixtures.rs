@@ -101,7 +101,12 @@ impl Drop for RemoteFixture {
 /// Initialize Jin in the specified directory
 ///
 /// Runs `jin init` and verifies success.
+/// Also initializes a Git repository in the project directory for tests.
 pub fn jin_init(path: &Path) -> Result<(), Box<dyn std::error::Error>> {
+    // Initialize Git repository in project directory first
+    // This is needed for tests that use create_commit_in_repo
+    git2::Repository::init(path)?;
+
     jin().arg("init").current_dir(path).assert().success();
     Ok(())
 }
@@ -196,13 +201,20 @@ pub fn create_commit_in_repo(
         repo.commit(Some("HEAD"), &signature, &signature, msg, &tree, &[])?;
     }
 
+    // Unstage the file from Git's index after committing
+    // This is needed because jin add rejects files that are staged in Git
+    // The file remains in the working directory for further modifications
+    let mut index = repo.index()?;
+    index.remove_path(Path::new(file))?;
+    index.write()?;
+
     Ok(())
 }
 
 /// Get the jin binary command for testing
 pub fn jin() -> Command {
-    let mut cmd = Command::new(env!("CARGO_BIN_EXE_jin"));
-    cmd
+    
+    Command::new(env!("CARGO_BIN_EXE_jin"))
 }
 
 /// Create a mode in the Jin repository with optional isolation

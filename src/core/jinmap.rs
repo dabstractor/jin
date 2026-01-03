@@ -480,7 +480,7 @@ mod tests {
 
         // Verify timestamp is valid ISO 8601
         let timestamp = jinmap.meta.last_updated.as_ref().unwrap();
-        assert!(timestamp.len() > 0);
+        assert!(!timestamp.is_empty());
         // Should be parseable as ISO 8601
         chrono::DateTime::parse_from_rfc3339(timestamp).unwrap();
     }

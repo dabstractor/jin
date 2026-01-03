@@ -620,14 +620,14 @@
               "type": "Task",
               "id": "P2.M1.T2",
               "title": "Implement 3-Way Merge for Divergent Histories",
-              "status": "Planned",
+              "status": "Complete",
               "description": "Use the existing text merge infrastructure to perform 3-way merge when histories have diverged. Handle conflicts using the .jinmerge workflow from Phase 1.",
               "subtasks": [
                 {
                   "type": "Subtask",
                   "id": "P2.M1.T2.S1",
                   "title": "Extract file contents from three commits",
-                  "status": "Planned",
+                  "status": "Complete",
                   "story_points": 1,
                   "dependencies": [
                     "P2.M1.T1.S2"
@@ -638,7 +638,7 @@
                   "type": "Subtask",
                   "id": "P2.M1.T2.S2",
                   "title": "Handle merge conflicts with .jinmerge workflow",
-                  "status": "Planned",
+                  "status": "Complete",
                   "story_points": 2,
                   "dependencies": [
                     "P2.M1.T2.S1"
@@ -649,7 +649,7 @@
                   "type": "Subtask",
                   "id": "P2.M1.T2.S3",
                   "title": "Write merged files to layer",
-                  "status": "Planned",
+                  "status": "Complete",
                   "story_points": 1,
                   "dependencies": [
                     "P2.M1.T2.S2"

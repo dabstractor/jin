@@ -79,10 +79,10 @@ pub fn detect_merge_type(repo: &JinRepo, local_oid: Oid, remote_oid: Oid) -> Res
     let (ahead, behind) = repo.inner().graph_ahead_behind(local_oid, remote_oid)?;
 
     match (ahead, behind) {
-        (0, 0) => Ok(MergeType::UpToDate),    // Same commit (redundant due to equality check above)
+        (0, 0) => Ok(MergeType::UpToDate), // Same commit (redundant due to equality check above)
         (0, _) => Ok(MergeType::FastForward), // Remote is ahead (we're behind, can fast-forward)
-        (_, 0) => Ok(MergeType::LocalAhead),  // Local is ahead (we're ahead of remote)
-        (_, _) => Ok(MergeType::Divergent),   // Both have unique commits
+        (_, 0) => Ok(MergeType::LocalAhead), // Local is ahead (we're ahead of remote)
+        (_, _) => Ok(MergeType::Divergent), // Both have unique commits
     }
 }
 
@@ -116,6 +116,51 @@ pub fn detect_merge_type_with_base(
         Ok(_) => Ok(MergeType::Divergent),
         // No merge base means unrelated histories - treat as divergent
         Err(_) => Ok(MergeType::Divergent),
+    }
+}
+
+/// Find the merge base (common ancestor) between two commits
+///
+/// Uses git2's merge_base to find the common ancestor. If no merge base
+/// exists (unrelated histories), returns an empty tree OID as the base.
+///
+/// # Arguments
+///
+/// * `repo` - The Jin repository
+/// * `local_oid` - OID of local commit
+/// * `remote_oid` - OID of remote commit
+///
+/// # Returns
+///
+/// `Oid` of the merge base commit or empty tree for unrelated histories
+///
+/// # Errors
+///
+/// Returns `JinError::Git` if merge base lookup fails unexpectedly
+///
+/// # Example
+///
+/// ```ignore
+/// use jin::git::{JinRepo, merge::find_merge_base};
+///
+/// let repo = JinRepo::open()?;
+/// let local_oid = repo.resolve_ref("refs/jin/layers/global")?;
+/// let remote_oid = repo.resolve_ref("refs/remotes/origin/layers/global")?;
+///
+/// let base_oid = find_merge_base(&repo, local_oid, remote_oid)?;
+/// ```
+pub fn find_merge_base(repo: &JinRepo, local_oid: Oid, remote_oid: Oid) -> Result<Oid> {
+    // Use git2's merge_base to find common ancestor
+    match repo.inner().merge_base(local_oid, remote_oid) {
+        Ok(base_oid) => Ok(base_oid),
+        // No merge base means unrelated histories
+        // In this case, use empty tree as base for merge
+        // The text merge will handle empty base correctly
+        Err(_) => {
+            // Create empty tree as base for unrelated histories
+            let empty_tree = repo.inner().treebuilder(None)?.write()?;
+            Ok(empty_tree)
+        }
     }
 }
 

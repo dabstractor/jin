@@ -16,7 +16,7 @@ pub mod repo;
 pub mod transaction;
 pub mod tree;
 
-pub use merge::{detect_merge_type, MergeType};
+pub use merge::{detect_merge_type, find_merge_base, MergeType};
 pub use objects::{EntryMode, ObjectOps, TreeEntry};
 pub use refs::RefOps;
 pub use repo::JinRepo;

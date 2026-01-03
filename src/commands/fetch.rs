@@ -41,8 +41,9 @@ pub fn execute() -> Result<()> {
     // 5. Perform fetch
     println!("Fetching from origin ({})...", remote_config.url);
 
-    // Fetch with custom refspec (only Jin layers)
-    match remote.fetch(&["refs/jin/layers/*"], Some(&mut fetch_opts), None) {
+    // Fetch using configured refspec from link (no custom refspec needed)
+    let refspecs: &[&str] = &[];
+    match remote.fetch(refspecs, Some(&mut fetch_opts), None) {
         Ok(()) => {
             println!(); // New line after progress
         }

@@ -26,6 +26,15 @@ pub enum JinError {
     #[error("Merge conflict in {path}")]
     MergeConflict { path: String },
 
+    /// Push rejected: local layer is behind remote
+    #[error(
+        "Push rejected: local layer '{layer}' is behind remote.\n\
+The remote contains commits you don't have locally.\n\
+Run 'jin pull' to merge remote changes, or use '--force' to overwrite.\n\
+WARNING: --force may cause data loss!"
+    )]
+    BehindRemote { layer: String },
+
     /// Transaction failures
     #[error("Transaction failed: {0}")]
     Transaction(String),

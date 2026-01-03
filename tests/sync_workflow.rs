@@ -293,6 +293,298 @@ fn test_push_uploads_commits() -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
+/// Test push rejected when local is behind remote
+#[test]
+fn test_push_rejected_when_behind() -> Result<(), Box<dyn std::error::Error>> {
+    let remote_fixture = setup_jin_with_remote()?;
+    let mode_name = format!("behind_test_{}", unique_test_id());
+    let jin_dir = remote_fixture.local_path.join(".jin_global");
+
+    // Link to remote
+    jin()
+        .args(["link", remote_fixture.remote_path.to_str().unwrap()])
+        .current_dir(&remote_fixture.local_path)
+        .env("JIN_DIR", &jin_dir)
+        .assert()
+        .success();
+
+    // Create mode
+    create_mode(&mode_name, Some(&jin_dir))?;
+
+    jin()
+        .args(["mode", "use", &mode_name])
+        .current_dir(&remote_fixture.local_path)
+        .env("JIN_DIR", &jin_dir)
+        .assert()
+        .success();
+
+    // Create a commit
+    fs::write(remote_fixture.local_path.join("local.txt"), "local content")?;
+
+    jin()
+        .args(["add", "local.txt", "--mode"])
+        .current_dir(&remote_fixture.local_path)
+        .env("JIN_DIR", &jin_dir)
+        .assert()
+        .success();
+
+    jin()
+        .args(["commit", "-m", "Local commit"])
+        .current_dir(&remote_fixture.local_path)
+        .env("JIN_DIR", &jin_dir)
+        .assert()
+        .success();
+
+    // Push to remote
+    jin()
+        .arg("push")
+        .current_dir(&remote_fixture.local_path)
+        .env("JIN_DIR", &jin_dir)
+        .assert()
+        .success();
+
+    // Now simulate remote being updated by someone else
+    // Directly update the remote ref using git
+    let remote_repo = git2::Repository::open(&remote_fixture.remote_path)?;
+    let remote_ref_path = format!("refs/jin/layers/mode/{}", mode_name);
+
+    // Create a new commit on the remote
+    let sig = remote_repo.signature()?;
+    let mut tree_builder = remote_repo.treebuilder(None)?;
+    let oid = remote_repo.blob(b"remote update")?;
+    tree_builder.insert("remote.txt", oid, 0o100644)?;
+    let tree_oid = tree_builder.write()?;
+    let tree = remote_repo.find_tree(tree_oid)?;
+
+    // Get the current remote commit as parent
+    let current_remote = remote_repo.find_reference(&remote_ref_path)?;
+    let current_oid = current_remote.target().unwrap();
+    let current_commit = remote_repo.find_commit(current_oid)?;
+
+    // Create new commit on top
+    let new_commit_oid = remote_repo.commit(
+        Some(&remote_ref_path),
+        &sig,
+        &sig,
+        "Remote update",
+        &tree,
+        &[&current_commit],
+    )?;
+
+    // Update the remote ref directly
+    let mut remote_ref = remote_repo.find_reference(&remote_ref_path)?;
+    remote_ref.set_target(new_commit_oid, "Remote update")?;
+
+    // Now try to push again - should be rejected (local is behind)
+    // First create a new local commit
+    fs::write(remote_fixture.local_path.join("local2.txt"), "local2 content")?;
+
+    jin()
+        .args(["add", "local2.txt", "--mode"])
+        .current_dir(&remote_fixture.local_path)
+        .env("JIN_DIR", &jin_dir)
+        .assert()
+        .success();
+
+    jin()
+        .args(["commit", "-m", "Local commit 2"])
+        .current_dir(&remote_fixture.local_path)
+        .env("JIN_DIR", &jin_dir)
+        .assert()
+        .success();
+
+    // Try to push - should be rejected
+    jin()
+        .arg("push")
+        .current_dir(&remote_fixture.local_path)
+        .env("JIN_DIR", &jin_dir)
+        .assert()
+        .failure()
+        .stderr(predicate::str::contains("behind remote"))
+        .stderr(predicate::str::contains("jin pull"))
+        .stderr(predicate::str::contains("--force"));
+
+    Ok(())
+}
+
+/// Test push succeeds with --force when behind
+#[test]
+fn test_push_succeeds_with_force_when_behind() -> Result<(), Box<dyn std::error::Error>> {
+    let remote_fixture = setup_jin_with_remote()?;
+    let mode_name = format!("force_test_{}", unique_test_id());
+    let jin_dir = remote_fixture.local_path.join(".jin_global");
+
+    // Step 1: Create remote commit via temp workspace
+    let temp_workspace = TestFixture::new()?;
+    temp_workspace.set_jin_dir();
+    jin_init(temp_workspace.path())?;
+
+    create_mode(&mode_name, Some(&jin_dir))?;
+
+    jin()
+        .args(["mode", "use", &mode_name])
+        .current_dir(temp_workspace.path())
+        .env("JIN_DIR", &jin_dir)
+        .assert()
+        .success();
+
+    fs::write(temp_workspace.path().join("remote.txt"), "remote content")?;
+
+    jin()
+        .args(["add", "remote.txt", "--mode"])
+        .current_dir(temp_workspace.path())
+        .env("JIN_DIR", &jin_dir)
+        .assert()
+        .success();
+
+    jin()
+        .args(["commit", "-m", "Remote commit"])
+        .current_dir(temp_workspace.path())
+        .env("JIN_DIR", &jin_dir)
+        .assert()
+        .success();
+
+    // Link temp workspace to remote and push
+    jin()
+        .args([
+            "link",
+            remote_fixture.remote_path.to_str().unwrap(),
+            "--force",
+        ])
+        .current_dir(temp_workspace.path())
+        .env("JIN_DIR", &jin_dir)
+        .assert()
+        .success();
+
+    jin()
+        .arg("push")
+        .current_dir(temp_workspace.path())
+        .env("JIN_DIR", &jin_dir)
+        .assert()
+        .success();
+
+    // Step 2: In local repo, create divergent commit on same layer
+    jin()
+        .args(["link", remote_fixture.remote_path.to_str().unwrap(), "--force"])
+        .current_dir(&remote_fixture.local_path)
+        .env("JIN_DIR", &jin_dir)
+        .assert()
+        .success();
+
+    create_mode(&mode_name, Some(&jin_dir))?;
+
+    jin()
+        .args(["mode", "use", &mode_name])
+        .current_dir(&remote_fixture.local_path)
+        .env("JIN_DIR", &jin_dir)
+        .assert()
+        .success();
+
+    // Create local commit
+    fs::write(remote_fixture.local_path.join("local.txt"), "local content")?;
+
+    jin()
+        .args(["add", "local.txt", "--mode"])
+        .current_dir(&remote_fixture.local_path)
+        .env("JIN_DIR", &jin_dir)
+        .assert()
+        .success();
+
+    jin()
+        .args(["commit", "-m", "Local commit"])
+        .current_dir(&remote_fixture.local_path)
+        .env("JIN_DIR", &jin_dir)
+        .assert()
+        .success();
+
+    // Step 3: Try to push with --force - should succeed
+    jin()
+        .args(["push", "--force"])
+        .current_dir(&remote_fixture.local_path)
+        .env("JIN_DIR", &jin_dir)
+        .assert()
+        .success();
+
+    Ok(())
+}
+
+/// Test push succeeds when local is ahead
+#[test]
+fn test_push_succeeds_when_ahead() -> Result<(), Box<dyn std::error::Error>> {
+    let remote_fixture = setup_jin_with_remote()?;
+    let mode_name = format!("ahead_test_{}", unique_test_id());
+    let jin_dir = remote_fixture.local_path.join(".jin_global");
+
+    // Link to remote
+    jin()
+        .args(["link", remote_fixture.remote_path.to_str().unwrap()])
+        .current_dir(&remote_fixture.local_path)
+        .env("JIN_DIR", &jin_dir)
+        .assert()
+        .success();
+
+    // Create mode
+    create_mode(&mode_name, Some(&jin_dir))?;
+
+    jin()
+        .args(["mode", "use", &mode_name])
+        .current_dir(&remote_fixture.local_path)
+        .env("JIN_DIR", &jin_dir)
+        .assert()
+        .success();
+
+    // Create first commit and push
+    fs::write(remote_fixture.local_path.join("v1.txt"), "version 1")?;
+
+    jin()
+        .args(["add", "v1.txt", "--mode"])
+        .current_dir(&remote_fixture.local_path)
+        .env("JIN_DIR", &jin_dir)
+        .assert()
+        .success();
+
+    jin()
+        .args(["commit", "-m", "Version 1"])
+        .current_dir(&remote_fixture.local_path)
+        .env("JIN_DIR", &jin_dir)
+        .assert()
+        .success();
+
+    jin()
+        .arg("push")
+        .current_dir(&remote_fixture.local_path)
+        .env("JIN_DIR", &jin_dir)
+        .assert()
+        .success();
+
+    // Create second commit - now we're ahead
+    fs::write(remote_fixture.local_path.join("v2.txt"), "version 2")?;
+
+    jin()
+        .args(["add", "v2.txt", "--mode"])
+        .current_dir(&remote_fixture.local_path)
+        .env("JIN_DIR", &jin_dir)
+        .assert()
+        .success();
+
+    jin()
+        .args(["commit", "-m", "Version 2"])
+        .current_dir(&remote_fixture.local_path)
+        .env("JIN_DIR", &jin_dir)
+        .assert()
+        .success();
+
+    // Push again - should succeed (ahead is OK)
+    jin()
+        .arg("push")
+        .current_dir(&remote_fixture.local_path)
+        .env("JIN_DIR", &jin_dir)
+        .assert()
+        .success();
+
+    Ok(())
+}
+
 /// Test sync performs complete fetch+pull+apply workflow
 #[test]
 fn test_sync_complete_workflow() -> Result<(), Box<dyn std::error::Error>> {

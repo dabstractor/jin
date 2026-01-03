@@ -8,6 +8,7 @@ use crate::core::{JinConfig, JinError, Result};
 use crate::git::remote::build_push_options;
 use crate::git::{JinRepo, RefOps};
 use git2::ErrorCode;
+use std::collections::HashMap;
 
 /// Execute the push command
 ///
@@ -20,14 +21,17 @@ pub fn execute(args: PushArgs) -> Result<()> {
         "No remote configured. Run 'jin link <url>'.".into(),
     ))?;
 
-    // 2. Fetch remote state first
-    super::fetch::execute()?;
-
-    // 3. Open repository
+    // 2. Open repository
     let jin_repo = JinRepo::open_or_create()?;
     let repo = jin_repo.inner();
 
-    // 4. Find the remote
+    // 3. Capture pre-fetch local refs (fetch will overwrite them)
+    let pre_fetch_refs = capture_local_refs(&jin_repo)?;
+
+    // 4. Fetch remote state
+    super::fetch::execute()?;
+
+    // 5. Find the remote
     let mut remote = repo.find_remote("origin").map_err(|e| {
         if e.code() == ErrorCode::NotFound {
             JinError::Config(
@@ -38,15 +42,15 @@ pub fn execute(args: PushArgs) -> Result<()> {
         }
     })?;
 
-    // 5. Detect modified layers (exclude user-local)
-    let modified_refs = detect_modified_layers(&jin_repo)?;
+    // 6. Detect modified layers (exclude user-local)
+    let modified_refs = detect_modified_layers(&jin_repo, &pre_fetch_refs, &args)?;
 
     if modified_refs.is_empty() {
         println!("Nothing to push");
         return Ok(());
     }
 
-    // 6. Build refspecs for push
+    // 7. Build refspecs for push
     let refspecs: Vec<String> = modified_refs
         .iter()
         .map(|ref_name| {
@@ -58,16 +62,16 @@ pub fn execute(args: PushArgs) -> Result<()> {
         })
         .collect();
 
-    // 7. Warn on force push
+    // 8. Warn on force push
     if args.force {
         println!("WARNING: Force push will overwrite remote changes!");
         println!("This may cause data loss for other team members.");
     }
 
-    // 8. Setup push options
+    // 9. Setup push options
     let mut push_opts = build_push_options()?;
 
-    // 9. Perform push
+    // 10. Perform push
     println!("Pushing to origin ({})...", remote_config.url);
 
     let refspec_refs: Vec<&str> = refspecs.iter().map(|s| s.as_str()).collect();
@@ -98,41 +102,90 @@ pub fn execute(args: PushArgs) -> Result<()> {
     }
 }
 
-/// Detect modified layers that need to be pushed
+/// Capture local refs before fetch (fetch will overwrite them with remote refs)
 ///
-/// Returns refs that exist locally but either don't exist remotely or differ from remote.
-/// Filters out user-local layer (refs/jin/layers/local) which is never synced.
-fn detect_modified_layers(jin_repo: &JinRepo) -> Result<Vec<String>> {
-    let local_refs = jin_repo.list_refs("refs/jin/layers/*")?;
-    let mut modified = Vec::new();
+/// We need to store the pre-fetch local OIDs so we can compare them against
+/// the post-fetch state (which contains remote OIDs) to detect if local is behind.
+fn capture_local_refs(jin_repo: &JinRepo) -> Result<HashMap<String, git2::Oid>> {
+    let mut local_refs = HashMap::new();
+    let all_refs = jin_repo.list_refs("refs/jin/layers/*")?;
 
-    for ref_name in local_refs {
-        // CRITICAL: Skip user-local layer (never push)
+    for ref_name in all_refs {
+        // Skip user-local layer
         if ref_name.contains("/local") {
             continue;
         }
 
-        // Check if ref exists locally
-        if !jin_repo.ref_exists(&ref_name) {
+        // Store the OID of each local ref
+        if let Ok(oid) = jin_repo.resolve_ref(&ref_name) {
+            local_refs.insert(ref_name, oid);
+        }
+    }
+
+    Ok(local_refs)
+}
+
+/// Detect modified layers that need to be pushed
+///
+/// Compares pre-fetch local refs with post-fetch refs (which contain remote state) to determine:
+/// - New local refs (not on remote) -> push
+/// - Local refs ahead of remote -> push
+/// - Local refs behind remote -> reject (unless --force)
+/// - Local refs diverged from remote -> reject (unless --force)
+/// - Local refs equal to remote -> skip
+fn detect_modified_layers(
+    jin_repo: &JinRepo,
+    pre_fetch_refs: &HashMap<String, git2::Oid>,
+    args: &PushArgs,
+) -> Result<Vec<String>> {
+    let mut modified = Vec::new();
+
+    for (ref_name, pre_fetch_oid) in pre_fetch_refs {
+        // Resolve current ref state (after fetch, this contains remote OID)
+        let current_oid = match jin_repo.resolve_ref(ref_name) {
+            Ok(oid) => oid,
+            Err(_) => {
+                // Ref was deleted by fetch - shouldn't happen but handle gracefully
+                continue;
+            }
+        };
+
+        // Compare pre-fetch local OID with current (remote) OID
+        if args.force {
+            // Force flag bypasses safety checks - push if different
+            if pre_fetch_oid != &current_oid {
+                modified.push(ref_name.clone());
+            }
+        } else {
+            // Use graph comparison to determine if push is safe
+            match crate::git::refs::compare_refs(jin_repo, *pre_fetch_oid, current_oid)? {
+                crate::git::refs::RefComparison::Ahead => {
+                    // Local is ahead - safe to push
+                    modified.push(ref_name.clone());
+                }
+                crate::git::refs::RefComparison::Equal => {
+                    // Refs are equal - nothing to push
+                }
+                crate::git::refs::RefComparison::Behind
+                | crate::git::refs::RefComparison::Diverged => {
+                    // REJECT: Local is behind or diverged from remote
+                    return Err(JinError::BehindRemote {
+                        layer: ref_name.clone(),
+                    });
+                }
+            }
+        }
+    }
+
+    // Check for new local refs that didn't exist before fetch
+    let current_refs = jin_repo.list_refs("refs/jin/layers/*")?;
+    for ref_name in current_refs {
+        if ref_name.contains("/local") {
             continue;
         }
 
-        let local_oid = jin_repo.resolve_ref(&ref_name)?;
-
-        // Check if ref differs from remote or doesn't exist on remote
-        let should_push = if jin_repo.ref_exists(&ref_name) {
-            // Ref exists both locally and remotely - check if they differ
-            // Note: After fetch, both local and remote refs exist in our local repo
-            // We compare the OIDs to see if local is ahead
-            match jin_repo.resolve_ref(&ref_name) {
-                Ok(remote_oid) => local_oid != remote_oid,
-                Err(_) => true, // Assume push needed if we can't resolve remote
-            }
-        } else {
-            true // New local ref, push it
-        };
-
-        if should_push {
+        // If this ref wasn't in our pre-fetch map, it's new - push it
+        if !pre_fetch_refs.contains_key(&ref_name) {
             modified.push(ref_name);
         }
     }

@@ -296,14 +296,14 @@
               "type": "Task",
               "id": "P1.M2.T2",
               "title": "Implement Local vs Remote Comparison",
-              "status": "Planned",
+              "status": "Complete",
               "description": "Add logic to compare local and remote refs after fetching. Detect if local commits are behind remote commits (divergent histories) to prevent data loss.",
               "subtasks": [
                 {
                   "type": "Subtask",
                   "id": "P1.M2.T2.S1",
                   "title": "Create ref comparison utility function",
-                  "status": "Planned",
+                  "status": "Complete",
                   "story_points": 1,
                   "dependencies": [],
                   "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: git2 provides graph_descendant_of() for ancestry checking (plan/architecture/external_deps.md Section 4.2).\n2. INPUT: JinRepo instance, local layer ref name (e.g., 'mode/claude'), remote ref name.\n3. LOGIC: Create function is_behind_remote() in src/git/repo.rs or src/commands/push.rs. Use git2::Repository::graph_descendant_of() to check if local commit is ancestor of remote commit. Return Result<bool> where true means local is behind. Handle missing refs gracefully.\n4. OUTPUT: Boolean indicating whether local ref is behind remote ref."
@@ -312,7 +312,7 @@
                   "type": "Subtask",
                   "id": "P1.M2.T2.S2",
                   "title": "Add DetachedWorkspace error variant",
-                  "status": "Planned",
+                  "status": "Complete",
                   "story_points": 1,
                   "dependencies": [],
                   "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: New error type needed for push rejection (plan/architecture/codebase_analysis.md Section 2, Gap #2). thiserror supports custom errors (plan/architecture/external_deps.md Section 1.4).\n2. INPUT: Layer ref name, local commit SHA, remote commit SHA.\n3. LOGIC: Add PushBehindRemote variant to JinError enum in src/core/error.rs with fields: layer_name (String), local_commit (String), remote_commit (String), hint (String). Implement thiserror derive with error message including hint.\n4. OUTPUT: New error type for use in push command."
@@ -321,7 +321,7 @@
                   "type": "Subtask",
                   "id": "P1.M2.T2.S3",
                   "title": "Compare refs before pushing",
-                  "status": "Planned",
+                  "status": "Complete",
                   "story_points": 1,
                   "dependencies": [
                     "P1.M2.T2.S1",

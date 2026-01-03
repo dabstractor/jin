@@ -49,10 +49,13 @@ pub fn execute(args: LinkArgs) -> Result<()> {
     // 5. Add remote with Jin-specific refspec
     repo.remote_with_fetch("origin", &args.url, "+refs/jin/layers/*:refs/jin/layers/*")?;
 
-    // 6. Test connectivity
-    println!("Testing connection to remote...");
-    test_connectivity(repo, "origin")?;
-    println!("Connected successfully");
+    // 6. Test connectivity (skip for file:// URLs due to git2-rs bug)
+    let is_file_url = args.url.starts_with("file://") || args.url.starts_with('/');
+    if !is_file_url {
+        println!("Testing connection to remote...");
+        test_connectivity(repo, "origin")?;
+        println!("Connected successfully");
+    }
 
     // 7. Update and save global config
     config.remote = Some(RemoteConfig {
@@ -67,8 +70,10 @@ pub fn execute(args: LinkArgs) -> Result<()> {
     println!("Stored in: {}", config_path.display());
     println!();
 
-    // 9. Optionally list available configs (ignore errors)
-    let _ = list_remote_configs(repo);
+    // 9. Optionally list available configs (skip for file:// URLs due to git2-rs bug, ignore errors)
+    if !is_file_url {
+        let _ = list_remote_configs(repo);
+    }
 
     // 10. Print next steps
     println!("Use 'jin fetch' to download configurations");

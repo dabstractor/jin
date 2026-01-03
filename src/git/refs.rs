@@ -8,6 +8,25 @@ use git2::{Oid, Reference};
 
 use super::JinRepo;
 
+/// Result of comparing two Git references
+///
+/// Used to determine if a push operation is safe to execute.
+/// Derived from git's graph_ahead_behind comparison.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum RefComparison {
+    /// Local commit is ahead of remote (fast-forward possible)
+    Ahead,
+
+    /// Local commit is behind remote (must pull first)
+    Behind,
+
+    /// Local and remote have diverged (merge required)
+    Diverged,
+
+    /// Local and remote point to the same commit
+    Equal,
+}
+
 /// Trait for reference operations in Jin's phantom repository.
 ///
 /// All references are stored under the `refs/jin/` namespace to avoid
@@ -111,6 +130,49 @@ impl RefOps for JinRepo {
         resolved
             .target()
             .ok_or_else(|| JinError::Git(git2::Error::from_str("Reference has no target")))
+    }
+}
+
+/// Compare local and remote Git references
+///
+/// Determines the relationship between two commits by analyzing
+/// the commit graph. Returns whether local is ahead, behind,
+/// diverged, or equal to remote.
+///
+/// # Arguments
+///
+/// * `repo` - The Jin repository
+/// * `local_oid` - OID of local commit
+/// * `remote_oid` - OID of remote commit
+///
+/// # Returns
+///
+/// `RefComparison` indicating the state relationship
+///
+/// # Errors
+///
+/// Returns `JinError::Git` if commit graph analysis fails
+///
+/// # Algorithm
+///
+/// Uses git2's `graph_ahead_behind` which counts commits
+/// reachable from each ref but not the other:
+/// - (0, 0) -> Same commit
+/// - (n, 0) -> Local is ahead (n commits ahead, 0 behind)
+/// - (0, n) -> Local is behind (0 ahead, n behind)
+/// - (m, n) -> Diverged (both have unique commits)
+pub fn compare_refs(repo: &JinRepo, local_oid: Oid, remote_oid: Oid) -> Result<RefComparison> {
+    // CRITICAL: graph_ahead_behind returns (ahead_count, behind_count)
+    // This is the core of git's ahead/behind detection
+    // Note: API takes Oid values directly, not commit references
+    let (ahead, behind) = repo.inner().graph_ahead_behind(local_oid, remote_oid)?;
+
+    // Match on counts to determine state
+    match (ahead, behind) {
+        (0, 0) => Ok(RefComparison::Equal),
+        (_, 0) => Ok(RefComparison::Ahead),
+        (0, _) => Ok(RefComparison::Behind),
+        (_, _) => Ok(RefComparison::Diverged),
     }
 }
 
@@ -241,5 +303,104 @@ mod tests {
     fn test_ref_ops_trait_exists() {
         // Verify the trait compiles
         fn _takes_ref_ops<T: RefOps>(_: &T) {}
+    }
+
+    #[test]
+    fn test_compare_refs_equal() {
+        let (_temp, repo) = create_test_repo();
+        let commit_oid = create_test_commit(&repo);
+
+        // Same commit should be Equal
+        let result = compare_refs(&repo, commit_oid, commit_oid);
+        assert!(result.is_ok());
+        assert_eq!(result.unwrap(), RefComparison::Equal);
+    }
+
+    #[test]
+    fn test_compare_refs_ahead() {
+        let (_temp, repo) = create_test_repo();
+
+        // Create first commit (base)
+        let sig = git2::Signature::now("test", "test@test.com").unwrap();
+        let blob_oid = create_test_blob(&repo);
+        let mut builder = repo.inner().treebuilder(None).unwrap();
+        builder.insert("base.txt", blob_oid, 0o100644).unwrap();
+        let tree_oid = builder.write().unwrap();
+        let tree = repo.inner().find_tree(tree_oid).unwrap();
+        let base_commit = repo
+            .inner()
+            .commit(None, &sig, &sig, "base", &tree, &[])
+            .unwrap();
+        let base_commit_obj = repo.inner().find_commit(base_commit).unwrap();
+
+        // Create second commit on top of base (ahead)
+        let mut builder2 = repo.inner().treebuilder(None).unwrap();
+        builder2.insert("base.txt", blob_oid, 0o100644).unwrap();
+        builder2
+            .insert("new.txt", create_test_blob(&repo), 0o100644)
+            .unwrap();
+        let tree_oid2 = builder2.write().unwrap();
+        let tree2 = repo.inner().find_tree(tree_oid2).unwrap();
+        let ahead_commit = repo
+            .inner()
+            .commit(None, &sig, &sig, "ahead", &tree2, &[&base_commit_obj])
+            .unwrap();
+
+        // ahead_commit should be Ahead of base_commit
+        let result = compare_refs(&repo, ahead_commit, base_commit);
+        assert!(result.is_ok());
+        assert_eq!(result.unwrap(), RefComparison::Ahead);
+
+        // And base_commit should be Behind ahead_commit
+        let result = compare_refs(&repo, base_commit, ahead_commit);
+        assert!(result.is_ok());
+        assert_eq!(result.unwrap(), RefComparison::Behind);
+    }
+
+    #[test]
+    fn test_compare_refs_diverged() {
+        let (_temp, repo) = create_test_repo();
+
+        // Create base commit
+        let sig = git2::Signature::now("test", "test@test.com").unwrap();
+        let blob_oid = create_test_blob(&repo);
+        let mut builder = repo.inner().treebuilder(None).unwrap();
+        builder.insert("base.txt", blob_oid, 0o100644).unwrap();
+        let tree_oid = builder.write().unwrap();
+        let tree = repo.inner().find_tree(tree_oid).unwrap();
+        let base_commit = repo
+            .inner()
+            .commit(None, &sig, &sig, "base", &tree, &[])
+            .unwrap();
+        let base_commit_obj = repo.inner().find_commit(base_commit).unwrap();
+
+        // Create diverged commit 1
+        let mut builder1 = repo.inner().treebuilder(None).unwrap();
+        builder1
+            .insert("diverged1.txt", create_test_blob(&repo), 0o100644)
+            .unwrap();
+        let tree_oid1 = builder1.write().unwrap();
+        let tree1 = repo.inner().find_tree(tree_oid1).unwrap();
+        let diverged1 = repo
+            .inner()
+            .commit(None, &sig, &sig, "diverged1", &tree1, &[&base_commit_obj])
+            .unwrap();
+
+        // Create diverged commit 2 (same parent, different content)
+        let mut builder2 = repo.inner().treebuilder(None).unwrap();
+        builder2
+            .insert("diverged2.txt", create_test_blob(&repo), 0o100644)
+            .unwrap();
+        let tree_oid2 = builder2.write().unwrap();
+        let tree2 = repo.inner().find_tree(tree_oid2).unwrap();
+        let diverged2 = repo
+            .inner()
+            .commit(None, &sig, &sig, "diverged2", &tree2, &[&base_commit_obj])
+            .unwrap();
+
+        // diverged1 and diverged2 should be Diverged
+        let result = compare_refs(&repo, diverged1, diverged2);
+        assert!(result.is_ok());
+        assert_eq!(result.unwrap(), RefComparison::Diverged);
     }
 }

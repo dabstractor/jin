@@ -786,7 +786,7 @@
           "type": "Milestone",
           "id": "P2.M3",
           "title": "Milestone 2.3: Active Context Notifications in Fetch",
-          "status": "Planned",
+          "status": "Complete",
           "description": "Enhance the fetch command to load ProjectContext and highlight updates affecting the active mode/scope. This improves user experience by calling attention to relevant updates.",
           "tasks": [
             {
@@ -853,14 +853,14 @@
               "type": "Task",
               "id": "P2.M3.T3",
               "title": "Add Integration Tests for Active Context Notifications",
-              "status": "Planned",
+              "status": "Complete",
               "description": "Create integration tests for fetch command verifying active context updates are highlighted and other updates are shown separately.",
               "subtasks": [
                 {
                   "type": "Subtask",
                   "id": "P2.M3.T3.S1",
                   "title": "Test fetch highlights active mode updates",
-                  "status": "Planned",
+                  "status": "Complete",
                   "story_points": 1,
                   "dependencies": [
                     "P2.M3.T2.S3"
@@ -871,7 +871,7 @@
                   "type": "Subtask",
                   "id": "P2.M3.T3.S2",
                   "title": "Test fetch separates active and other updates",
-                  "status": "Planned",
+                  "status": "Complete",
                   "story_points": 1,
                   "dependencies": [
                     "P2.M3.T3.S1"

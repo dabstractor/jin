@@ -59,7 +59,12 @@ impl AuthCounter {
 pub fn setup_callbacks(callbacks: &mut RemoteCallbacks) {
     let auth_counter = AuthCounter::new();
 
-    callbacks.credentials(move |_url, username, _allowed| {
+    callbacks.credentials(move |url, username, _allowed| {
+        // For file:// URLs or absolute paths, no authentication is needed
+        if url.starts_with("file://") || url.starts_with('/') {
+            return Cred::default();
+        }
+
         if !auth_counter.increment_and_check(3) {
             return Err(git2::Error::from_str(
                 "Authentication failed after 3 attempts",

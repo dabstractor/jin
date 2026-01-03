@@ -46,10 +46,21 @@ pub fn execute(args: LinkArgs) -> Result<()> {
         Err(e) => return Err(e.into()),
     }
 
-    // 5. Add remote with Jin-specific refspec
-    repo.remote_with_fetch("origin", &args.url, "+refs/jin/layers/*:refs/jin/layers/*")?;
+    // 5. Normalize URL for git2-rs: convert plain paths to file:// URLs
+    let normalized_url = if args.url.starts_with('/') && !args.url.starts_with("file://") {
+        format!("file://{}", args.url)
+    } else {
+        args.url.clone()
+    };
 
-    // 6. Test connectivity (skip for file:// URLs due to git2-rs bug)
+    // 6. Add remote with Jin-specific refspec
+    repo.remote_with_fetch(
+        "origin",
+        &normalized_url,
+        "+refs/jin/layers/*:refs/jin/layers/*",
+    )?;
+
+    // 7. Test connectivity (skip for file:// URLs due to git2-rs bug)
     let is_file_url = args.url.starts_with("file://") || args.url.starts_with('/');
     if !is_file_url {
         println!("Testing connection to remote...");
@@ -57,25 +68,25 @@ pub fn execute(args: LinkArgs) -> Result<()> {
         println!("Connected successfully");
     }
 
-    // 7. Update and save global config
+    // 8. Update and save global config (store original URL for display purposes)
     config.remote = Some(RemoteConfig {
         url: args.url.clone(),
         fetch_on_init: true,
     });
     config.save()?;
 
-    // 8. Print confirmation
+    // 9. Print confirmation
     println!("Configured remote 'origin' for Jin repository");
     let config_path = JinConfig::default_path()?;
     println!("Stored in: {}", config_path.display());
     println!();
 
-    // 9. Optionally list available configs (skip for file:// URLs due to git2-rs bug, ignore errors)
+    // 10. Optionally list available configs (skip for file:// URLs due to git2-rs bug, ignore errors)
     if !is_file_url {
         let _ = list_remote_configs(repo);
     }
 
-    // 10. Print next steps
+    // 11. Print next steps
     println!("Use 'jin fetch' to download configurations");
     println!("Use 'jin pull' to merge and apply configurations");
 

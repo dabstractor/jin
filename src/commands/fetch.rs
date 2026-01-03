@@ -42,10 +42,13 @@ pub fn execute() -> Result<()> {
         }
     })?;
 
-    // 4. Setup fetch options with callbacks
+    // 4. Capture pre-fetch local refs to compare after fetch
+    let pre_fetch_refs = capture_local_refs(&jin_repo)?;
+
+    // 5. Setup fetch options with callbacks
     let mut fetch_opts = build_fetch_options()?;
 
-    // 5. Perform fetch
+    // 6. Perform fetch
     println!("Fetching from origin ({})...", remote_config.url);
 
     // Fetch using configured refspec from link (no custom refspec needed)
@@ -67,15 +70,39 @@ pub fn execute() -> Result<()> {
         }
     }
 
-    // 6. Report available updates
-    report_updates(&jin_repo, &context)?;
+    // 7. Report available updates
+    report_updates(&jin_repo, &pre_fetch_refs, &context)?;
 
     Ok(())
 }
 
+/// Capture local refs before fetch
+fn capture_local_refs(jin_repo: &JinRepo) -> Result<HashMap<String, git2::Oid>> {
+    let mut local_refs = HashMap::new();
+    let all_refs = jin_repo.list_refs("refs/jin/layers/*")?;
+
+    for ref_name in all_refs {
+        // Skip user-local layer
+        if ref_name.contains("/local") {
+            continue;
+        }
+
+        // Store the OID of each local ref
+        if let Ok(oid) = jin_repo.resolve_ref(&ref_name) {
+            local_refs.insert(ref_name, oid);
+        }
+    }
+
+    Ok(local_refs)
+}
+
 /// Report available updates by comparing local and remote refs
-fn report_updates(jin_repo: &JinRepo, context: &ProjectContext) -> Result<()> {
-    // Get all remote refs in Jin namespace
+fn report_updates(
+    jin_repo: &JinRepo,
+    pre_fetch_refs: &HashMap<String, git2::Oid>,
+    context: &ProjectContext,
+) -> Result<()> {
+    // Get all remote refs in Jin namespace (after fetch, these are in local refs)
     let remote_refs = jin_repo.list_refs("refs/jin/layers/*")?;
 
     if remote_refs.is_empty() {
@@ -83,7 +110,7 @@ fn report_updates(jin_repo: &JinRepo, context: &ProjectContext) -> Result<()> {
         return Ok(());
     }
 
-    // Compare with local refs to find updates
+    // Compare remote refs with pre-fetch local refs to find updates
     let mut updates: HashMap<String, UpdateInfo> = HashMap::new();
 
     for remote_ref in &remote_refs {
@@ -99,13 +126,16 @@ fn report_updates(jin_repo: &JinRepo, context: &ProjectContext) -> Result<()> {
                 "Remote ref has no target",
             )))?;
 
-        // Check if we have this ref locally
-        let has_local = jin_repo.ref_exists(remote_ref);
-        let is_update = if has_local {
-            let local_oid = jin_repo.resolve_ref(remote_ref)?;
-            local_oid != remote_oid
-        } else {
-            true // New ref
+        // Check if we had this ref locally before fetch
+        let is_update = match pre_fetch_refs.get(remote_ref) {
+            Some(pre_fetch_oid) => {
+                // Ref existed locally, check if it changed
+                pre_fetch_oid != &remote_oid
+            }
+            None => {
+                // Ref didn't exist locally before fetch - it's new
+                true
+            }
         };
 
         if is_update {
@@ -140,10 +170,12 @@ fn report_updates(jin_repo: &JinRepo, context: &ProjectContext) -> Result<()> {
 
     for (category, info) in updates {
         // Check if any ref in this category is relevant to active context
-        let is_relevant = info
-            .refs
-            .iter()
-            .any(|ref_path| is_ref_relevant_to_context(ref_path, context));
+        // NOTE: info.refs contains just the layer path (e.g., "mode/xxx"),
+        // we need to prefix it with "refs/jin/layers/" for the filtering logic
+        let is_relevant = info.refs.iter().any(|ref_path| {
+            let full_ref_path = format!("refs/jin/layers/{}", ref_path);
+            is_ref_relevant_to_context(&full_ref_path, context)
+        });
 
         if is_relevant {
             active_updates.insert(category, info);
@@ -253,10 +285,7 @@ fn is_ref_relevant_to_context(ref_path: &str, context: &ProjectContext) -> bool 
 /// * `updates` - HashMap of updates to display
 fn format_update_section(title: &str, updates: &HashMap<String, UpdateInfo>) {
     if updates.is_empty() {
-        // For active context section, show "no updates" message
-        if title.contains("active context") {
-            println!("{}", title);
-        }
+        // Don't show empty sections
         return;
     }
 

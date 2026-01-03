@@ -67,8 +67,18 @@ impl JinConfig {
         Ok(())
     }
 
-    /// Returns default config path (~/.jin/config.toml)
+    /// Returns default config path (~/.jin/config.toml or $JIN_DIR/config.toml)
+    ///
+    /// Respects JIN_DIR environment variable for test isolation.
+    /// If JIN_DIR is set, returns $JIN_DIR/config.toml.
+    /// Otherwise, returns ~/.jin/config.toml.
     pub fn default_path() -> Result<PathBuf> {
+        // Check JIN_DIR environment variable first for test isolation
+        if let Ok(jin_dir) = std::env::var("JIN_DIR") {
+            return Ok(PathBuf::from(jin_dir).join("config.toml"));
+        }
+
+        // Fall back to default ~/.jin location
         dirs::home_dir()
             .map(|h| h.join(".jin").join("config.toml"))
             .ok_or_else(|| JinError::Config("Cannot determine home directory".into()))

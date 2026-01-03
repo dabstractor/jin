@@ -19,9 +19,9 @@ fn test_pull_fast_forward_still_works() -> Result<(), Box<dyn std::error::Error>
     let jin_dir = remote_fixture.jin_dir.as_ref().unwrap();
 
     // Setup: Create initial commit in "remote" via temp workspace
+    // CRITICAL: Use the SAME JIN_DIR for both workspaces to share layer refs
     let temp_workspace = TestFixture::new()?;
-    let temp_jin_dir = temp_workspace.jin_dir.as_ref().unwrap();
-    jin_init(temp_workspace.path(), Some(temp_jin_dir))?;
+    jin_init(temp_workspace.path(), Some(jin_dir))?;
 
     // Create initial file and commit
     fs::write(temp_workspace.path().join("config.txt"), "version=1")?;
@@ -29,14 +29,14 @@ fn test_pull_fast_forward_still_works() -> Result<(), Box<dyn std::error::Error>
     jin()
         .args(["add", "config.txt", "--global"])
         .current_dir(temp_workspace.path())
-        .env("JIN_DIR", temp_jin_dir)
+        .env("JIN_DIR", jin_dir)
         .assert()
         .success();
 
     jin()
         .args(["commit", "-m", "Initial commit"])
         .current_dir(temp_workspace.path())
-        .env("JIN_DIR", temp_jin_dir)
+        .env("JIN_DIR", jin_dir)
         .assert()
         .success();
 
@@ -48,16 +48,17 @@ fn test_pull_fast_forward_still_works() -> Result<(), Box<dyn std::error::Error>
             "--force",
         ])
         .current_dir(temp_workspace.path())
-        .env("JIN_DIR", temp_jin_dir)
+        .env("JIN_DIR", jin_dir)
         .assert()
         .success();
 
     jin()
         .arg("push")
         .current_dir(temp_workspace.path())
-        .env("JIN_DIR", temp_jin_dir)
+        .env("JIN_DIR", jin_dir)
         .assert()
-        .success();
+        .success()
+        .stdout(predicates::str::contains("Successfully pushed"));
 
     // Setup main local repo - link and fetch
     jin()
@@ -100,9 +101,9 @@ fn test_pull_divergent_clean_merge() -> Result<(), Box<dyn std::error::Error>> {
     let jin_dir = remote_fixture.jin_dir.as_ref().unwrap();
 
     // Step 1: Create base commit in remote via temp workspace
+    // CRITICAL: Use the SAME JIN_DIR for both workspaces to share layer refs
     let temp_workspace = TestFixture::new()?;
-    let temp_jin_dir = temp_workspace.jin_dir.as_ref().unwrap();
-    jin_init(temp_workspace.path(), Some(temp_jin_dir))?;
+    jin_init(temp_workspace.path(), Some(jin_dir))?;
 
     fs::write(
         temp_workspace.path().join("config.txt"),
@@ -112,14 +113,14 @@ fn test_pull_divergent_clean_merge() -> Result<(), Box<dyn std::error::Error>> {
     jin()
         .args(["add", "config.txt", "--global"])
         .current_dir(temp_workspace.path())
-        .env("JIN_DIR", temp_jin_dir)
+        .env("JIN_DIR", jin_dir)
         .assert()
         .success();
 
     jin()
         .args(["commit", "-m", "Base commit"])
         .current_dir(temp_workspace.path())
-        .env("JIN_DIR", temp_jin_dir)
+        .env("JIN_DIR", jin_dir)
         .assert()
         .success();
 
@@ -131,16 +132,17 @@ fn test_pull_divergent_clean_merge() -> Result<(), Box<dyn std::error::Error>> {
             "--force",
         ])
         .current_dir(temp_workspace.path())
-        .env("JIN_DIR", temp_jin_dir)
+        .env("JIN_DIR", jin_dir)
         .assert()
         .success();
 
     jin()
         .arg("push")
         .current_dir(temp_workspace.path())
-        .env("JIN_DIR", temp_jin_dir)
+        .env("JIN_DIR", jin_dir)
         .assert()
-        .success();
+        .success()
+        .stdout(predicates::str::contains("Successfully pushed"));
 
     // Setup local repo with base
     jin()
@@ -197,23 +199,24 @@ fn test_pull_divergent_clean_merge() -> Result<(), Box<dyn std::error::Error>> {
     jin()
         .args(["add", "config.txt", "--global"])
         .current_dir(temp_workspace.path())
-        .env("JIN_DIR", temp_jin_dir)
+        .env("JIN_DIR", jin_dir)
         .assert()
         .success();
 
     jin()
         .args(["commit", "-m", "Remote change"])
         .current_dir(temp_workspace.path())
-        .env("JIN_DIR", temp_jin_dir)
+        .env("JIN_DIR", jin_dir)
         .assert()
         .success();
 
     jin()
         .arg("push")
         .current_dir(temp_workspace.path())
-        .env("JIN_DIR", temp_jin_dir)
+        .env("JIN_DIR", jin_dir)
         .assert()
-        .success();
+        .success()
+        .stdout(predicates::str::contains("Successfully pushed"));
 
     // Step 4: Pull with divergent history - should 3-way merge cleanly
     jin()
@@ -257,22 +260,22 @@ fn test_pull_divergent_with_conflicts() -> Result<(), Box<dyn std::error::Error>
 
     // Step 1: Create base commit in remote via temp workspace
     let temp_workspace = TestFixture::new()?;
-    let temp_jin_dir = temp_workspace.jin_dir.as_ref().unwrap();
-    jin_init(temp_workspace.path(), Some(temp_jin_dir))?;
+    let jin_dir = temp_workspace.jin_dir.as_ref().unwrap();
+    jin_init(temp_workspace.path(), Some(jin_dir))?;
 
     fs::write(temp_workspace.path().join("config.txt"), "version=1")?;
 
     jin()
         .args(["add", "config.txt", "--global"])
         .current_dir(temp_workspace.path())
-        .env("JIN_DIR", temp_jin_dir)
+        .env("JIN_DIR", jin_dir)
         .assert()
         .success();
 
     jin()
         .args(["commit", "-m", "Base commit"])
         .current_dir(temp_workspace.path())
-        .env("JIN_DIR", temp_jin_dir)
+        .env("JIN_DIR", jin_dir)
         .assert()
         .success();
 
@@ -284,16 +287,17 @@ fn test_pull_divergent_with_conflicts() -> Result<(), Box<dyn std::error::Error>
             "--force",
         ])
         .current_dir(temp_workspace.path())
-        .env("JIN_DIR", temp_jin_dir)
+        .env("JIN_DIR", jin_dir)
         .assert()
         .success();
 
     jin()
         .arg("push")
         .current_dir(temp_workspace.path())
-        .env("JIN_DIR", temp_jin_dir)
+        .env("JIN_DIR", jin_dir)
         .assert()
-        .success();
+        .success()
+        .stdout(predicates::str::contains("Successfully pushed"));
 
     // Setup local repo with base
     jin()
@@ -344,23 +348,24 @@ fn test_pull_divergent_with_conflicts() -> Result<(), Box<dyn std::error::Error>
     jin()
         .args(["add", "config.txt", "--global"])
         .current_dir(temp_workspace.path())
-        .env("JIN_DIR", temp_jin_dir)
+        .env("JIN_DIR", jin_dir)
         .assert()
         .success();
 
     jin()
         .args(["commit", "-m", "Remote conflicting change"])
         .current_dir(temp_workspace.path())
-        .env("JIN_DIR", temp_jin_dir)
+        .env("JIN_DIR", jin_dir)
         .assert()
         .success();
 
     jin()
         .arg("push")
         .current_dir(temp_workspace.path())
-        .env("JIN_DIR", temp_jin_dir)
+        .env("JIN_DIR", jin_dir)
         .assert()
-        .success();
+        .success()
+        .stdout(predicates::str::contains("Successfully pushed"));
 
     // Step 4: Pull with divergent history - should create .jinmerge file
     jin()
@@ -413,8 +418,8 @@ fn test_pull_divergent_clean_merge_different_files() -> Result<(), Box<dyn std::
 
     // Step 1: Create base commit (with initial file)
     let temp_workspace = TestFixture::new()?;
-    let temp_jin_dir = temp_workspace.jin_dir.as_ref().unwrap();
-    jin_init(temp_workspace.path(), Some(temp_jin_dir))?;
+    let jin_dir = temp_workspace.jin_dir.as_ref().unwrap();
+    jin_init(temp_workspace.path(), Some(jin_dir))?;
 
     // Create initial file
     fs::write(temp_workspace.path().join("base.txt"), "base content")?;
@@ -422,14 +427,14 @@ fn test_pull_divergent_clean_merge_different_files() -> Result<(), Box<dyn std::
     jin()
         .args(["add", "base.txt", "--global"])
         .current_dir(temp_workspace.path())
-        .env("JIN_DIR", temp_jin_dir)
+        .env("JIN_DIR", jin_dir)
         .assert()
         .success();
 
     jin()
         .args(["commit", "-m", "Base commit with initial file"])
         .current_dir(temp_workspace.path())
-        .env("JIN_DIR", temp_jin_dir)
+        .env("JIN_DIR", jin_dir)
         .assert()
         .success();
 
@@ -441,16 +446,17 @@ fn test_pull_divergent_clean_merge_different_files() -> Result<(), Box<dyn std::
             "--force",
         ])
         .current_dir(temp_workspace.path())
-        .env("JIN_DIR", temp_jin_dir)
+        .env("JIN_DIR", jin_dir)
         .assert()
         .success();
 
     jin()
         .arg("push")
         .current_dir(temp_workspace.path())
-        .env("JIN_DIR", temp_jin_dir)
+        .env("JIN_DIR", jin_dir)
         .assert()
-        .success();
+        .success()
+        .stdout(predicates::str::contains("Successfully pushed"));
 
     // Setup local repo
     jin()
@@ -501,23 +507,24 @@ fn test_pull_divergent_clean_merge_different_files() -> Result<(), Box<dyn std::
     jin()
         .args(["add", "remote.txt", "--global"])
         .current_dir(temp_workspace.path())
-        .env("JIN_DIR", temp_jin_dir)
+        .env("JIN_DIR", jin_dir)
         .assert()
         .success();
 
     jin()
         .args(["commit", "-m", "Add remote file"])
         .current_dir(temp_workspace.path())
-        .env("JIN_DIR", temp_jin_dir)
+        .env("JIN_DIR", jin_dir)
         .assert()
         .success();
 
     jin()
         .arg("push")
         .current_dir(temp_workspace.path())
-        .env("JIN_DIR", temp_jin_dir)
+        .env("JIN_DIR", jin_dir)
         .assert()
-        .success();
+        .success()
+        .stdout(predicates::str::contains("Successfully pushed"));
 
     // Step 4: Pull should merge both files
     jin()

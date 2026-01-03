@@ -584,7 +584,7 @@
           "type": "Milestone",
           "id": "P2.M1",
           "title": "Milestone 2.1: 3-Way Merge in Pull Command",
-          "status": "Planned",
+          "status": "Complete",
           "description": "Extend the pull command to handle non-fast-forward cases using proper 3-way merge instead of only supporting fast-forward updates. This enables team collaboration scenarios with divergent histories.",
           "tasks": [
             {
@@ -662,14 +662,14 @@
               "type": "Task",
               "id": "P2.M1.T3",
               "title": "Add Integration Tests for 3-Way Merge",
-              "status": "Planned",
+              "status": "Complete",
               "description": "Create integration tests for 3-way merge in pull covering fast-forward, divergent clean merge, and divergent with conflicts scenarios.",
               "subtasks": [
                 {
                   "type": "Subtask",
                   "id": "P2.M1.T3.S1",
                   "title": "Test fast-forward merge still works",
-                  "status": "Planned",
+                  "status": "Complete",
                   "story_points": 1,
                   "dependencies": [
                     "P2.M1.T2.S3"
@@ -680,7 +680,7 @@
                   "type": "Subtask",
                   "id": "P2.M1.T3.S2",
                   "title": "Test divergent clean merge",
-                  "status": "Planned",
+                  "status": "Complete",
                   "story_points": 1,
                   "dependencies": [
                     "P2.M1.T3.S1"
@@ -691,7 +691,7 @@
                   "type": "Subtask",
                   "id": "P2.M1.T3.S3",
                   "title": "Test divergent merge with conflicts",
-                  "status": "Planned",
+                  "status": "Complete",
                   "story_points": 1,
                   "dependencies": [
                     "P2.M1.T3.S2"

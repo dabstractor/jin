@@ -7,11 +7,11 @@
 //! states where the workspace files or metadata no longer correspond to valid
 //! layer configurations.
 
-use crate::core::{JinError, Result};
 use crate::core::config::ProjectContext;
+use crate::core::{JinError, Result};
+use crate::git::JinRepo;
 use crate::git::RefOps;
 use crate::staging::metadata::WorkspaceMetadata;
-use crate::git::JinRepo;
 use std::path::{Path, PathBuf};
 
 /// Read a file from the workspace
@@ -256,10 +256,7 @@ fn detect_missing_commits(
 /// - `Ok(Some(ref_name))` - Name of invalid ref (e.g., "mode:production")
 /// - `Ok(None)` - All active context refs are valid
 /// - `Err(JinError)` - Error checking refs
-fn detect_invalid_context(
-    context: &ProjectContext,
-    repo: &JinRepo,
-) -> Result<Option<String>> {
+fn detect_invalid_context(context: &ProjectContext, repo: &JinRepo) -> Result<Option<String>> {
     // Check active mode exists
     if let Some(mode) = &context.mode {
         let mode_ref = format!("refs/jin/layers/mode/{}", mode);
@@ -325,10 +322,7 @@ fn describe_context(context: &ProjectContext) -> String {
 /// - `Ok(())` - Workspace is properly attached
 /// - `Err(JinError::DetachedWorkspace)` - Workspace is detached with details
 /// - `Err(JinError)` - Other error (e.g., loading metadata)
-pub fn validate_workspace_attached(
-    context: &ProjectContext,
-    repo: &JinRepo,
-) -> Result<()> {
+pub fn validate_workspace_attached(context: &ProjectContext, repo: &JinRepo) -> Result<()> {
     // Fresh workspace - no metadata means no attachment to validate
     let metadata = match WorkspaceMetadata::load() {
         Ok(m) => m,
@@ -341,7 +335,10 @@ pub fn validate_workspace_attached(
         let workspace_commit = repo
             .inner()
             .head()
-            .and_then(|h| h.target().ok_or_else(|| git2::Error::from_str("HEAD has no target")))
+            .and_then(|h| {
+                h.target()
+                    .ok_or_else(|| git2::Error::from_str("HEAD has no target"))
+            })
             .map(|t| t.to_string())
             .ok();
 
@@ -378,7 +375,10 @@ pub fn validate_workspace_attached(
         let workspace_commit = repo
             .inner()
             .head()
-            .and_then(|h| h.target().ok_or_else(|| git2::Error::from_str("HEAD has no target")))
+            .and_then(|h| {
+                h.target()
+                    .ok_or_else(|| git2::Error::from_str("HEAD has no target"))
+            })
             .map(|t| t.to_string())
             .ok();
 
@@ -657,7 +657,14 @@ mod tests {
         let tree = repo.inner().find_tree(tree_oid).unwrap();
         let _commit_oid = repo
             .inner()
-            .commit(Some("refs/jin/layers/mode/test"), &sig, &sig, "test", &tree, &[])
+            .commit(
+                Some("refs/jin/layers/mode/test"),
+                &sig,
+                &sig,
+                "test",
+                &tree,
+                &[],
+            )
             .unwrap();
 
         let mut metadata = WorkspaceMetadata::new();

@@ -197,6 +197,10 @@ pub struct RepairArgs {
     /// Show what would be repaired
     #[arg(long)]
     pub dry_run: bool,
+
+    /// Check workspace state without making repairs
+    #[arg(long)]
+    pub check: bool,
 }
 
 /// Arguments for the `link` command

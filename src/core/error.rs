@@ -175,13 +175,17 @@ mod tests {
             workspace_commit: Some("abc123def".to_string()),
             expected_layer_ref: "refs/jin/layers/modes/claude/scopes/default".to_string(),
             details: "Workspace files have been modified outside of Jin operations".to_string(),
-            recovery_hint: "Run 'jin reset --hard refs/jin/layers/modes/claude/scopes/default' to restore".to_string(),
+            recovery_hint:
+                "Run 'jin reset --hard refs/jin/layers/modes/claude/scopes/default' to restore"
+                    .to_string(),
         };
         let msg = err.to_string();
         assert!(msg.contains("Workspace is in a detached state."));
         assert!(msg.contains("Workspace files have been modified outside of Jin operations"));
         assert!(msg.contains("Recovery:"));
-        assert!(msg.contains("Run 'jin reset --hard refs/jin/layers/modes/claude/scopes/default' to restore"));
+        assert!(msg.contains(
+            "Run 'jin reset --hard refs/jin/layers/modes/claude/scopes/default' to restore"
+        ));
     }
 
     #[test]
@@ -205,7 +209,8 @@ mod tests {
             workspace_commit: Some("xyz789".to_string()),
             expected_layer_ref: "mode:production".to_string(),
             details: "Active context references deleted mode: production".to_string(),
-            recovery_hint: "Run 'jin mode activate <valid-mode>' to set a new active mode".to_string(),
+            recovery_hint: "Run 'jin mode activate <valid-mode>' to set a new active mode"
+                .to_string(),
         };
         let msg = err.to_string();
         assert!(msg.contains("Workspace is in a detached state."));

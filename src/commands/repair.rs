@@ -10,7 +10,7 @@
 use crate::cli::RepairArgs;
 use crate::core::{JinConfig, JinError, ProjectContext, Result};
 use crate::git::{JinRepo, RefOps};
-use crate::staging::{StagingIndex, WorkspaceMetadata};
+use crate::staging::{validate_workspace_attached, StagingIndex, WorkspaceMetadata};
 use std::path::PathBuf;
 
 /// Execute the repair command
@@ -32,6 +32,23 @@ pub fn execute(args: RepairArgs) -> Result<()> {
 
     let mut issues_found = Vec::new();
     let mut issues_fixed = Vec::new();
+
+    // Check workspace attachment if --check flag is set
+    if args.check {
+        check_workspace_attachment(&args, &mut issues_found);
+
+        // Display summary and return early
+        println!();
+        if issues_found.is_empty() {
+            println!("Workspace is properly attached.");
+        } else {
+            println!("Workspace state:");
+            for issue in &issues_found {
+                println!("  - {}", issue);
+            }
+        }
+        return Ok(());
+    }
 
     // Check 1: Repository structure
     let repo_result = check_repository_structure(&args, &mut issues_found, &mut issues_fixed);
@@ -658,6 +675,68 @@ fn repair_project_context() -> Result<()> {
     Ok(())
 }
 
+/// Check workspace attachment state
+///
+/// Validates that the workspace is properly attached to the active context.
+/// This check is used by the --check flag to diagnose detached workspace issues.
+fn check_workspace_attachment(args: &RepairArgs, issues_found: &mut Vec<String>) {
+    print!("Checking workspace attachment... ");
+
+    // Load project context
+    let context = match ProjectContext::load() {
+        Ok(ctx) => ctx,
+        Err(JinError::NotInitialized) => {
+            println!("✓ (not initialized)");
+            return;
+        }
+        Err(_) => {
+            println!("✓ (no context)");
+            return;
+        }
+    };
+
+    // Open Jin repository
+    let repo = match JinRepo::open() {
+        Ok(r) => r,
+        Err(_) => {
+            println!("✓ (no repository)");
+            return;
+        }
+    };
+
+    // Validate workspace
+    match validate_workspace_attached(&context, &repo) {
+        Ok(()) => {
+            println!("✓");
+        }
+        Err(JinError::DetachedWorkspace {
+            details,
+            recovery_hint,
+            ..
+        }) => {
+            println!("✗");
+            let issue = format!(
+                "Workspace is detached. {}. Recovery: {}",
+                details, recovery_hint
+            );
+            issues_found.push(issue.clone());
+
+            if !args.dry_run {
+                println!("  Issue: {}", issue);
+            }
+        }
+        Err(e) => {
+            println!("✗");
+            let issue = format!("Workspace check failed: {}", e);
+            issues_found.push(issue.clone());
+
+            if !args.dry_run {
+                println!("  Issue: {}", issue);
+            }
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -700,7 +779,10 @@ mod tests {
     fn test_execute_dry_run() {
         let _guard = DirGuard::new(setup_isolated_test());
 
-        let args = RepairArgs { dry_run: true };
+        let args = RepairArgs {
+            dry_run: true,
+            check: false,
+        };
         let result = execute(args);
         assert!(result.is_ok());
     }
@@ -709,7 +791,10 @@ mod tests {
     fn test_execute_no_issues() {
         let _guard = DirGuard::new(setup_isolated_test());
 
-        let args = RepairArgs { dry_run: false };
+        let args = RepairArgs {
+            dry_run: false,
+            check: false,
+        };
         let result = execute(args);
         assert!(result.is_ok());
     }
@@ -718,7 +803,10 @@ mod tests {
     fn test_check_staging_index_missing() {
         let _guard = DirGuard::new(setup_isolated_test());
 
-        let args = RepairArgs { dry_run: true };
+        let args = RepairArgs {
+            dry_run: true,
+            check: false,
+        };
         let mut issues_found = Vec::new();
         let mut issues_fixed = Vec::new();
 
@@ -740,7 +828,10 @@ mod tests {
         // Use DirGuard to change to temp directory and auto-restore
         let _guard = DirGuard::new(temp);
 
-        let args = RepairArgs { dry_run: true };
+        let args = RepairArgs {
+            dry_run: true,
+            check: false,
+        };
         let mut issues_found = Vec::new();
         let mut issues_fixed = Vec::new();
 
@@ -804,7 +895,10 @@ mod tests {
         // Use DirGuard to change to temp directory and auto-restore
         let _guard = DirGuard::new(temp);
 
-        let args = RepairArgs { dry_run: true };
+        let args = RepairArgs {
+            dry_run: true,
+            check: false,
+        };
         let mut issues_found = Vec::new();
         let mut issues_fixed = Vec::new();
 
@@ -826,7 +920,10 @@ mod tests {
         // Use DirGuard to change to temp directory and auto-restore
         let _guard = DirGuard::new(temp);
 
-        let args = RepairArgs { dry_run: true };
+        let args = RepairArgs {
+            dry_run: true,
+            check: false,
+        };
         let mut issues_found = Vec::new();
         let mut issues_fixed = Vec::new();
 
@@ -840,7 +937,10 @@ mod tests {
     fn test_check_workspace_metadata_missing() {
         let _guard = DirGuard::new(TempDir::new().unwrap());
 
-        let args = RepairArgs { dry_run: true };
+        let args = RepairArgs {
+            dry_run: true,
+            check: false,
+        };
         let mut issues_found = Vec::new();
         let mut issues_fixed = Vec::new();
 

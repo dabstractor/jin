@@ -77,7 +77,10 @@ fn test_validation_allows_fresh_workspace() {
     let repo = jin::git::JinRepo::open_at(&jin_dir).unwrap();
 
     let result = jin::staging::validate_workspace_attached(&context, &repo);
-    assert!(result.is_ok(), "Fresh workspace (no metadata) should pass validation");
+    assert!(
+        result.is_ok(),
+        "Fresh workspace (no metadata) should pass validation"
+    );
 }
 
 #[test]
@@ -122,13 +125,20 @@ fn test_validation_detects_deleted_mode() {
 
     // Now validation should fail
     let result = jin::staging::validate_workspace_attached(&context, &repo);
-    assert!(result.is_err(), "Validation should fail when mode is deleted");
+    assert!(
+        result.is_err(),
+        "Validation should fail when mode is deleted"
+    );
 
     // Verify it's a DetachedWorkspace error
     match result {
         Err(jin::core::error::JinError::DetachedWorkspace { details, .. }) => {
             // The error should mention that the layer ref no longer exists
-            assert!(details.contains("no longer exist") || details.contains("Missing refs"), "Details should mention missing refs, got: {}", details);
+            assert!(
+                details.contains("no longer exist") || details.contains("Missing refs"),
+                "Details should mention missing refs, got: {}",
+                details
+            );
         }
         _ => panic!("Expected DetachedWorkspace error, got: {:?}", result),
     }
@@ -176,13 +186,20 @@ fn test_validation_detects_deleted_scope() {
 
     // Now validation should fail
     let result = jin::staging::validate_workspace_attached(&context, &repo);
-    assert!(result.is_err(), "Validation should fail when mode is deleted");
+    assert!(
+        result.is_err(),
+        "Validation should fail when mode is deleted"
+    );
 
     // Verify it's a DetachedWorkspace error
     match result {
         Err(jin::core::error::JinError::DetachedWorkspace { details, .. }) => {
             // The error should mention that the layer ref no longer exists
-            assert!(details.contains("no longer exist") || details.contains("Missing refs"), "Details should mention missing refs, got: {}", details);
+            assert!(
+                details.contains("no longer exist") || details.contains("Missing refs"),
+                "Details should mention missing refs, got: {}",
+                details
+            );
         }
         _ => panic!("Expected DetachedWorkspace error, got: {:?}", result),
     }
@@ -218,14 +235,20 @@ fn test_validation_detects_modified_files() {
     // Validation should pass with matching content
     let context = jin::core::config::ProjectContext::default();
     let result = jin::staging::validate_workspace_attached(&context, &repo);
-    assert!(result.is_ok(), "Validation should pass when files match metadata");
+    assert!(
+        result.is_ok(),
+        "Validation should pass when files match metadata"
+    );
 
     // Modify the file externally
     fs::write(fixture.path().join(file_path), b"modified content").unwrap();
 
     // Now validation should fail
     let result = jin::staging::validate_workspace_attached(&context, &repo);
-    assert!(result.is_err(), "Validation should fail when files are modified");
+    assert!(
+        result.is_err(),
+        "Validation should fail when files are modified"
+    );
 
     // Verify it's a DetachedWorkspace error about file modification
     match result {
@@ -273,7 +296,10 @@ fn test_validation_detects_deleted_files() {
 
     // Now validation should fail
     let result = jin::staging::validate_workspace_attached(&context, &repo);
-    assert!(result.is_err(), "Validation should fail when tracked files are deleted");
+    assert!(
+        result.is_err(),
+        "Validation should fail when tracked files are deleted"
+    );
 
     // Verify it's a DetachedWorkspace error
     match result {
@@ -307,7 +333,10 @@ fn test_validation_detects_missing_layer_refs() {
     let repo = jin::git::JinRepo::open_at(&jin_dir).unwrap();
     let result = jin::staging::validate_workspace_attached(&context, &repo);
 
-    assert!(result.is_err(), "Validation should fail when layer refs don't exist");
+    assert!(
+        result.is_err(),
+        "Validation should fail when layer refs don't exist"
+    );
 
     // Verify it's a DetachedWorkspace error about missing refs
     match result {
@@ -351,7 +380,10 @@ fn test_validation_with_multiple_layers_all_exist() {
     let repo = jin::git::JinRepo::open_at(&jin_dir).unwrap();
     let result = jin::staging::validate_workspace_attached(&context, &repo);
 
-    assert!(result.is_ok(), "Validation should pass when all layers exist");
+    assert!(
+        result.is_ok(),
+        "Validation should pass when all layers exist"
+    );
 }
 
 #[test]
@@ -387,7 +419,10 @@ fn test_validation_with_some_layers_missing() {
     let repo = jin::git::JinRepo::open_at(&jin_dir).unwrap();
     let result = jin::staging::validate_workspace_attached(&context, &repo);
 
-    assert!(result.is_err(), "Validation should fail when some layers are missing");
+    assert!(
+        result.is_err(),
+        "Validation should fail when some layers are missing"
+    );
 
     match result {
         Err(jin::core::error::JinError::DetachedWorkspace { .. }) => {
@@ -437,7 +472,10 @@ fn test_validation_error_messages_include_recovery_hints() {
     let result = jin::staging::validate_workspace_attached(&context, &repo);
     match result {
         Err(jin::core::error::JinError::DetachedWorkspace { recovery_hint, .. }) => {
-            assert!(!recovery_hint.is_empty(), "Recovery hint should not be empty");
+            assert!(
+                !recovery_hint.is_empty(),
+                "Recovery hint should not be empty"
+            );
             assert!(
                 recovery_hint.contains("activate") || recovery_hint.contains("apply"),
                 "Recovery hint should suggest an action, got: {}",

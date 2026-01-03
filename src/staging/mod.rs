@@ -15,4 +15,7 @@ pub use gitignore::{ensure_in_managed_block, remove_from_managed_block};
 pub use index::StagingIndex;
 pub use metadata::WorkspaceMetadata;
 pub use router::{route_to_layer, validate_routing_options, RoutingOptions};
-pub use workspace::{get_file_mode, is_git_tracked, is_symlink, read_file, validate_workspace_attached, walk_directory};
+pub use workspace::{
+    get_file_mode, is_git_tracked, is_symlink, read_file, validate_workspace_attached,
+    walk_directory,
+};

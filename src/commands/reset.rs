@@ -5,7 +5,9 @@
 use crate::cli::ResetArgs;
 use crate::core::{JinError, Layer, ProjectContext, Result};
 use crate::git::JinRepo;
-use crate::staging::{remove_from_managed_block, StagedEntry, StagingIndex, validate_workspace_attached};
+use crate::staging::{
+    remove_from_managed_block, validate_workspace_attached, StagedEntry, StagingIndex,
+};
 use std::io::{self, Write};
 
 /// Reset mode enumeration

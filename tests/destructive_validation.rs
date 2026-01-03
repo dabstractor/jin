@@ -43,7 +43,11 @@ fn init_jin_project(jin_dir: &PathBuf) -> Result<(), Box<dyn std::error::Error>>
 }
 
 /// Helper to stage a file and commit it to create a proper workspace state
-fn setup_tracked_file(fixture: &TestFixture, file_path: &str, content: &[u8]) -> Result<(), Box<dyn std::error::Error>> {
+fn setup_tracked_file(
+    fixture: &TestFixture,
+    file_path: &str,
+    content: &[u8],
+) -> Result<(), Box<dyn std::error::Error>> {
     use jin::git::JinRepo;
     use jin::staging::WorkspaceMetadata;
 
@@ -101,13 +105,19 @@ fn test_reset_hard_rejected_when_files_modified() {
         force: true, // Skip confirmation for test
     });
 
-    assert!(result.is_err(), "reset --hard should fail when files are modified");
+    assert!(
+        result.is_err(),
+        "reset --hard should fail when files are modified"
+    );
 
     // Verify it's a DetachedWorkspace error
     match result {
         Err(jin::core::error::JinError::DetachedWorkspace { details, .. }) => {
-            assert!(details.contains("modified") || details.contains("Workspace files"),
-                    "Error should mention file modification, got: {}", details);
+            assert!(
+                details.contains("modified") || details.contains("Workspace files"),
+                "Error should mention file modification, got: {}",
+                details
+            );
         }
         _ => panic!("Expected DetachedWorkspace error, got: {:?}", result),
     }
@@ -154,13 +164,19 @@ fn test_reset_hard_rejected_when_layer_refs_missing() {
         force: true,
     });
 
-    assert!(result.is_err(), "reset --hard should fail when layer refs are missing");
+    assert!(
+        result.is_err(),
+        "reset --hard should fail when layer refs are missing"
+    );
 
     // Verify it's a DetachedWorkspace error about missing refs
     match result {
         Err(jin::core::error::JinError::DetachedWorkspace { details, .. }) => {
-            assert!(details.contains("no longer exist") || details.contains("Missing refs"),
-                    "Error should mention missing refs, got: {}", details);
+            assert!(
+                details.contains("no longer exist") || details.contains("Missing refs"),
+                "Error should mention missing refs, got: {}",
+                details
+            );
         }
         _ => panic!("Expected DetachedWorkspace error, got: {:?}", result),
     }
@@ -214,7 +230,10 @@ fn test_reset_hard_rejected_when_context_invalid() {
         force: true,
     });
 
-    assert!(result.is_err(), "reset --hard should fail when context is invalid");
+    assert!(
+        result.is_err(),
+        "reset --hard should fail when context is invalid"
+    );
 
     // Verify it's a DetachedWorkspace error
     match result {
@@ -257,7 +276,10 @@ fn test_reset_soft_skips_validation() {
         force: false,
     });
 
-    assert!(result.is_ok(), "reset --soft should skip validation and succeed");
+    assert!(
+        result.is_ok(),
+        "reset --soft should skip validation and succeed"
+    );
 }
 
 #[test]
@@ -292,7 +314,10 @@ fn test_reset_mixed_skips_validation() {
         force: false,
     });
 
-    assert!(result.is_ok(), "reset --mixed should skip validation and succeed");
+    assert!(
+        result.is_ok(),
+        "reset --mixed should skip validation and succeed"
+    );
 }
 
 // ============================================================================
@@ -325,13 +350,19 @@ fn test_apply_force_rejected_when_files_modified() {
         dry_run: false,
     });
 
-    assert!(result.is_err(), "apply --force should fail when files are modified");
+    assert!(
+        result.is_err(),
+        "apply --force should fail when files are modified"
+    );
 
     // Verify it's a DetachedWorkspace error
     match result {
         Err(jin::core::error::JinError::DetachedWorkspace { details, .. }) => {
-            assert!(details.contains("modified") || details.contains("Workspace files"),
-                    "Error should mention file modification, got: {}", details);
+            assert!(
+                details.contains("modified") || details.contains("Workspace files"),
+                "Error should mention file modification, got: {}",
+                details
+            );
         }
         _ => panic!("Expected DetachedWorkspace error, got: {:?}", result),
     }
@@ -372,13 +403,19 @@ fn test_apply_force_rejected_when_layer_refs_missing() {
         dry_run: false,
     });
 
-    assert!(result.is_err(), "apply --force should fail when layer refs are missing");
+    assert!(
+        result.is_err(),
+        "apply --force should fail when layer refs are missing"
+    );
 
     // Verify it's a DetachedWorkspace error about missing refs
     match result {
         Err(jin::core::error::JinError::DetachedWorkspace { details, .. }) => {
-            assert!(details.contains("no longer exist") || details.contains("Missing refs"),
-                    "Error should mention missing refs, got: {}", details);
+            assert!(
+                details.contains("no longer exist") || details.contains("Missing refs"),
+                "Error should mention missing refs, got: {}",
+                details
+            );
         }
         _ => panic!("Expected DetachedWorkspace error, got: {:?}", result),
     }
@@ -426,7 +463,10 @@ fn test_apply_force_rejected_when_context_invalid() {
         dry_run: false,
     });
 
-    assert!(result.is_err(), "apply --force should fail when context is invalid");
+    assert!(
+        result.is_err(),
+        "apply --force should fail when context is invalid"
+    );
 
     // Verify it's a DetachedWorkspace error
     match result {
@@ -466,11 +506,16 @@ fn test_apply_without_force_skips_validation() {
     // Should fail with "Workspace has uncommitted changes" error, not DetachedWorkspace
     match result {
         Err(jin::core::error::JinError::Other(msg)) => {
-            assert!(msg.contains("uncommitted changes"),
-                    "Should get 'uncommitted changes' error, got: {}", msg);
+            assert!(
+                msg.contains("uncommitted changes"),
+                "Should get 'uncommitted changes' error, got: {}",
+                msg
+            );
         }
         Err(jin::core::error::JinError::DetachedWorkspace { .. }) => {
-            panic!("apply without --force should NOT validate workspace, got DetachedWorkspace error");
+            panic!(
+                "apply without --force should NOT validate workspace, got DetachedWorkspace error"
+            );
         }
         _ => panic!("Expected 'uncommitted changes' error, got: {:?}", result),
     }
@@ -515,9 +560,15 @@ fn test_reset_hard_error_includes_recovery_hint() {
     // Check error includes recovery hint
     match result {
         Err(jin::core::error::JinError::DetachedWorkspace { recovery_hint, .. }) => {
-            assert!(!recovery_hint.is_empty(), "Recovery hint should not be empty");
-            assert!(recovery_hint.contains("apply") || recovery_hint.contains("activate"),
-                    "Recovery hint should suggest an action, got: {}", recovery_hint);
+            assert!(
+                !recovery_hint.is_empty(),
+                "Recovery hint should not be empty"
+            );
+            assert!(
+                recovery_hint.contains("apply") || recovery_hint.contains("activate"),
+                "Recovery hint should suggest an action, got: {}",
+                recovery_hint
+            );
         }
         _ => panic!("Expected DetachedWorkspace error with recovery hint"),
     }
@@ -552,9 +603,15 @@ fn test_apply_force_error_includes_recovery_hint() {
     // Check error includes recovery hint
     match result {
         Err(jin::core::error::JinError::DetachedWorkspace { recovery_hint, .. }) => {
-            assert!(!recovery_hint.is_empty(), "Recovery hint should not be empty");
-            assert!(recovery_hint.contains("apply") || recovery_hint.contains("activate"),
-                    "Recovery hint should suggest an action, got: {}", recovery_hint);
+            assert!(
+                !recovery_hint.is_empty(),
+                "Recovery hint should not be empty"
+            );
+            assert!(
+                recovery_hint.contains("apply") || recovery_hint.contains("activate"),
+                "Recovery hint should suggest an action, got: {}",
+                recovery_hint
+            );
         }
         _ => panic!("Expected DetachedWorkspace error with recovery hint"),
     }

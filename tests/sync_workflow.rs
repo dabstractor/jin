@@ -288,8 +288,14 @@ fn test_push_uploads_commits() -> Result<(), Box<dyn std::error::Error>> {
         .env("JIN_DIR", &jin_dir)
         .output()?;
     eprintln!("DEBUG: Push output status: {}", output.status);
-    eprintln!("DEBUG: Push stdout: {}", String::from_utf8_lossy(&output.stdout));
-    eprintln!("DEBUG: Push stderr: {}", String::from_utf8_lossy(&output.stderr));
+    eprintln!(
+        "DEBUG: Push stdout: {}",
+        String::from_utf8_lossy(&output.stdout)
+    );
+    eprintln!(
+        "DEBUG: Push stderr: {}",
+        String::from_utf8_lossy(&output.stderr)
+    );
     assert!(output.status.success(), "Push should succeed");
 
     // DEBUG: Check refs in remote after push
@@ -409,7 +415,10 @@ fn test_push_rejected_when_behind() -> Result<(), Box<dyn std::error::Error>> {
 
     // Now try to push again - should be rejected (local is behind)
     // First create a new local commit
-    fs::write(remote_fixture.local_path.join("local2.txt"), "local2 content")?;
+    fs::write(
+        remote_fixture.local_path.join("local2.txt"),
+        "local2 content",
+    )?;
 
     jin()
         .args(["add", "local2.txt", "--mode"])
@@ -497,7 +506,11 @@ fn test_push_succeeds_with_force_when_behind() -> Result<(), Box<dyn std::error:
 
     // Step 2: In local repo, create divergent commit on same layer
     jin()
-        .args(["link", remote_fixture.remote_path.to_str().unwrap(), "--force"])
+        .args([
+            "link",
+            remote_fixture.remote_path.to_str().unwrap(),
+            "--force",
+        ])
         .current_dir(&remote_fixture.local_path)
         .env("JIN_DIR", &jin_dir)
         .assert()
@@ -782,7 +795,10 @@ fn test_push_rejected_when_divergent() -> Result<(), Box<dyn std::error::Error>>
     remote_ref.set_target(remote_commit_oid, "Remote divergent update")?;
 
     // Step 3: Create divergent commit in local
-    fs::write(remote_fixture.local_path.join("local_divergent.txt"), "local divergent content")?;
+    fs::write(
+        remote_fixture.local_path.join("local_divergent.txt"),
+        "local divergent content",
+    )?;
 
     jin()
         .args(["add", "local_divergent.txt", "--mode"])

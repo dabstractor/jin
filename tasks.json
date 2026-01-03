@@ -499,14 +499,14 @@
               "type": "Task",
               "id": "P1.M3.T4",
               "title": "Add Detached State Detection to Repair Command",
-              "status": "Planned",
+              "status": "Complete",
               "description": "Extend the repair command with --check flag to detect and report detached workspace states. This provides users with a diagnostic tool when they encounter detached workspace errors.",
               "subtasks": [
                 {
                   "type": "Subtask",
                   "id": "P1.M3.T4.S1",
                   "title": "Add --check flag to repair command",
-                  "status": "Planned",
+                  "status": "Complete",
                   "story_points": 1,
                   "dependencies": [],
                   "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: repair command exists at src/commands/repair.rs (plan/architecture/codebase_analysis.md Section 2, Gap #3).\n2. INPUT: RepairArgs struct.\n3. LOGIC: Add 'check: bool' field to RepairArgs in src/cli/mod.rs. Default to false. In repair::execute(), if check is true, run diagnostic checks and report issues without fixing them. Add 'jin repair --check' command to CLI.\n4. OUTPUT: New repair --check command for diagnostics."
@@ -515,7 +515,7 @@
                   "type": "Subtask",
                   "id": "P1.M3.T4.S2",
                   "title": "Implement detached state check",
-                  "status": "Planned",
+                  "status": "Complete",
                   "story_points": 1,
                   "dependencies": [
                     "P1.M3.T4.S1",

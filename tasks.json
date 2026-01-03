@@ -69,14 +69,14 @@
               "type": "Task",
               "id": "P1.M1.T2",
               "title": "Modify Apply Command to Write .jinmerge Files",
-              "status": "Planned",
+              "status": "Complete",
               "description": "Replace the current abort-on-conflict behavior in jin apply with .jinmerge file creation workflow. When conflicts are detected, write .jinmerge files and pause the operation instead of failing.",
               "subtasks": [
                 {
                   "type": "Subtask",
                   "id": "P1.M1.T2.S1",
                   "title": "Refactor conflict detection to collect merge results",
-                  "status": "Planned",
+                  "status": "Complete",
                   "story_points": 1,
                   "dependencies": [
                     "P1.M1.T1.S4"
@@ -87,7 +87,7 @@
                   "type": "Subtask",
                   "id": "P1.M1.T2.S2",
                   "title": "Generate .jinmerge files for each conflict",
-                  "status": "Planned",
+                  "status": "Complete",
                   "story_points": 1,
                   "dependencies": [
                     "P1.M1.T2.S1"
@@ -98,7 +98,7 @@
                   "type": "Subtask",
                   "id": "P1.M1.T2.S3",
                   "title": "Update apply command to pause instead of abort",
-                  "status": "Planned",
+                  "status": "Complete",
                   "story_points": 1,
                   "dependencies": [
                     "P1.M1.T2.S2"
@@ -109,7 +109,7 @@
                   "type": "Subtask",
                   "id": "P1.M1.T2.S4",
                   "title": "Create conflict state tracking file",
-                  "status": "Planned",
+                  "status": "Complete",
                   "story_points": 1,
                   "dependencies": [
                     "P1.M1.T2.S3"

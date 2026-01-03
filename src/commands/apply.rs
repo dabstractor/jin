@@ -4,10 +4,63 @@
 
 use crate::cli::ApplyArgs;
 use crate::core::{JinError, ProjectContext, Result};
-use crate::git::{JinRepo, ObjectOps};
+use crate::git::{JinRepo, ObjectOps, RefOps, TreeOps};
+use crate::merge::jinmerge::JinMergeConflict;
 use crate::merge::{get_applicable_layers, merge_layers, FileFormat, LayerMergeConfig};
 use crate::staging::{ensure_in_managed_block, WorkspaceMetadata};
-use std::path::Path;
+use chrono::{DateTime, Utc};
+use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
+use std::path::{Path, PathBuf};
+
+/// State for a paused apply operation due to conflicts
+#[derive(Debug, Clone, Serialize, Deserialize)]
+struct PausedApplyState {
+    /// When the operation was paused
+    timestamp: DateTime<Utc>,
+    /// Layer configuration used for the merge attempt
+    layer_config: PausedLayerConfig,
+    /// Files with conflicts (original paths, not .jinmerge paths)
+    conflict_files: Vec<PathBuf>,
+    /// Files that were successfully applied
+    applied_files: Vec<PathBuf>,
+    /// Number of conflicts total
+    conflict_count: usize,
+}
+
+/// Simplified layer config for serialization
+#[derive(Debug, Clone, Serialize, Deserialize)]
+struct PausedLayerConfig {
+    /// Layer names as strings
+    layers: Vec<String>,
+    /// Active mode, if any
+    mode: Option<String>,
+    /// Active scope, if any
+    scope: Option<String>,
+    /// Project name
+    project: Option<String>,
+}
+
+impl PausedApplyState {
+    /// Save state to `.jin/.paused_apply.yaml`
+    fn save(&self) -> Result<()> {
+        let path = PathBuf::from(".jin/.paused_apply.yaml");
+        let content = serde_yaml::to_string(self)
+            .map_err(|e| JinError::Other(format!("Failed to serialize paused state: {}", e)))?;
+
+        // Atomic write pattern
+        let temp_path = path.with_extension("tmp");
+        std::fs::write(&temp_path, content).map_err(JinError::Io)?;
+        std::fs::rename(&temp_path, &path).map_err(JinError::Io)?;
+
+        Ok(())
+    }
+
+    /// Check if a paused operation exists
+    fn exists() -> bool {
+        PathBuf::from(".jin/.paused_apply.yaml").exists()
+    }
+}
 
 /// Execute the apply command
 ///
@@ -60,8 +113,10 @@ pub fn execute(args: ApplyArgs) -> Result<()> {
     };
     let merged = merge_layers(&config, &repo)?;
 
-    // 6. Check for conflicts
-    if !merged.conflict_files.is_empty() {
+    // 6. Check for conflicts and prepare paused state if needed
+    let has_conflicts = !merged.conflict_files.is_empty();
+
+    if has_conflicts {
         eprintln!(
             "Merge conflicts detected in {} files:",
             merged.conflict_files.len()
@@ -69,22 +124,46 @@ pub fn execute(args: ApplyArgs) -> Result<()> {
         for path in &merged.conflict_files {
             eprintln!("  - {}", path.display());
         }
-        return Err(JinError::Other(format!(
-            "Cannot apply due to {} merge conflicts",
-            merged.conflict_files.len()
-        )));
     }
 
     // 7. Preview mode - show diff and exit
     if args.dry_run {
+        if has_conflicts {
+            eprintln!();
+            eprintln!("Use --force to apply non-conflicting files, or resolve conflicts first.");
+        }
         preview_changes(&merged)?;
         return Ok(());
     }
 
-    // 8. Apply to workspace
+    // 8. Apply to workspace (non-conflicting files only)
     apply_to_workspace(&merged, &repo)?;
 
-    // 9. Update workspace metadata
+    // 9. Handle conflicts if any
+    if has_conflicts {
+        // Handle conflicts: generate .jinmerge files and save state
+        let paused_state = handle_conflicts(&merged.conflict_files, &config, &merged.merged_files)?;
+
+        eprintln!();
+        eprintln!("Created .jinmerge files for manual resolution:");
+        for conflict_path in &merged.conflict_files {
+            let merge_path = JinMergeConflict::merge_path_for_file(conflict_path);
+            eprintln!("  - {}", merge_path.display());
+        }
+
+        // Save paused state
+        paused_state.save()?;
+
+        eprintln!();
+        eprintln!("Operation paused. Resolve conflicts with:");
+        eprintln!("  jin resolve <file>");
+        eprintln!();
+        eprintln!("For more information, run: jin status");
+
+        return Ok(());
+    }
+
+    // 10. Update workspace metadata (only if no conflicts)
     let mut metadata = WorkspaceMetadata::new();
     metadata.applied_layers = config.layers.iter().map(|l| l.to_string()).collect();
     for (path, merged_file) in &merged.merged_files {
@@ -95,14 +174,14 @@ pub fn execute(args: ApplyArgs) -> Result<()> {
     }
     metadata.save()?;
 
-    // 10. Update .gitignore managed block
+    // 11. Update .gitignore managed block
     for path in merged.merged_files.keys() {
         if let Err(e) = ensure_in_managed_block(path) {
             eprintln!("Warning: Could not update .gitignore: {}", e);
         }
     }
 
-    // 11. Report results
+    // 12. Report results
     println!("Applied {} files to workspace", merged.merged_files.len());
     if !merged.added_files.is_empty() {
         println!("  Added: {}", merged.added_files.len());
@@ -112,6 +191,123 @@ pub fn execute(args: ApplyArgs) -> Result<()> {
     }
 
     Ok(())
+}
+
+/// Handle merge conflicts by generating .jinmerge files and creating paused state
+///
+/// # Arguments
+///
+/// * `conflict_files` - List of files that have conflicts
+/// * `config` - Layer merge configuration
+/// * `merged_files` - Successfully merged files (for tracking in state)
+///
+/// # Returns
+///
+/// PausedApplyState with conflict information
+fn handle_conflicts(
+    conflict_files: &[PathBuf],
+    config: &LayerMergeConfig,
+    merged_files: &HashMap<PathBuf, crate::merge::MergedFile>,
+) -> Result<PausedApplyState> {
+    // Collect successfully applied files
+    let applied_files: Vec<PathBuf> = merged_files.keys().cloned().collect();
+
+    for conflict_path in conflict_files {
+        // Get the two conflicting layer contents
+        let (layer1_ref, layer1_content, layer2_ref, layer2_content) =
+            get_conflicting_layer_contents(conflict_path, config)?;
+
+        // Create .jinmerge file
+        let merge_conflict = JinMergeConflict::from_text_merge(
+            conflict_path.clone(),
+            layer1_ref,
+            layer1_content,
+            layer2_ref,
+            layer2_content,
+        );
+
+        let merge_path = JinMergeConflict::merge_path_for_file(conflict_path);
+        merge_conflict.write_to_file(&merge_path)?;
+    }
+
+    // Create paused state
+    Ok(PausedApplyState {
+        timestamp: Utc::now(),
+        layer_config: PausedLayerConfig {
+            layers: config.layers.iter().map(|l| l.to_string()).collect(),
+            mode: config.mode.clone(),
+            scope: config.scope.clone(),
+            project: config.project.clone(),
+        },
+        conflict_files: conflict_files.to_vec(),
+        applied_files,
+        conflict_count: conflict_files.len(),
+    })
+}
+
+/// Get content from the two conflicting layers for a file
+///
+/// Iterates layers in REVERSE (highest precedence first) to find the first
+/// TWO layers that contain the conflicting file.
+///
+/// # Returns
+///
+/// (layer1_ref, layer1_content, layer2_ref, layer2_content)
+/// where layer1 is lower precedence (ours) and layer2 is higher (theirs)
+fn get_conflicting_layer_contents(
+    file_path: &Path,
+    config: &LayerMergeConfig,
+) -> Result<(String, String, String, String)> {
+    let repo = JinRepo::open()?;
+    let mut layer_refs = Vec::new();
+
+    // Iterate layers in REVERSE (highest precedence first)
+    for layer in config.layers.iter().rev() {
+        let ref_path = layer.ref_path(
+            config.mode.as_deref(),
+            config.scope.as_deref(),
+            config.project.as_deref(),
+        );
+
+        if repo.ref_exists(&ref_path) {
+            if let Ok(commit_oid) = repo.resolve_ref(&ref_path) {
+                let commit = repo.inner().find_commit(commit_oid)?;
+                let tree_oid = commit.tree_id();
+
+                if let Ok(content) = repo.read_file_from_tree(tree_oid, file_path) {
+                    let content_str = String::from_utf8_lossy(&content).to_string();
+
+                    // Create short layer label (strip "refs/jin/layers/" prefix)
+                    let short_label = ref_path
+                        .strip_prefix("refs/jin/layers/")
+                        .unwrap_or(&ref_path)
+                        .to_string();
+
+                    layer_refs.push((short_label, content_str));
+
+                    if layer_refs.len() >= 2 {
+                        break; // Got the two conflicting layers
+                    }
+                }
+            }
+        }
+    }
+
+    if layer_refs.len() < 2 {
+        return Err(JinError::Other(format!(
+            "Could not find two layers for conflict: {}",
+            file_path.display()
+        )));
+    }
+
+    // layer_refs[0] is higher precedence (theirs)
+    // layer_refs[1] is lower precedence (ours)
+    Ok((
+        layer_refs[1].0.clone(), // layer1_ref (ours)
+        layer_refs[1].1.clone(), // layer1_content
+        layer_refs[0].0.clone(), // layer2_ref (theirs)
+        layer_refs[0].1.clone(), // layer2_content
+    ))
 }
 
 /// Apply merged files to workspace

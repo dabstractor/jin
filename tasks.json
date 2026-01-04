@@ -1037,7 +1037,7 @@
       "type": "Phase",
       "id": "P3",
       "title": "Phase 3: Polish and Documentation",
-      "status": "Planned",
+      "status": "Complete",
       "description": "Address low-priority gaps including staging index TODOs, JIN_DIR documentation, and any remaining polish items to complete 100% PRD compliance.",
       "milestones": [
         {
@@ -1082,7 +1082,7 @@
           "type": "Milestone",
           "id": "P3.M2",
           "title": "Milestone 3.2: JIN_DIR Documentation",
-          "status": "Planned",
+          "status": "Complete",
           "description": "Document the JIN_DIR environment variable in user-facing documentation. Add config command to view/set Jin directory location.",
           "tasks": [
             {
@@ -1107,14 +1107,14 @@
               "type": "Task",
               "id": "P3.M2.T2",
               "title": "Add Config Command",
-              "status": "Planned",
+              "status": "Complete",
               "description": "Implement a 'jin config' command to view and set Jin configuration options, including the Jin directory location.",
               "subtasks": [
                 {
                   "type": "Subtask",
                   "id": "P3.M2.T2.S1",
                   "title": "Add config CLI arguments",
-                  "status": "Planned",
+                  "status": "Complete",
                   "story_points": 1,
                   "dependencies": [],
                   "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: Follow clap derive pattern (plan/architecture/external_deps.md Section 1.6).\n2. INPUT: User command line input.\n3. LOGIC: Add ConfigArgs struct to src/cli/mod.rs with optional fields: 'get: Option<String>' for retrieving config values, 'set: Option<Vec<String>>' for setting key=value pairs. Add '--jin-dir <path>' flag for setting Jin directory. Derive Parser.\n4. OUTPUT: ConfigArgs struct for config command."
@@ -1123,7 +1123,7 @@
                   "type": "Subtask",
                   "id": "P3.M2.T2.S2",
                   "title": "Implement config get command",
-                  "status": "Planned",
+                  "status": "Complete",
                   "story_points": 1,
                   "dependencies": [
                     "P3.M2.T2.S1"
@@ -1134,7 +1134,7 @@
                   "type": "Subtask",
                   "id": "P3.M2.T2.S3",
                   "title": "Implement config set command",
-                  "status": "Planned",
+                  "status": "Complete",
                   "story_points": 2,
                   "dependencies": [
                     "P3.M2.T2.S2"

@@ -122,6 +122,10 @@ pub enum Commands {
         #[arg(value_enum)]
         shell: Shell,
     },
+
+    /// View/edit Jin configuration
+    #[command(subcommand)]
+    Config(ConfigAction),
 }
 
 /// Mode subcommands
@@ -177,4 +181,23 @@ pub enum ScopeAction {
     Show,
     /// Deactivate current scope
     Unset,
+}
+
+/// Config subcommands
+#[derive(Subcommand, Debug)]
+pub enum ConfigAction {
+    /// List all configuration values
+    List,
+    /// Get a specific configuration value
+    Get {
+        /// Configuration key (e.g., remote.url, user.name, jin-dir)
+        key: String,
+    },
+    /// Set a configuration value
+    Set {
+        /// Configuration key (e.g., remote.url, user.name)
+        key: String,
+        /// Configuration value
+        value: String,
+    },
 }

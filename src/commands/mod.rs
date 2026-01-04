@@ -9,6 +9,7 @@ pub mod add;
 pub mod apply;
 pub mod commit_cmd;
 pub mod completion;
+pub mod config;
 pub mod context;
 pub mod diff;
 pub mod export;
@@ -61,5 +62,6 @@ pub fn execute(cli: Cli) -> Result<()> {
         Commands::Push(args) => push::execute(args),
         Commands::Sync => sync::execute(),
         Commands::Completion { shell } => completion::execute(shell),
+        Commands::Config(action) => config::execute(action),
     }
 }

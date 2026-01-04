@@ -90,6 +90,12 @@ impl WorkspaceMetadata {
 
     /// Get the default path for workspace metadata
     pub fn default_path() -> PathBuf {
+        // Check JIN_DIR environment variable first for test isolation
+        if let Ok(jin_dir) = std::env::var("JIN_DIR") {
+            return PathBuf::from(jin_dir)
+                .join("workspace")
+                .join("last_applied.json");
+        }
         PathBuf::from(".jin")
             .join("workspace")
             .join("last_applied.json")

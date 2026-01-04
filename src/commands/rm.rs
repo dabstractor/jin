@@ -396,8 +396,7 @@ mod tests {
 
     #[test]
     fn test_execute_project_without_mode() {
-        let ctx = crate::test_utils::setup_unit_test();
-        let project_path = &ctx.project_path;
+        let _ctx = crate::test_utils::setup_unit_test();
 
         let args = RmArgs {
             files: vec!["file.txt".to_string()],
@@ -414,8 +413,7 @@ mod tests {
 
     #[test]
     fn test_execute_global_with_mode() {
-        let ctx = crate::test_utils::setup_unit_test();
-        let project_path = &ctx.project_path;
+        let _ctx = crate::test_utils::setup_unit_test();
 
         let args = RmArgs {
             files: vec!["file.txt".to_string()],

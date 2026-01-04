@@ -106,10 +106,11 @@ pub fn execute(args: ExportArgs) -> Result<()> {
 /// 1. Validate file is Jin-tracked
 /// 2. Remove from .gitignore managed block (before git add)
 /// 3. Remove from Jin staging
-/// 4. Add to Git index
+/// 4. Extract from layer if committed and not in workspace
+/// 5. Add to Git index
 fn export_file(path: &Path, staging: &mut StagingIndex, repo: &JinRepo) -> Result<()> {
-    // 1. Validate file is Jin-tracked
-    validate_jin_tracked(path, staging, repo)?;
+    // 1. Validate file is Jin-tracked and check if it's committed
+    let is_committed = validate_jin_tracked(path, staging, repo)?;
 
     // 2. Remove from .gitignore managed block FIRST (before git add)
     // If this fails, we should still continue - the user can manually fix .gitignore
@@ -127,10 +128,56 @@ fn export_file(path: &Path, staging: &mut StagingIndex, repo: &JinRepo) -> Resul
         staging.remove(path);
     }
 
-    // 4. Add to Git index (now that it's not in .gitignore)
+    // 4. For committed files not in workspace, extract from layer
+    if is_committed && !path.exists() {
+        extract_file_from_layer(path, repo)?;
+    }
+
+    // 5. Add to Git index (now that it's not in .gitignore)
     add_to_git(path)?;
 
     Ok(())
+}
+
+/// Extract a file from its committed layer to the workspace
+fn extract_file_from_layer(path: &Path, repo: &JinRepo) -> Result<()> {
+    let file_name = path
+        .file_name()
+        .and_then(|n| n.to_str())
+        .ok_or_else(|| JinError::Other("Invalid file path".to_string()))?;
+
+    let jinmap = JinMap::load()?;
+
+    // Find the file in any layer that contains it
+    for layer_ref in jinmap.layer_refs() {
+        if let Some(files) = jinmap.get_layer_files(layer_ref) {
+            if files.contains(&file_name.to_string()) && repo.ref_exists(layer_ref) {
+                let commit_oid = repo.resolve_ref(layer_ref)?;
+                let commit = repo.find_commit(commit_oid)?;
+                let tree_oid = commit.tree_id();
+
+                // Read file content from tree
+                let content = repo.read_file_from_tree(tree_oid, Path::new(file_name))?;
+
+                // Create parent directory if needed
+                if let Some(parent) = path.parent() {
+                    std::fs::create_dir_all(parent)
+                        .map_err(JinError::Io)?;
+                }
+
+                // Write file to workspace
+                std::fs::write(path, content)
+                    .map_err(JinError::Io)?;
+
+                return Ok(());
+            }
+        }
+    }
+
+    Err(JinError::Other(format!(
+        "Could not extract {} from any layer",
+        path.display()
+    )))
 }
 
 /// Validate that a file is Jin-tracked
@@ -138,15 +185,17 @@ fn export_file(path: &Path, staging: &mut StagingIndex, repo: &JinRepo) -> Resul
 /// A file is considered Jin-tracked if it exists in:
 /// 1. The staging index (files staged for commit), or
 /// 2. Any committed Jin layer (files in JinMap)
-fn validate_jin_tracked(path: &Path, staging: &StagingIndex, repo: &JinRepo) -> Result<()> {
-    // Check if file exists
-    if !path.exists() {
-        return Err(JinError::NotFound(path.display().to_string()));
-    }
-
+///
+/// Returns `Ok(true)` if the file is committed (not in staging),
+/// `Ok(false)` if the file is in staging, or an error if not Jin-tracked.
+fn validate_jin_tracked(path: &Path, staging: &StagingIndex, repo: &JinRepo) -> Result<bool> {
     // Check if file is in staging index (fast path)
     if staging.get(path).is_some() {
-        return Ok(());
+        // For staged files, verify file exists in workspace
+        if !path.exists() {
+            return Err(JinError::NotFound(path.display().to_string()));
+        }
+        return Ok(false); // File is in staging (not committed)
     }
 
     // File not in staging - check JinMap for committed files
@@ -164,25 +213,23 @@ fn validate_jin_tracked(path: &Path, staging: &StagingIndex, repo: &JinRepo) -> 
         )));
     }
 
-    // Verify file exists in committed layer tree
+    // For committed files, verify file exists in committed layer tree
+    // The file doesn't need to exist in the workspace for committed files
     let _context = ProjectContext::load()
         .map_err(|_| JinError::Other("Jin not initialized. Run 'jin init' first.".to_string()))?;
 
     // Find the file in any layer that contains it
     for layer_ref in jinmap.layer_refs() {
         if let Some(files) = jinmap.get_layer_files(layer_ref) {
-            if files.contains(&file_name.to_string()) {
-                // Found the file in this layer - verify it exists in tree
-                if repo.ref_exists(layer_ref) {
-                    let commit_oid = repo.resolve_ref(layer_ref)?;
-                    let commit = repo.find_commit(commit_oid)?;
-                    let tree_oid = commit.tree_id();
+            if files.contains(&file_name.to_string()) && repo.ref_exists(layer_ref) {
+                let commit_oid = repo.resolve_ref(layer_ref)?;
+                let commit = repo.find_commit(commit_oid)?;
+                let tree_oid = commit.tree_id();
 
-                    // Read file from tree to verify it exists
-                    // Use just the filename for tree lookup (relative to tree root)
-                    repo.read_file_from_tree(tree_oid, Path::new(file_name))?;
-                    return Ok(()); // File found in committed layer
-                }
+                // Read file from tree to verify it exists
+                // Use just the filename for tree lookup (relative to tree root)
+                repo.read_file_from_tree(tree_oid, Path::new(file_name))?;
+                return Ok(true); // File found in committed layer
             }
         }
     }
@@ -272,7 +319,12 @@ mod tests {
         let staging = StagingIndex::new();
         let path = PathBuf::from("/nonexistent/file.txt");
         let result = validate_jin_tracked(&path, &staging, &repo);
-        assert!(matches!(result, Err(JinError::NotFound(_))));
+        // File that doesn't exist and isn't in JinMap returns "not Jin-tracked"
+        assert!(result.is_err());
+        assert!(result
+            .unwrap_err()
+            .to_string()
+            .contains("is not Jin-tracked"));
     }
 
     #[test]
@@ -334,17 +386,19 @@ mod tests {
         let mut jinmap = JinMap::default();
         jinmap.add_layer_mapping("refs/jin/layers/global", vec!["config.json".to_string()]);
 
-        // Save to temp directory
-        let original_dir = std::env::current_dir().unwrap();
-        std::env::set_current_dir(temp.path()).unwrap();
-        std::fs::create_dir_all(".jin").unwrap();
-        let jinmap_path = PathBuf::from(".jin/.jinmap");
+        // Set up JIN_DIR for test isolation
+        let jin_dir = temp.path().join(".jin");
+        std::env::set_var("JIN_DIR", &jin_dir);
+        std::fs::create_dir_all(&jin_dir).unwrap();
+
+        // Save JinMap to JIN_DIR
+        let jinmap_path = jin_dir.join(".jinmap");
         let content = serde_yaml::to_string(&jinmap).unwrap();
         std::fs::write(jinmap_path, content).unwrap();
 
         // Create .jin/context file
         let context = ProjectContext::default();
-        let context_path = PathBuf::from(".jin/context");
+        let context_path = jin_dir.join("context");
         let context_content = serde_yaml::to_string(&context).unwrap();
         std::fs::write(context_path, context_content).unwrap();
 
@@ -362,8 +416,8 @@ mod tests {
         }
         assert!(result.is_ok());
 
-        // Always restore directory
-        let _ = std::env::set_current_dir(original_dir);
+        // Clean up JIN_DIR
+        std::env::remove_var("JIN_DIR");
     }
 
     #[test]
@@ -377,18 +431,20 @@ mod tests {
         let repo_path = temp.path().join(".jin");
         let repo = JinRepo::create_at(&repo_path).unwrap();
 
+        // Set up JIN_DIR for test isolation
+        let jin_dir = temp.path().join(".jin");
+        std::env::set_var("JIN_DIR", &jin_dir);
+        std::fs::create_dir_all(&jin_dir).unwrap();
+
         // Create empty JinMap
-        let original_dir = std::env::current_dir().unwrap();
-        std::env::set_current_dir(temp.path()).unwrap();
-        std::fs::create_dir_all(".jin").unwrap();
         let jinmap = JinMap::default();
-        let jinmap_path = PathBuf::from(".jin/.jinmap");
+        let jinmap_path = jin_dir.join(".jinmap");
         let content = serde_yaml::to_string(&jinmap).unwrap();
         std::fs::write(jinmap_path, content).unwrap();
 
         // Create .jin/context file
         let context = ProjectContext::default();
-        let context_path = PathBuf::from(".jin/context");
+        let context_path = jin_dir.join("context");
         let context_content = serde_yaml::to_string(&context).unwrap();
         std::fs::write(context_path, context_content).unwrap();
 
@@ -403,8 +459,8 @@ mod tests {
             .to_string()
             .contains("is not Jin-tracked"));
 
-        // Always restore directory
-        let _ = std::env::set_current_dir(original_dir);
+        // Clean up JIN_DIR
+        std::env::remove_var("JIN_DIR");
     }
 
     #[test]

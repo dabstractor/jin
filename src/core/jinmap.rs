@@ -135,6 +135,10 @@ impl JinMap {
 
     /// Get the default path for the JinMap file
     pub fn default_path() -> PathBuf {
+        // Check JIN_DIR environment variable first for test isolation
+        if let Ok(jin_dir) = std::env::var("JIN_DIR") {
+            return PathBuf::from(jin_dir).join(".jinmap");
+        }
         PathBuf::from(".jin").join(".jinmap")
     }
 

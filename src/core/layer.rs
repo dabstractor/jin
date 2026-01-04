@@ -12,17 +12,17 @@ use serde::{Deserialize, Serialize};
 pub enum Layer {
     /// Layer 1: Shared defaults (jin/global/)
     GlobalBase,
-    /// Layer 2: Mode defaults (jin/mode/<mode>/)
+    /// Layer 2: Mode defaults (jin/mode/`<mode>/`)
     ModeBase,
-    /// Layer 3: Scoped mode configs (jin/mode/<mode>/scope/<scope>/)
+    /// Layer 3: Scoped mode configs (jin/mode/`<mode>`/scope/`<scope>/`)
     ModeScope,
     /// Layer 4: Project overrides for scoped mode
     ModeScopeProject,
-    /// Layer 5: Project overrides for mode (jin/mode/<mode>/project/<project>/)
+    /// Layer 5: Project overrides for mode (jin/mode/`<mode>`/project/`<project>/`)
     ModeProject,
-    /// Layer 6: Untethered scope configs (jin/scope/<scope>/)
+    /// Layer 6: Untethered scope configs (jin/scope/`<scope>/`)
     ScopeBase,
-    /// Layer 7: Project-only configs (jin/project/<project>/)
+    /// Layer 7: Project-only configs (jin/project/`<project>/`)
     ProjectBase,
     /// Layer 8: Machine-only overlays (~/.jin/local/)
     UserLocal,

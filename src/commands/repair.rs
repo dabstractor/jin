@@ -371,11 +371,11 @@ fn rebuild_staging_index(index_path: &PathBuf) -> Result<()> {
 fn check_jinmap(args: &RepairArgs, issues_found: &mut Vec<String>, issues_fixed: &mut Vec<String>) {
     print!("Checking .jinmap... ");
 
-    let jinmap_path = PathBuf::from(".jin").join(".jinmap");
+    let jinmap_path = crate::core::JinMap::default_path();
 
     if !jinmap_path.exists() {
         // .jinmap is optional, but if .jin/ exists it should have one
-        let jin_dir = PathBuf::from(".jin");
+        let jin_dir = jinmap_path.parent().map(|p| p.to_path_buf()).unwrap_or_else(|| PathBuf::from(".jin"));
         if jin_dir.exists() && jin_dir.is_dir() {
             println!("✗");
             let issue = ".jinmap missing".to_string();

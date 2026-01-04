@@ -577,7 +577,7 @@
       "type": "Phase",
       "id": "P2",
       "title": "Phase 2: Feature Completeness and Test Suite",
-      "status": "Planned",
+      "status": "Complete",
       "description": "Address medium-priority gaps for feature completeness (3-way merge in pull, export committed files, active context notifications) and fix the 12 failing unit tests to achieve 100% test reliability.",
       "milestones": [
         {
@@ -706,7 +706,7 @@
           "type": "Milestone",
           "id": "P2.M2",
           "title": "Milestone 2.2: Export Committed Files",
-          "status": "Planned",
+          "status": "Complete",
           "description": "Extend the export command to support exporting files that were committed to layers (not just files currently in staging). This uses JinMap for fast lookups of layer contents.",
           "tasks": [
             {
@@ -753,14 +753,14 @@
               "type": "Task",
               "id": "P2.M2.T2",
               "title": "Add Integration Tests for Export Committed Files",
-              "status": "Planned",
+              "status": "Complete",
               "description": "Create integration tests for exporting committed files without re-staging. Tests must verify JinMap lookups and layer content extraction.",
               "subtasks": [
                 {
                   "type": "Subtask",
                   "id": "P2.M2.T2.S1",
                   "title": "Test export committed file without staging",
-                  "status": "Planned",
+                  "status": "Complete",
                   "story_points": 1,
                   "dependencies": [
                     "P2.M2.T1.S3"
@@ -771,7 +771,7 @@
                   "type": "Subtask",
                   "id": "P2.M2.T2.S2",
                   "title": "Test export rejects untracked files",
-                  "status": "Planned",
+                  "status": "Complete",
                   "story_points": 1,
                   "dependencies": [
                     "P2.M2.T2.S1"

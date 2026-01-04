@@ -66,6 +66,10 @@ impl StagingIndex {
 
     /// Get the default path for the staging index
     pub fn default_path() -> PathBuf {
+        // Check JIN_DIR environment variable first for test isolation
+        if let Ok(jin_dir) = std::env::var("JIN_DIR") {
+            return PathBuf::from(jin_dir).join("staging").join("index.json");
+        }
         PathBuf::from(".jin").join("staging").join("index.json")
     }
 

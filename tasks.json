@@ -1089,14 +1089,14 @@
               "type": "Task",
               "id": "P3.M2.T1",
               "title": "Document JIN_DIR in README",
-              "status": "Planned",
+              "status": "Complete",
               "description": "Add documentation to README.md explaining the JIN_DIR environment variable, its default location, and how to customize it.",
               "subtasks": [
                 {
                   "type": "Subtask",
                   "id": "P3.M2.T1.S1",
                   "title": "Add JIN_DIR section to README",
-                  "status": "Planned",
+                  "status": "Complete",
                   "story_points": 1,
                   "dependencies": [],
                   "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: PRD Section 19.1 mentions JIN_DIR (plan/architecture/codebase_analysis.md Section 2, Gap #8).\n2. INPUT: README.md file.\n3. LOGIC: Add 'Configuration' section to README with 'JIN_DIR Environment Variable' subsection. Explain: default location (~/.jin/), how to override (export JIN_DIR=/path/to/jin), use cases (multiple Jin repos, per-project Jin), and that tests use it for isolation. Add examples.\n4. OUTPUT: User-facing documentation for JIN_DIR."

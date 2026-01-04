@@ -174,6 +174,128 @@ Layer 1: Global Base (shared defaults, lowest precedence)
 
 For detailed explanation, see [Layer System Documentation](docs/LAYER_SYSTEM.md).
 
+## Configuration Directory
+
+Jin stores its internal Git repository and configuration data in a directory controlled by the `JIN_DIR` environment variable.
+
+### Default Location
+
+By default, Jin uses:
+- **Linux/macOS**: `~/.jin/`
+- **Windows**: `%USERPROFILE%\.jin\`
+
+This directory contains:
+- `config.toml` - Global Jin configuration (remote URL, user settings)
+- Internal Git repository - Stores layers, refs, and objects
+- Cached data and metadata
+
+### Customizing JIN_DIR
+
+You can override the default location by setting the `JIN_DIR` environment variable before running Jin commands:
+
+```bash
+# Set custom Jin directory
+export JIN_DIR="/custom/path/to/jin"
+
+# All subsequent Jin commands use this location
+jin init
+jin mode create dev
+```
+
+**Important**: `JIN_DIR` must be set **before** running any Jin commands, as it is read at process startup.
+
+### Use Cases
+
+**Different Drive or Partition**:
+Store Jin data on a different drive to save space on your system drive:
+
+```bash
+# Linux/macOS
+export JIN_DIR="/mnt/storage/jin"
+
+# Windows (PowerShell)
+$env:JIN_DIR = "D:\jin"
+```
+
+**Network Storage**:
+Share Jin configuration across multiple machines via network mount:
+
+```bash
+export JIN_DIR="/mnt/network-shared/jin"
+```
+
+**Isolated Testing**:
+Create separate Jin environments for testing without affecting your main setup:
+
+```bash
+# Create test environment
+export JIN_DIR="/tmp/jin-test"
+git init test-project && cd test-project
+jin init
+# ... run tests ...
+
+# Return to production (uses default ~/.jin/)
+unset JIN_DIR
+```
+
+**CI/CD Environments**:
+Configure Jin for CI pipelines with non-standard home directories:
+
+```bash
+# GitLab CI, GitHub Actions, etc.
+export JIN_DIR="$CI_PROJECT_DIR/.jin"
+jin sync
+```
+
+### Making JIN_DIR Persistent
+
+To make `JIN_DIR` persist across shell sessions, add it to your shell configuration:
+
+**Bash** (`~/.bashrc` or `~/.bash_profile`):
+```bash
+export JIN_DIR="$HOME/.local/share/jin"
+```
+
+**Zsh** (`~/.zshrc`):
+```bash
+export JIN_DIR="$HOME/.local/share/jin"
+```
+
+**Fish** (`~/.config/fish/config.fish`):
+```fish
+set -x JIN_DIR "$HOME/.local/share/jin"
+```
+
+**PowerShell** (`$PROFILE`):
+```powershell
+$env:JIN_DIR = "$env:USERPROFILE\.local\share\jin"
+```
+
+After adding to your shell config, reload your shell or run `source ~/.bashrc` (or equivalent).
+
+### Directory Structure
+
+Inside `JIN_DIR`, you'll find:
+
+```
+$JIN_DIR/
+├── config.toml           # Global configuration (remote URL, user info)
+├── refs/                 # Git references
+│   └── jin/             # Jin-specific refs (layers, modes, scopes)
+├── objects/             # Git objects (blobs, trees, commits)
+└── jin/                 # Jin metadata (if present)
+```
+
+This is a standard **bare Git repository** structure, which you can inspect with Git commands:
+
+```bash
+# List all Jin layers
+git --git-dir=$JIN_DIR show-ref | grep refs/jin/layers
+
+# View Jin configuration
+cat $JIN_DIR/config.toml
+```
+
 ## Example Use Cases
 
 ### Developer Configuration

@@ -147,7 +147,8 @@ pub fn setup_unit_test() -> UnitTestContext {
     cleanup_before_test(&jin_dir);
 
     // Initialize Jin repository (before setting current directory)
-    let _ = JinRepo::open_or_create();
+    // CRITICAL: Don't ignore the result - the repo MUST be initialized
+    JinRepo::open_or_create().expect("Failed to initialize Jin repository");
 
     // CRITICAL: Create .jin directory structure using absolute path
     // Do this BEFORE setting current directory to avoid relative path issues
@@ -164,10 +165,14 @@ pub fn setup_unit_test() -> UnitTestContext {
     // CRITICAL: Set current directory for tests that expect it
     // (Tests must use #[serial] attribute to prevent conflicts)
     // We do this AFTER creating all directories using absolute paths
-    std::env::set_current_dir(&project_path).expect("Failed to set current directory");
+    // Use unwrap_or to handle case where current dir was deleted by previous test
+    if std::env::set_current_dir(&project_path).is_err() {
+        panic!("Failed to set current directory to {:?}", project_path);
+    }
 
-    // Create empty staging index (many tests expect this to exist)
-    let staging_dir = project_path.join(".jin/staging");
+    // Create empty staging index at the JIN_DIR location (where StagingIndex looks)
+    // Note: JIN_DIR is jin_dir, NOT project_path/.jin
+    let staging_dir = jin_dir.join("staging");
     std::fs::create_dir_all(&staging_dir).expect("Failed to create staging directory");
     std::fs::write(staging_dir.join("index.json"), "{}").expect("Failed to create staging index");
 

@@ -304,6 +304,7 @@ mod tests {
     use super::*;
     use crate::core::Layer;
     use crate::staging::StagedEntry;
+    use serial_test::serial;
     use std::sync::Mutex;
     use tempfile::TempDir;
 
@@ -363,14 +364,19 @@ mod tests {
     }
 
     #[test]
+    #[serial]
     fn test_validate_jin_tracked_committed_file() {
         let _lock = TEST_LOCK.lock(); // Serialize with other directory-changing tests
 
         let temp = TempDir::new().unwrap();
 
-        // Create Jin repo
-        let repo_path = temp.path().join(".jin");
-        let repo = JinRepo::create_at(&repo_path).unwrap();
+        // Set up JIN_DIR for test isolation FIRST
+        let jin_dir = temp.path().join(".jin_global");
+        std::env::set_var("JIN_DIR", &jin_dir);
+        std::fs::create_dir_all(&jin_dir).unwrap();
+
+        // Create Jin repo using JIN_DIR
+        let repo = JinRepo::open_or_create().unwrap();
 
         // Create a test file in a layer
         use crate::git::ObjectOps;
@@ -386,21 +392,22 @@ mod tests {
         let mut jinmap = JinMap::default();
         jinmap.add_layer_mapping("refs/jin/layers/global", vec!["config.json".to_string()]);
 
-        // Set up JIN_DIR for test isolation
-        let jin_dir = temp.path().join(".jin");
-        std::env::set_var("JIN_DIR", &jin_dir);
-        std::fs::create_dir_all(&jin_dir).unwrap();
-
         // Save JinMap to JIN_DIR
         let jinmap_path = jin_dir.join(".jinmap");
         let content = serde_yaml::to_string(&jinmap).unwrap();
         std::fs::write(jinmap_path, content).unwrap();
 
-        // Create .jin/context file
+        // Save original directory (may fail if previous test left us in a deleted dir)
+        let original_dir = std::env::current_dir().ok();
+
+        // Change to temp directory so ProjectContext can find .jin/context
+        std::env::set_current_dir(temp.path()).unwrap();
+
+        // Create .jin/context file in temp directory (where ProjectContext looks)
+        let local_jin = temp.path().join(".jin");
+        std::fs::create_dir_all(&local_jin).unwrap();
         let context = ProjectContext::default();
-        let context_path = jin_dir.join("context");
-        let context_content = serde_yaml::to_string(&context).unwrap();
-        std::fs::write(context_path, context_content).unwrap();
+        context.save().unwrap();
 
         // Create physical file
         let file = temp.path().join("config.json");
@@ -416,11 +423,19 @@ mod tests {
         }
         assert!(result.is_ok());
 
+        // Always restore directory if we have a valid one
+        if let Some(ref dir) = original_dir {
+            if dir.exists() {
+                let _ = std::env::set_current_dir(dir);
+            }
+        }
+
         // Clean up JIN_DIR
         std::env::remove_var("JIN_DIR");
     }
 
     #[test]
+    #[serial]
     fn test_validate_jin_tracked_not_in_jinmap() {
         let _lock = TEST_LOCK.lock(); // Serialize with other directory-changing tests
 
@@ -472,6 +487,7 @@ mod tests {
     }
 
     #[test]
+    #[serial]
     fn test_execute_file_not_jin_tracked() {
         let _lock = TEST_LOCK.lock(); // Serialize with other directory-changing tests
 
@@ -481,8 +497,10 @@ mod tests {
         let jin_dir = temp.path().join(".jin_global");
         std::env::set_var("JIN_DIR", &jin_dir);
 
+        // Save original directory (may fail if previous test left us in a deleted dir)
+        let original_dir = std::env::current_dir().ok();
+
         // Change to temp directory
-        let original_dir = std::env::current_dir().unwrap();
         std::env::set_current_dir(temp.path()).unwrap();
 
         // Initialize Git repo
@@ -497,8 +515,12 @@ mod tests {
         };
         let result = execute(args);
 
-        // Always restore directory
-        let _ = std::env::set_current_dir(&original_dir);
+        // Always restore directory if we have a valid one
+        if let Some(ref dir) = original_dir {
+            if dir.exists() {
+                let _ = std::env::set_current_dir(dir);
+            }
+        }
 
         assert!(result.is_err());
         assert!(result
@@ -508,6 +530,7 @@ mod tests {
     }
 
     #[test]
+    #[serial]
     fn test_add_to_git_no_git_repo() {
         let _lock = TEST_LOCK.lock(); // Serialize with other directory-changing tests
 
@@ -520,20 +543,27 @@ mod tests {
         let file = temp.path().join("test.json");
         std::fs::write(&file, b"{}").unwrap();
 
+        // Save original directory (may fail if previous test left us in a deleted dir)
+        let original_dir = std::env::current_dir().ok();
+
         // Change to temp directory (no Git repo)
-        let original_dir = std::env::current_dir().unwrap();
         std::env::set_current_dir(temp.path()).unwrap();
 
         let result = add_to_git(&file);
 
-        // Always restore directory
-        let _ = std::env::set_current_dir(&original_dir);
+        // Always restore directory if we have a valid one
+        if let Some(ref dir) = original_dir {
+            if dir.exists() {
+                let _ = std::env::set_current_dir(dir);
+            }
+        }
 
         assert!(result.is_err());
         assert!(result.unwrap_err().to_string().contains("git add failed"));
     }
 
     #[test]
+    #[serial]
     fn test_add_to_git_success() {
         let _lock = TEST_LOCK.lock(); // Serialize with other directory-changing tests
 
@@ -544,8 +574,10 @@ mod tests {
         let jin_dir = temp.path().join(".jin_global");
         std::env::set_var("JIN_DIR", &jin_dir);
 
+        // Save original directory (may fail if previous test left us in a deleted dir)
+        let original_dir = std::env::current_dir().ok();
+
         // Change to temp directory and initialize Git repo
-        let original_dir = std::env::current_dir().unwrap();
         std::env::set_current_dir(&temp_path).unwrap();
 
         // Initialize Git repo
@@ -569,8 +601,12 @@ mod tests {
         // Use relative path since we're in the git repo directory
         let result = add_to_git(Path::new("test.json"));
 
-        // Always restore directory
-        let _ = std::env::set_current_dir(&original_dir);
+        // Always restore directory if we have a valid one
+        if let Some(ref dir) = original_dir {
+            if dir.exists() {
+                let _ = std::env::set_current_dir(dir);
+            }
+        }
 
         assert!(result.is_ok());
     }

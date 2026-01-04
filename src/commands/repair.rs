@@ -745,13 +745,14 @@ mod tests {
 
     /// Scope guard that restores the original directory when dropped
     struct DirGuard {
-        original_dir: PathBuf,
+        original_dir: Option<PathBuf>,
         _temp: TempDir, // Keep temp alive
     }
 
     impl DirGuard {
         fn new(temp: TempDir) -> Self {
-            let original_dir = std::env::current_dir().unwrap();
+            // current_dir() can fail if previous test left us in a deleted directory
+            let original_dir = std::env::current_dir().ok();
             std::env::set_current_dir(temp.path()).unwrap();
             Self {
                 original_dir,
@@ -762,7 +763,11 @@ mod tests {
 
     impl Drop for DirGuard {
         fn drop(&mut self) {
-            std::env::set_current_dir(&self.original_dir).ok();
+            if let Some(ref dir) = self.original_dir {
+                if dir.exists() {
+                    std::env::set_current_dir(dir).ok();
+                }
+            }
         }
     }
 
@@ -825,8 +830,12 @@ mod tests {
     fn test_check_staging_index_corrupted() {
         let temp = TempDir::new().unwrap();
 
-        // Create corrupted staging index in temp directory
-        let index_path = temp.path().join(".jin/staging/index.json");
+        // Set JIN_DIR to temp/.jin so StagingIndex looks there
+        let jin_dir = temp.path().join(".jin");
+        std::env::set_var("JIN_DIR", &jin_dir);
+
+        // Create corrupted staging index at JIN_DIR/staging/index.json
+        let index_path = jin_dir.join("staging").join("index.json");
         std::fs::create_dir_all(index_path.parent().unwrap()).unwrap();
         std::fs::write(&index_path, "invalid json").unwrap();
 
@@ -844,6 +853,8 @@ mod tests {
 
         assert_eq!(issues_found.len(), 1);
         assert!(issues_found[0].contains("corrupted"));
+
+        std::env::remove_var("JIN_DIR");
     }
 
     #[test]
@@ -919,8 +930,11 @@ mod tests {
     fn test_check_jinmap_invalid_yaml() {
         let temp = TempDir::new().unwrap();
 
-        // Create .jin directory and invalid .jinmap in temp directory
+        // Set JIN_DIR so JinMap::default_path() finds our file
         let jin_dir = temp.path().join(".jin");
+        std::env::set_var("JIN_DIR", &jin_dir);
+
+        // Create .jin directory and invalid .jinmap
         std::fs::create_dir_all(&jin_dir).unwrap();
         // Use content that YAML will actually reject - unclosed quote
         std::fs::write(jin_dir.join(".jinmap"), "key: \"unclosed").unwrap();
@@ -939,6 +953,8 @@ mod tests {
 
         assert_eq!(issues_found.len(), 1);
         assert!(issues_found[0].contains("not valid YAML"));
+
+        std::env::remove_var("JIN_DIR");
     }
 
     #[test]

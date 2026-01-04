@@ -290,6 +290,7 @@ fn count_files_in_layer(repo: &git2::Repository, ref_path: &str) -> Result<usize
 #[cfg(test)]
 mod tests {
     use super::*;
+    use serial_test::serial;
     use tempfile::TempDir;
 
     #[test]
@@ -311,9 +312,13 @@ mod tests {
     }
 
     #[test]
+    #[serial]
     fn test_check_for_conflicts_no_state() {
         let temp = TempDir::new().unwrap();
-        std::env::set_current_dir(temp.path()).unwrap();
+        // Set JIN_DIR to isolate this test
+        std::env::set_var("JIN_DIR", temp.path().join(".jin_global"));
+        // Use .ok() because current_dir() can fail if previous test left us in deleted dir
+        let _ = std::env::set_current_dir(temp.path());
 
         // No paused state file exists
         let result = check_for_conflicts();
@@ -321,6 +326,7 @@ mod tests {
     }
 
     #[test]
+    #[serial]
     fn test_check_for_conflicts_with_state() {
         use crate::commands::apply::PausedLayerConfig;
         use chrono::Utc;
@@ -329,7 +335,10 @@ mod tests {
 
         let temp = TempDir::new().unwrap();
         let temp_path = temp.path();
-        std::env::set_current_dir(temp_path).unwrap();
+        // Set JIN_DIR to isolate this test
+        std::env::set_var("JIN_DIR", temp_path.join(".jin_global"));
+        // Use .ok() because current_dir() can fail if previous test left us in deleted dir
+        let _ = std::env::set_current_dir(temp_path);
 
         // Create .jin directory using absolute path
         let jin_dir = temp_path.join(".jin");

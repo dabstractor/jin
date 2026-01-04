@@ -268,6 +268,7 @@ fn format_layer_name(layer: Layer) -> &'static str {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use serial_test::serial;
     use tempfile::TempDir;
 
     #[test]
@@ -330,6 +331,7 @@ mod tests {
     }
 
     #[test]
+    #[serial]
     fn test_move_file_not_staged() {
         let ctx = crate::test_utils::setup_unit_test();
         let project_path = &ctx.project_path;
@@ -352,6 +354,7 @@ mod tests {
     }
 
     #[test]
+    #[serial]
     fn test_move_file_destination_exists() {
         let ctx = crate::test_utils::setup_unit_test();
         let project_path = &ctx.project_path;
@@ -382,6 +385,7 @@ mod tests {
     }
 
     #[test]
+    #[serial]
     fn test_execute_project_without_mode() {
         let _ctx = crate::test_utils::setup_unit_test();
 
@@ -399,6 +403,7 @@ mod tests {
     }
 
     #[test]
+    #[serial]
     fn test_execute_global_with_mode() {
         let _ctx = crate::test_utils::setup_unit_test();
 
@@ -416,6 +421,7 @@ mod tests {
     }
 
     #[test]
+    #[serial]
     fn test_move_file_success() {
         let ctx = crate::test_utils::setup_unit_test();
         let project_path = &ctx.project_path;
@@ -453,6 +459,7 @@ mod tests {
     }
 
     #[test]
+    #[serial]
     fn test_execute_dry_run() {
         let ctx = crate::test_utils::setup_unit_test();
         let project_path = &ctx.project_path;

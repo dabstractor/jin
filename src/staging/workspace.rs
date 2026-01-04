@@ -401,6 +401,7 @@ pub fn validate_workspace_attached(context: &ProjectContext, repo: &JinRepo) -> 
 #[cfg(test)]
 mod tests {
     use super::*;
+    use serial_test::serial;
     use tempfile::TempDir;
 
     #[test]
@@ -539,9 +540,17 @@ mod tests {
     }
 
     #[test]
+    #[serial]
     fn test_validate_workspace_attached_fresh_workspace() {
         let temp = TempDir::new().unwrap();
-        std::env::set_current_dir(temp.path()).unwrap();
+
+        // Set JIN_DIR to isolate this test
+        let jin_dir = temp.path().join(".jin_global");
+        std::env::set_var("JIN_DIR", &jin_dir);
+        std::fs::create_dir_all(&jin_dir).unwrap();
+
+        // Use .ok() because current_dir() can fail if previous test left us in deleted dir
+        let _ = std::env::set_current_dir(temp.path());
 
         // Create a test repo
         let repo_path = temp.path().join(".jin");
@@ -551,6 +560,8 @@ mod tests {
         let context = ProjectContext::default();
         let result = validate_workspace_attached(&context, &repo);
         assert!(result.is_ok());
+
+        std::env::remove_var("JIN_DIR");
     }
 
     #[test]
@@ -565,9 +576,11 @@ mod tests {
     }
 
     #[test]
+    #[serial]
     fn test_detect_file_mismatch_missing_file() {
         let temp = TempDir::new().unwrap();
-        std::env::set_current_dir(temp.path()).unwrap();
+        // Use .ok() because current_dir() can fail if previous test left us in deleted dir
+        let _ = std::env::set_current_dir(temp.path());
         let repo_path = temp.path().join(".jin");
         let repo = JinRepo::create_at(&repo_path).unwrap();
 
@@ -580,9 +593,11 @@ mod tests {
     }
 
     #[test]
+    #[serial]
     fn test_detect_file_mismatch_modified_file() {
         let temp = TempDir::new().unwrap();
-        std::env::set_current_dir(temp.path()).unwrap();
+        // Use .ok() because current_dir() can fail if previous test left us in deleted dir
+        let _ = std::env::set_current_dir(temp.path());
         let repo_path = temp.path().join(".jin");
         let repo = JinRepo::create_at(&repo_path).unwrap();
 
@@ -607,9 +622,11 @@ mod tests {
     }
 
     #[test]
+    #[serial]
     fn test_detect_file_mismatch_no_mismatch() {
         let temp = TempDir::new().unwrap();
-        std::env::set_current_dir(temp.path()).unwrap();
+        // Use .ok() because current_dir() can fail if previous test left us in deleted dir
+        let _ = std::env::set_current_dir(temp.path());
         let repo_path = temp.path().join(".jin");
         let repo = JinRepo::create_at(&repo_path).unwrap();
 

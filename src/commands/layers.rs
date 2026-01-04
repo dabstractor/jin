@@ -138,10 +138,14 @@ mod tests {
         let jin_dir = temp.path().join(".jin_global");
         std::env::set_var("JIN_DIR", &jin_dir);
 
-        std::env::set_current_dir(temp.path()).unwrap();
+        // Create JIN_DIR
+        std::fs::create_dir_all(&jin_dir).unwrap();
+
+        // Change to temp directory (use .ok() in case previous test left us in deleted dir)
+        let _ = std::env::set_current_dir(temp.path());
 
         // Initialize .jin directory and context
-        std::fs::create_dir(".jin").unwrap();
+        std::fs::create_dir_all(temp.path().join(".jin")).unwrap();
         let context = ProjectContext::default();
         context.save().unwrap();
 

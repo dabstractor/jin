@@ -896,7 +896,8 @@ mod tests {
 
         assert_eq!(update.layer, Layer::ModeBase);
         assert_eq!(update.mode, Some("claude".to_string()));
-        assert_eq!(update.ref_path, "refs/jin/layers/mode/claude");
+        // ModeBase uses /_ suffix to avoid Git ref path conflicts with child refs
+        assert_eq!(update.ref_path, "refs/jin/layers/mode/claude/_");
         assert!(update.old_oid.is_none());
     }
 
@@ -1014,11 +1015,12 @@ mod tests {
         tx.commit().unwrap();
 
         // Verify both refs were created
+        // ModeBase uses /_ suffix to avoid Git ref path conflicts with child refs
         assert!(repo.ref_exists("refs/jin/layers/global"));
-        assert!(repo.ref_exists("refs/jin/layers/mode/claude"));
+        assert!(repo.ref_exists("refs/jin/layers/mode/claude/_"));
 
         let resolved1 = repo.resolve_ref("refs/jin/layers/global").unwrap();
-        let resolved2 = repo.resolve_ref("refs/jin/layers/mode/claude").unwrap();
+        let resolved2 = repo.resolve_ref("refs/jin/layers/mode/claude/_").unwrap();
         assert_eq!(resolved1, commit1);
         assert_eq!(resolved2, commit2);
 

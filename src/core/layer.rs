@@ -47,6 +47,13 @@ impl Layer {
     }
 
     /// Returns the Git ref path for this layer
+    ///
+    /// Note: Layers that can have child refs use `/_` suffix to avoid Git ref naming conflicts.
+    /// Git refs are files, so a ref can't exist at a path that has children.
+    /// For example, `refs/jin/layers/mode/claude` can't exist as a file if
+    /// `refs/jin/layers/mode/claude/project/foo` exists (which requires `claude` to be a directory).
+    /// The `/_` suffix solves this: `refs/jin/layers/mode/claude/_` can coexist with
+    /// `refs/jin/layers/mode/claude/project/foo`.
     pub fn ref_path(
         &self,
         mode: Option<&str>,
@@ -55,11 +62,14 @@ impl Layer {
     ) -> String {
         match self {
             Layer::GlobalBase => "refs/jin/layers/global".to_string(),
+            // ModeBase uses /_ suffix because ModeScope, ModeScopeProject, and ModeProject
+            // create refs under the mode directory
             Layer::ModeBase => {
-                format!("refs/jin/layers/mode/{}", mode.unwrap_or("default"))
+                format!("refs/jin/layers/mode/{}/_", mode.unwrap_or("default"))
             }
+            // ModeScope uses /_ suffix because ModeScopeProject creates refs under it
             Layer::ModeScope => format!(
-                "refs/jin/layers/mode/{}/scope/{}",
+                "refs/jin/layers/mode/{}/scope/{}/_",
                 mode.unwrap_or("default"),
                 scope.unwrap_or("default")
             ),
@@ -211,13 +221,15 @@ mod tests {
             Layer::GlobalBase.ref_path(None, None, None),
             "refs/jin/layers/global"
         );
+        // ModeBase uses /_ suffix to avoid conflict with child refs
         assert_eq!(
             Layer::ModeBase.ref_path(Some("claude"), None, None),
-            "refs/jin/layers/mode/claude"
+            "refs/jin/layers/mode/claude/_"
         );
+        // ModeScope uses /_ suffix to avoid conflict with ModeScopeProject refs
         assert_eq!(
             Layer::ModeScope.ref_path(Some("claude"), Some("language:javascript"), None),
-            "refs/jin/layers/mode/claude/scope/language:javascript"
+            "refs/jin/layers/mode/claude/scope/language:javascript/_"
         );
         assert_eq!(
             Layer::ProjectBase.ref_path(None, None, Some("ui-dashboard")),

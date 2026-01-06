@@ -111,6 +111,7 @@ impl Default for WorkspaceMetadata {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use serial_test::serial;
     use tempfile::TempDir;
 
     #[test]
@@ -177,6 +178,7 @@ mod tests {
     }
 
     #[test]
+    #[serial]
     fn test_workspace_metadata_load_not_found() {
         let temp = TempDir::new().unwrap();
         std::env::set_current_dir(temp.path()).unwrap();

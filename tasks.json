@@ -4,7 +4,7 @@
       "type": "Phase",
       "id": "P1",
       "title": "Jin CLI Bug Fixes & Missing Features",
-      "status": "Planned",
+      "status": "Researching",
       "description": "Address all critical bugs and missing features identified in the PRD test results, ensuring full CLI functionality and user experience improvements.",
       "milestones": [
         {
@@ -323,21 +323,21 @@
           "type": "Milestone",
           "id": "P1.M5",
           "title": "Documentation and Clarification Updates",
-          "status": "Planned",
+          "status": "Researching",
           "description": "Update documentation to clarify layer routing behavior and command usage.",
           "tasks": [
             {
               "type": "Task",
               "id": "P1.M5.T1",
               "title": "Clarify --project Flag Behavior",
-              "status": "Researching",
+              "status": "Complete",
               "description": "Document that --project targets Layer 5 (ModeProject) not Layer 7, and jin add (no flags) targets Layer 7.",
               "subtasks": [
                 {
                   "type": "Subtask",
                   "id": "P1.M5.T1.S1",
                   "title": "Update --project help text in AddArgs",
-                  "status": "Researching",
+                  "status": "Complete",
                   "story_points": 0.5,
                   "dependencies": [],
                   "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: PRD shows confusion about --project accessing Layer 7. Actually, no flags = Layer 7, --project + --mode = Layer 5. See plan/architecture/identified_issues.md.\n2. INPUT: None - documentation update.\n3. LOGIC: Update the help attribute for project field in AddArgs from current text to: 'Add to mode-project layer (Layer 5, requires --mode). For project-base layer (Layer 7), use: jin add <file> without flags'.\n4. OUTPUT: Clearer help text explaining --project behavior."
@@ -348,14 +348,14 @@
               "type": "Task",
               "id": "P1.M5.T2",
               "title": "Add Layer Routing Reference to Help Output",
-              "status": "Planned",
+              "status": "Researching",
               "description": "Add a quick reference showing which flags route to which layers.",
               "subtasks": [
                 {
                   "type": "Subtask",
                   "id": "P1.M5.T2.S1",
                   "title": "Add after_help with layer routing table to AddArgs",
-                  "status": "Planned",
+                  "status": "Researching",
                   "story_points": 1,
                   "dependencies": [
                     "P1.M5.T1.S1"

@@ -16,7 +16,7 @@ pub struct AddArgs {
     #[arg(long)]
     pub scope: Option<String>,
 
-    /// Target project layer
+    /// Add to mode-project layer (Layer 5, requires --mode). For project-base layer (Layer 7), use: jin add <file> without flags
     #[arg(long)]
     pub project: bool,
 

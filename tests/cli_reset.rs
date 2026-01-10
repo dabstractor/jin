@@ -350,7 +350,11 @@ fn test_reset_hard_force_in_detached_state() {
 
     // ================== STEP 4: ADD ANOTHER FILE TO STAGING ==================
     // Now add a different file to staging so reset has something to operate on
-    fs::write(project_path.join("settings.json"), r#"{"setting": "value"}"#).unwrap();
+    fs::write(
+        project_path.join("settings.json"),
+        r#"{"setting": "value"}"#,
+    )
+    .unwrap();
 
     jin()
         .args(["add", "settings.json"])

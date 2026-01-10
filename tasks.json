@@ -177,7 +177,7 @@
           "type": "Milestone",
           "id": "P1.M3",
           "title": "Improve Mode Switching UX",
-          "status": "Planned",
+          "status": "Researching",
           "description": "Eliminate the detached state issue when switching modes by auto-clearing workspace metadata.",
           "tasks": [
             {
@@ -213,14 +213,14 @@
               "type": "Task",
               "id": "P1.M3.T2",
               "title": "Auto-Clear Workspace Metadata on Scope Switch",
-              "status": "Researching",
+              "status": "Complete",
               "description": "Apply the same metadata clearing logic when switching scopes.",
               "subtasks": [
                 {
                   "type": "Subtask",
                   "id": "P1.M3.T2.S1",
                   "title": "Add metadata clearing logic to scope use handler",
-                  "status": "Researching",
+                  "status": "Complete",
                   "story_points": 1,
                   "dependencies": [
                     "P1.M3.T1.S2"
@@ -233,14 +233,14 @@
               "type": "Task",
               "id": "P1.M3.T3",
               "title": "Add Integration Tests for Mode/Scope Switching",
-              "status": "Planned",
+              "status": "Researching",
               "description": "Create tests verifying smooth mode/scope switching without detached state.",
               "subtasks": [
                 {
                   "type": "Subtask",
                   "id": "P1.M3.T3.S1",
                   "title": "Create mode switching workflow test",
-                  "status": "Planned",
+                  "status": "Researching",
                   "story_points": 2,
                   "dependencies": [
                     "P1.M3.T1.S2",

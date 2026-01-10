@@ -3,6 +3,7 @@
 use crate::cli::ScopeAction;
 use crate::core::{JinError, ProjectContext, Result};
 use crate::git::{JinRepo, ObjectOps, RefOps};
+use crate::staging::metadata::WorkspaceMetadata;
 
 /// Execute a scope subcommand
 pub fn execute(action: ScopeAction) -> Result<()> {
@@ -180,6 +181,50 @@ fn use_scope(name: &str) -> Result<()> {
 
     // Save context
     context.save()?;
+
+    // Load workspace metadata (may not exist yet)
+    let metadata = match WorkspaceMetadata::load() {
+        Ok(meta) => Some(meta),
+        Err(JinError::NotFound(_)) => None, // Fresh workspace - no metadata yet
+        Err(e) => return Err(e),            // Other errors should propagate
+    };
+
+    // Extract scope from metadata if present
+    if let Some(meta) = &metadata {
+        // Find scope layer in applied_layers (format: "scope/{name}")
+        // IMPORTANT: Exclude mode+scope layers like "mode/production/scope/backend"
+        let metadata_scope = meta
+            .applied_layers
+            .iter()
+            .find(|layer| layer.starts_with("scope/") && !layer.starts_with("mode/"))
+            .and_then(|layer| layer.strip_prefix("scope/"))
+            .and_then(|s| s.split('/').next());
+
+        // Compare with new scope
+        if let Some(old_scope) = metadata_scope {
+            if old_scope != name {
+                // Scopes differ - clear metadata to prevent detached state
+                let metadata_path = WorkspaceMetadata::default_path();
+                if metadata_path.exists() {
+                    std::fs::remove_file(&metadata_path)?;
+                    println!(
+                        "Cleared workspace metadata (scope changed from '{}' to '{}').",
+                        old_scope, name
+                    );
+                    println!("Run 'jin apply' to apply new scope configuration.");
+                }
+            }
+        } else {
+            // No scope layer in metadata (only global or mode layers)
+            // Clear metadata since we're now activating a scope
+            let metadata_path = WorkspaceMetadata::default_path();
+            if metadata_path.exists() {
+                std::fs::remove_file(&metadata_path)?;
+                println!("Cleared workspace metadata (activating scope '{}').", name);
+                println!("Run 'jin apply' to apply new scope configuration.");
+            }
+        }
+    }
 
     println!("Activated scope '{}'", name);
     println!("Stage files with: jin add --scope={}", name);

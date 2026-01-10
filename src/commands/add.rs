@@ -52,6 +52,7 @@ pub fn execute(args: AddArgs) -> Result<()> {
         scope: args.scope.clone(),
         project: args.project,
         global: args.global,
+        local: args.local,
     };
     validate_routing_options(&options)?;
 
@@ -199,12 +200,10 @@ fn format_layer_name_with_context(layer: Layer, context: &ProjectContext) -> Str
                 "mode-base".to_string()
             }
         }
-        Layer::ModeScope => {
-            match (&context.mode, &context.scope) {
-                (Some(mode), Some(scope)) => format!("'{}/{}' (mode/scope)", mode, scope),
-                _ => "mode-scope".to_string(),
-            }
-        }
+        Layer::ModeScope => match (&context.mode, &context.scope) {
+            (Some(mode), Some(scope)) => format!("'{}/{}' (mode/scope)", mode, scope),
+            _ => "mode-scope".to_string(),
+        },
         Layer::ModeScopeProject => "mode-scope-project".to_string(),
         Layer::ModeProject => {
             if let Some(ref mode) = context.mode {

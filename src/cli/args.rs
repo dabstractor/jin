@@ -111,6 +111,10 @@ pub struct RmArgs {
     #[arg(long)]
     pub global: bool,
 
+    /// Target user-local layer (Layer 8, machine-specific)
+    #[arg(long)]
+    pub local: bool,
+
     /// Skip confirmation prompt for workspace deletion
     #[arg(long, short = 'f')]
     pub force: bool,
@@ -141,6 +145,10 @@ pub struct MvArgs {
     /// Target global layer
     #[arg(long)]
     pub global: bool,
+
+    /// Target user-local layer (Layer 8, machine-specific)
+    #[arg(long)]
+    pub local: bool,
 
     /// Skip confirmation prompt for workspace moves
     #[arg(long, short = 'f')]

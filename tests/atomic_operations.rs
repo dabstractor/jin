@@ -269,8 +269,14 @@ fn test_reset_atomic() -> Result<(), Box<dyn std::error::Error>> {
     // Verify staging contains files (staging is at JIN_DIR)
     let staging_path = jin_dir.join("staging/index.json");
     let staging_content = fs::read_to_string(&staging_path)?;
-    assert!(staging_content.contains("file1.txt"), "Staging should contain file1.txt");
-    assert!(staging_content.contains("file2.txt"), "Staging should contain file2.txt");
+    assert!(
+        staging_content.contains("file1.txt"),
+        "Staging should contain file1.txt"
+    );
+    assert!(
+        staging_content.contains("file2.txt"),
+        "Staging should contain file2.txt"
+    );
 
     // Reset (should clear all staged files atomically)
     jin()
@@ -282,8 +288,14 @@ fn test_reset_atomic() -> Result<(), Box<dyn std::error::Error>> {
 
     // Verify all files removed from staging
     let staging_after = fs::read_to_string(&staging_path).unwrap_or_default();
-    assert!(!staging_after.contains("file1.txt"), "Staging should not contain file1.txt");
-    assert!(!staging_after.contains("file2.txt"), "Staging should not contain file2.txt");
+    assert!(
+        !staging_after.contains("file1.txt"),
+        "Staging should not contain file1.txt"
+    );
+    assert!(
+        !staging_after.contains("file2.txt"),
+        "Staging should not contain file2.txt"
+    );
 
     Ok(())
 }
@@ -457,7 +469,10 @@ fn test_jin_directory_integrity() -> Result<(), Box<dyn std::error::Error>> {
         .success();
 
     // Now staging directory should exist
-    assert!(staging_dir.exists(), "Staging directory should exist after add");
+    assert!(
+        staging_dir.exists(),
+        "Staging directory should exist after add"
+    );
 
     jin()
         .args(["commit", "-m", "Test"])
@@ -504,8 +519,14 @@ fn test_operations_isolated() -> Result<(), Box<dyn std::error::Error>> {
     // Both should be staged (staging is at JIN_DIR)
     let staging_path = jin_dir.join("staging/index.json");
     let staging_content = fs::read_to_string(&staging_path)?;
-    assert!(staging_content.contains("file1.txt"), "Staging should contain file1.txt");
-    assert!(staging_content.contains("file2.txt"), "Staging should contain file2.txt");
+    assert!(
+        staging_content.contains("file1.txt"),
+        "Staging should contain file1.txt"
+    );
+    assert!(
+        staging_content.contains("file2.txt"),
+        "Staging should contain file2.txt"
+    );
 
     // Commit should include both
     jin()
@@ -516,8 +537,14 @@ fn test_operations_isolated() -> Result<(), Box<dyn std::error::Error>> {
         .success();
 
     let staging_after = fs::read_to_string(&staging_path).unwrap_or_default();
-    assert!(!staging_after.contains("file1.txt"), "Staging should not contain file1.txt");
-    assert!(!staging_after.contains("file2.txt"), "Staging should not contain file2.txt");
+    assert!(
+        !staging_after.contains("file1.txt"),
+        "Staging should not contain file1.txt"
+    );
+    assert!(
+        !staging_after.contains("file2.txt"),
+        "Staging should not contain file2.txt"
+    );
 
     Ok(())
 }

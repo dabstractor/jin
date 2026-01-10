@@ -51,6 +51,7 @@ pub fn execute(args: RmArgs) -> Result<()> {
         scope: args.scope.clone(),
         project: args.project,
         global: args.global,
+        local: args.local,
     };
     validate_routing_options(&options)?;
 
@@ -217,6 +218,7 @@ mod tests {
             scope: None,
             project: false,
             global: false,
+            local: false,
             force: false,
             dry_run: false,
         };
@@ -235,6 +237,7 @@ mod tests {
             scope: None,
             project: false,
             global: false,
+            local: false,
             force: false,
             dry_run: false,
         };
@@ -262,6 +265,7 @@ mod tests {
             scope: None,
             project: false,
             global: false,
+            local: false,
             force: false,
             dry_run: false,
         };
@@ -298,6 +302,7 @@ mod tests {
             scope: None,
             project: false,
             global: false,
+            local: false,
             force: false,
             dry_run: false,
         };
@@ -342,6 +347,7 @@ mod tests {
             scope: None,
             project: false,
             global: false,
+            local: false,
             force: true,
             dry_run: false,
         };
@@ -387,6 +393,7 @@ mod tests {
             scope: None,
             project: false,
             global: false,
+            local: false,
             force: false,
             dry_run: true,
         };
@@ -410,6 +417,7 @@ mod tests {
             scope: None,
             project: true,
             global: false,
+            local: false,
             force: false,
             dry_run: false,
         };
@@ -428,6 +436,7 @@ mod tests {
             scope: None,
             project: false,
             global: true,
+            local: false,
             force: false,
             dry_run: false,
         };

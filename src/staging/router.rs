@@ -13,6 +13,8 @@ pub struct RoutingOptions {
     pub project: bool,
     /// Target global layer
     pub global: bool,
+    /// Target user-local layer (Layer 8)
+    pub local: bool,
 }
 
 /// Determine the target layer for a file based on routing options

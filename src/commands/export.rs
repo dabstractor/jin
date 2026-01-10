@@ -161,13 +161,11 @@ fn extract_file_from_layer(path: &Path, repo: &JinRepo) -> Result<()> {
 
                 // Create parent directory if needed
                 if let Some(parent) = path.parent() {
-                    std::fs::create_dir_all(parent)
-                        .map_err(JinError::Io)?;
+                    std::fs::create_dir_all(parent).map_err(JinError::Io)?;
                 }
 
                 // Write file to workspace
-                std::fs::write(path, content)
-                    .map_err(JinError::Io)?;
+                std::fs::write(path, content).map_err(JinError::Io)?;
 
                 return Ok(());
             }

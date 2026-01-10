@@ -14,8 +14,8 @@ fn test_list_empty_repository() {
     let fixture = TestFixture::new().unwrap();
     let jin_dir = fixture.path().join(".jin");
 
-    // Initialize the Jin repository
-    jin_init(fixture.path(), None).unwrap();
+    // Initialize the Jin repository with the same JIN_DIR that list will use
+    jin_init(fixture.path(), Some(&jin_dir)).unwrap();
 
     jin()
         .arg("list")
@@ -38,8 +38,8 @@ fn test_list_with_modes() {
     let fixture = TestFixture::new().unwrap();
     let jin_dir = fixture.path().join(".jin");
 
-    // Initialize the Jin repository
-    jin_init(fixture.path(), None).unwrap();
+    // Initialize the Jin repository with the same JIN_DIR
+    jin_init(fixture.path(), Some(&jin_dir)).unwrap();
 
     // Create and activate a mode
     jin()
@@ -91,8 +91,8 @@ fn test_list_with_all_categories() {
     let fixture = TestFixture::new().unwrap();
     let jin_dir = fixture.path().join(".jin");
 
-    // Initialize project context
-    jin_init(fixture.path(), None).unwrap();
+    // Initialize project context with the same JIN_DIR
+    jin_init(fixture.path(), Some(&jin_dir)).unwrap();
 
     // Create a mode and add files to it
     jin()
@@ -226,8 +226,8 @@ fn test_list_shows_usage_hints() {
     let fixture = TestFixture::new().unwrap();
     let jin_dir = fixture.path().join(".jin");
 
-    // Initialize the Jin repository
-    jin_init(fixture.path(), None).unwrap();
+    // Initialize the Jin repository with the same JIN_DIR
+    jin_init(fixture.path(), Some(&jin_dir)).unwrap();
 
     // Create a mode with files
     jin()
@@ -282,8 +282,8 @@ fn test_list_with_mode_bound_scopes() {
     let fixture = TestFixture::new().unwrap();
     let jin_dir = fixture.path().join(".jin");
 
-    // Initialize the Jin repository
-    jin_init(fixture.path(), None).unwrap();
+    // Initialize the Jin repository with the same JIN_DIR
+    jin_init(fixture.path(), Some(&jin_dir)).unwrap();
 
     // Create a mode
     jin()
@@ -370,8 +370,8 @@ fn test_list_empty_categories_hidden() {
     let fixture = TestFixture::new().unwrap();
     let jin_dir = fixture.path().join(".jin");
 
-    // Initialize the Jin repository
-    jin_init(fixture.path(), None).unwrap();
+    // Initialize the Jin repository with the same JIN_DIR
+    jin_init(fixture.path(), Some(&jin_dir)).unwrap();
 
     // Create only modes (no scopes or projects)
     jin()

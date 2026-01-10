@@ -20,23 +20,29 @@ pub fn execute() -> Result<()> {
 
     let git_repo = repo.inner();
 
-    // Enumerate all refs under refs/jin/layers/
-    let refs = match git_repo.references_glob("refs/jin/layers/**") {
-        Ok(r) => r,
-        Err(e) => {
-            return Err(JinError::Git(e));
-        }
-    };
-
     // Parse ref paths to extract mode/scope/project names
     let mut modes = HashSet::new();
     let mut scopes = HashSet::new();
     let mut projects = HashSet::new();
 
-    for ref_result in refs {
-        let reference = ref_result?;
-        if let Some(name) = reference.name() {
-            parse_ref_path(name, &mut modes, &mut scopes, &mut projects);
+    // Enumerate all refs under refs/jin/layers/
+    if let Ok(refs) = git_repo.references_glob("refs/jin/layers/**") {
+        for ref_result in refs {
+            let reference = ref_result?;
+            if let Some(name) = reference.name() {
+                parse_ref_path(name, &mut modes, &mut scopes, &mut projects);
+            }
+        }
+    }
+
+    // Also enumerate mode refs from refs/jin/modes/
+    // Modes are stored at refs/jin/modes/{name}/_mode
+    if let Ok(refs) = git_repo.references_glob("refs/jin/modes/**") {
+        for ref_result in refs {
+            let reference = ref_result?;
+            if let Some(name) = reference.name() {
+                parse_mode_ref(name, &mut modes, &mut scopes);
+            }
         }
     }
 
@@ -144,6 +150,34 @@ fn parse_ref_path(
     }
 }
 
+/// Parse mode refs from refs/jin/modes/ namespace
+///
+/// Modes are stored at refs/jin/modes/{name}/_mode
+/// Mode-bound scopes are at refs/jin/modes/{mode}/scopes/{scope}/_scope
+fn parse_mode_ref(ref_path: &str, modes: &mut HashSet<String>, scopes: &mut HashSet<String>) {
+    if !ref_path.starts_with("refs/jin/modes/") {
+        return;
+    }
+
+    let path = &ref_path["refs/jin/modes/".len()..];
+    let parts: Vec<&str> = path.split('/').collect();
+
+    match parts.as_slice() {
+        [mode, "_mode"] => {
+            // refs/jin/modes/{mode}/_mode
+            modes.insert(mode.to_string());
+        }
+        [mode, "scopes", scope, "_scope"] => {
+            // refs/jin/modes/{mode}/scopes/{scope}/_scope
+            modes.insert(mode.to_string());
+            scopes.insert(scope.to_string());
+        }
+        _ => {
+            // Ignore other patterns (e.g., intermediate directories)
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -241,5 +275,45 @@ mod tests {
         assert!(modes.is_empty());
         assert!(scopes.is_empty());
         assert!(projects.is_empty());
+    }
+
+    #[test]
+    fn test_parse_mode_ref() {
+        let mut modes = HashSet::new();
+        let mut scopes = HashSet::new();
+
+        parse_mode_ref("refs/jin/modes/development/_mode", &mut modes, &mut scopes);
+        assert!(modes.contains("development"));
+        assert!(scopes.is_empty());
+    }
+
+    #[test]
+    fn test_parse_mode_ref_with_scope() {
+        let mut modes = HashSet::new();
+        let mut scopes = HashSet::new();
+
+        parse_mode_ref(
+            "refs/jin/modes/editor/scopes/config:vim/_scope",
+            &mut modes,
+            &mut scopes,
+        );
+        assert!(modes.contains("editor"));
+        assert!(scopes.contains("config:vim"));
+    }
+
+    #[test]
+    fn test_parse_mode_ref_ignores_non_matching_patterns() {
+        let mut modes = HashSet::new();
+        let mut scopes = HashSet::new();
+
+        // Intermediate directory pattern - should be ignored
+        parse_mode_ref("refs/jin/modes/development", &mut modes, &mut scopes);
+        assert!(modes.is_empty());
+        assert!(scopes.is_empty());
+
+        // refs/jin/layers pattern - should be ignored
+        parse_mode_ref("refs/jin/layers/mode/development", &mut modes, &mut scopes);
+        assert!(modes.is_empty());
+        assert!(scopes.is_empty());
     }
 }

@@ -242,6 +242,7 @@ fn layer_name(layer: Layer) -> &'static str {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use serial_test::serial;
     use tempfile::TempDir;
 
     #[test]
@@ -387,6 +388,7 @@ mod tests {
     }
 
     #[test]
+    #[serial]
     fn test_reset_hard_with_force() {
         let ctx = crate::test_utils::setup_unit_test();
         let project_path = &ctx.project_path;

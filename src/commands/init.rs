@@ -3,6 +3,7 @@
 use crate::core::{ProjectContext, Result};
 use crate::git::JinRepo;
 use std::fs;
+use std::io::Write;
 
 /// Execute the init command
 ///
@@ -29,6 +30,9 @@ pub fn execute() -> Result<()> {
     // Ensure global Jin repository exists
     JinRepo::open_or_create()?;
 
+    // Add .jin/ to .gitignore if not already present
+    add_to_gitignore(".jin/")?;
+
     println!("Initialized Jin in {}", jin_dir.display());
     println!();
     println!("Next steps:");
@@ -36,5 +40,35 @@ pub fn execute() -> Result<()> {
     println!("  2. Activate the mode: jin mode use <name>");
     println!("  3. Add files:         jin add <file> --mode");
 
+    Ok(())
+}
+
+/// Add an entry to .gitignore if not already present
+fn add_to_gitignore(entry: &str) -> Result<()> {
+    let gitignore_path = std::path::Path::new(".gitignore");
+
+    // Check if entry already exists and determine if we need a leading newline
+    let needs_newline = if gitignore_path.exists() {
+        let contents = fs::read_to_string(gitignore_path)?;
+        for line in contents.lines() {
+            if line.trim() == entry || line.trim() == entry.trim_end_matches('/') {
+                return Ok(()); // Already present
+            }
+        }
+        !contents.is_empty() && !contents.ends_with('\n')
+    } else {
+        false
+    };
+
+    // Append entry to .gitignore
+    let mut file = fs::OpenOptions::new()
+        .create(true)
+        .append(true)
+        .open(gitignore_path)?;
+
+    if needs_newline {
+        writeln!(file)?;
+    }
+    writeln!(file, "{}", entry)?;
     Ok(())
 }

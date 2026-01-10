@@ -108,7 +108,7 @@ pub fn execute(args: AddArgs) -> Result<()> {
         println!(
             "Staged {} file(s) to {} layer",
             staged_count,
-            format_layer_name(target_layer)
+            format_layer_name_with_context(target_layer, &context)
         );
     }
 
@@ -188,18 +188,41 @@ fn validate_file(path: &Path) -> Result<()> {
     Ok(())
 }
 
-/// Format layer name for display
-fn format_layer_name(layer: Layer) -> &'static str {
+/// Format layer name for display, including context (mode/scope names)
+fn format_layer_name_with_context(layer: Layer, context: &ProjectContext) -> String {
     match layer {
-        Layer::GlobalBase => "global-base",
-        Layer::ModeBase => "mode-base",
-        Layer::ModeScope => "mode-scope",
-        Layer::ModeScopeProject => "mode-scope-project",
-        Layer::ModeProject => "mode-project",
-        Layer::ScopeBase => "scope-base",
-        Layer::ProjectBase => "project-base",
-        Layer::UserLocal => "user-local",
-        Layer::WorkspaceActive => "workspace-active",
+        Layer::GlobalBase => "global".to_string(),
+        Layer::ModeBase => {
+            if let Some(ref mode) = context.mode {
+                format!("'{}' (mode)", mode)
+            } else {
+                "mode-base".to_string()
+            }
+        }
+        Layer::ModeScope => {
+            match (&context.mode, &context.scope) {
+                (Some(mode), Some(scope)) => format!("'{}/{}' (mode/scope)", mode, scope),
+                _ => "mode-scope".to_string(),
+            }
+        }
+        Layer::ModeScopeProject => "mode-scope-project".to_string(),
+        Layer::ModeProject => {
+            if let Some(ref mode) = context.mode {
+                format!("'{}/project' (mode/project)", mode)
+            } else {
+                "mode-project".to_string()
+            }
+        }
+        Layer::ScopeBase => {
+            if let Some(ref scope) = context.scope {
+                format!("'{}' (scope)", scope)
+            } else {
+                "scope-base".to_string()
+            }
+        }
+        Layer::ProjectBase => "project".to_string(),
+        Layer::UserLocal => "user-local".to_string(),
+        Layer::WorkspaceActive => "workspace-active".to_string(),
     }
 }
 
@@ -268,10 +291,25 @@ mod tests {
     }
 
     #[test]
-    fn test_format_layer_name() {
-        assert_eq!(format_layer_name(Layer::GlobalBase), "global-base");
-        assert_eq!(format_layer_name(Layer::ModeBase), "mode-base");
-        assert_eq!(format_layer_name(Layer::ProjectBase), "project-base");
+    fn test_format_layer_name_with_context() {
+        let empty_context = ProjectContext::default();
+        let mode_context = ProjectContext {
+            mode: Some("claude".to_string()),
+            ..Default::default()
+        };
+
+        assert_eq!(
+            format_layer_name_with_context(Layer::GlobalBase, &empty_context),
+            "global"
+        );
+        assert_eq!(
+            format_layer_name_with_context(Layer::ModeBase, &mode_context),
+            "'claude' (mode)"
+        );
+        assert_eq!(
+            format_layer_name_with_context(Layer::ProjectBase, &empty_context),
+            "project"
+        );
     }
 
     #[test]

@@ -6,8 +6,9 @@ build/
 # Jin local state
 .jin/
 
-# Research documentation (kept local)
+# Research and implementation documentation (kept local)
 plan/*/research/
+plan/docs/
 
 # OS-specific files
 .DS_Store

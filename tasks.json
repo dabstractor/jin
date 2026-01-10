@@ -11,7 +11,7 @@
           "type": "Milestone",
           "id": "P1.M1",
           "title": "Implement Missing --local Flag for Layer 8 Access",
-          "status": "Planned",
+          "status": "Researching",
           "description": "Enable access to Layer 8 (UserLocal) via the jin add --local command, allowing users to store machine-specific configuration overlays.",
           "tasks": [
             {
@@ -78,14 +78,14 @@
               "type": "Task",
               "id": "P1.M1.T3",
               "title": "Wire --local Flag Through Add Command",
-              "status": "Researching",
+              "status": "Complete",
               "description": "Update the add command implementation to pass the --local flag to the routing layer.",
               "subtasks": [
                 {
                   "type": "Subtask",
                   "id": "P1.M1.T3.S1",
                   "title": "Pass local flag in add command execute()",
-                  "status": "Researching",
+                  "status": "Complete",
                   "story_points": 0.5,
                   "dependencies": [
                     "P1.M1.T2.S3"
@@ -98,14 +98,14 @@
               "type": "Task",
               "id": "P1.M1.T4",
               "title": "Add Integration Tests for --local Flag",
-              "status": "Planned",
+              "status": "Researching",
               "description": "Create integration tests verifying --local flag routes to Layer 8 and validates properly.",
               "subtasks": [
                 {
                   "type": "Subtask",
                   "id": "P1.M1.T4.S1",
                   "title": "Create test file for --local flag functionality",
-                  "status": "Planned",
+                  "status": "Researching",
                   "story_points": 2,
                   "dependencies": [
                     "P1.M1.T3.S1"

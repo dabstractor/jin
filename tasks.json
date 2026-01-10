@@ -65,7 +65,7 @@
                   "type": "Subtask",
                   "id": "P1.M1.T2.S3",
                   "title": "Add --local routing case in route_to_layer()",
-                  "status": "Researching",
+                  "status": "Complete",
                   "story_points": 0.5,
                   "dependencies": [
                     "P1.M1.T2.S2"
@@ -78,14 +78,14 @@
               "type": "Task",
               "id": "P1.M1.T3",
               "title": "Wire --local Flag Through Add Command",
-              "status": "Planned",
+              "status": "Researching",
               "description": "Update the add command implementation to pass the --local flag to the routing layer.",
               "subtasks": [
                 {
                   "type": "Subtask",
                   "id": "P1.M1.T3.S1",
                   "title": "Pass local flag in add command execute()",
-                  "status": "Planned",
+                  "status": "Researching",
                   "story_points": 0.5,
                   "dependencies": [
                     "P1.M1.T2.S3"

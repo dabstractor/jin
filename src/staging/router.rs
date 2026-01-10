@@ -34,6 +34,11 @@ pub fn route_to_layer(options: &RoutingOptions, context: &ProjectContext) -> Res
         return Ok(Layer::GlobalBase);
     }
 
+    // Local flag routes to UserLocal layer
+    if options.local {
+        return Ok(Layer::UserLocal);
+    }
+
     // Check mode flag
     if options.mode {
         // Require active mode
@@ -126,6 +131,17 @@ mod tests {
         let context = ProjectContext::default();
         let layer = route_to_layer(&options, &context).unwrap();
         assert_eq!(layer, Layer::GlobalBase);
+    }
+
+    #[test]
+    fn test_route_local() {
+        let options = RoutingOptions {
+            local: true,
+            ..Default::default()
+        };
+        let context = ProjectContext::default();
+        let layer = route_to_layer(&options, &context).unwrap();
+        assert_eq!(layer, Layer::UserLocal);
     }
 
     #[test]

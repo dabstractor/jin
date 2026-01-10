@@ -116,12 +116,47 @@ fn use_mode(name: &str) -> Result<()> {
     context.save()?;
 
     // Load workspace metadata (may not exist yet)
-    let _metadata = match WorkspaceMetadata::load() {
+    let metadata = match WorkspaceMetadata::load() {
         Ok(meta) => Some(meta),
         Err(JinError::NotFound(_)) => None, // Fresh workspace - no metadata yet
         Err(e) => return Err(e),            // Other errors should propagate
     };
-    // Metadata is now available for P1.M3.T1.S2 to compare and clear if needed
+
+    // Extract mode from metadata if present
+    if let Some(meta) = &metadata {
+        // Find mode layer in applied_layers (format: "mode/{name}")
+        let metadata_mode = meta
+            .applied_layers
+            .iter()
+            .find(|layer| layer.starts_with("mode/"))
+            .and_then(|layer| layer.strip_prefix("mode/"))
+            .and_then(|s| s.split('/').next());
+
+        // Compare with new mode
+        if let Some(old_mode) = metadata_mode {
+            if old_mode != name {
+                // Modes differ - clear metadata to prevent detached state
+                let metadata_path = WorkspaceMetadata::default_path();
+                if metadata_path.exists() {
+                    std::fs::remove_file(&metadata_path)?;
+                    println!(
+                        "Cleared workspace metadata (mode changed from '{}' to '{}').",
+                        old_mode, name
+                    );
+                    println!("Run 'jin apply' to apply new mode configuration.");
+                }
+            }
+        } else {
+            // No mode layer in metadata (only global layers)
+            // Clear metadata since we're now activating a mode
+            let metadata_path = WorkspaceMetadata::default_path();
+            if metadata_path.exists() {
+                std::fs::remove_file(&metadata_path)?;
+                println!("Cleared workspace metadata (activating mode '{}').", name);
+                println!("Run 'jin apply' to apply new mode configuration.");
+            }
+        }
+    }
 
     println!("Activated mode '{}'", name);
     println!("Stage files with: jin add --mode");

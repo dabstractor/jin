@@ -184,7 +184,7 @@
               "type": "Task",
               "id": "P1.M3.T1",
               "title": "Auto-Clear Workspace Metadata on Mode Switch",
-              "status": "Researching",
+              "status": "Complete",
               "description": "When activating a new mode, automatically clear workspace metadata if it references a different mode.",
               "subtasks": [
                 {
@@ -200,7 +200,7 @@
                   "type": "Subtask",
                   "id": "P1.M3.T1.S2",
                   "title": "Compare modes and clear metadata if different",
-                  "status": "Researching",
+                  "status": "Complete",
                   "story_points": 1,
                   "dependencies": [
                     "P1.M3.T1.S1"
@@ -213,14 +213,14 @@
               "type": "Task",
               "id": "P1.M3.T2",
               "title": "Auto-Clear Workspace Metadata on Scope Switch",
-              "status": "Planned",
+              "status": "Researching",
               "description": "Apply the same metadata clearing logic when switching scopes.",
               "subtasks": [
                 {
                   "type": "Subtask",
                   "id": "P1.M3.T2.S1",
                   "title": "Add metadata clearing logic to scope use handler",
-                  "status": "Planned",
+                  "status": "Researching",
                   "story_points": 1,
                   "dependencies": [
                     "P1.M3.T1.S2"

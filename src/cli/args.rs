@@ -84,7 +84,7 @@ pub struct ResetArgs {
     #[arg(long)]
     pub global: bool,
 
-    /// Skip confirmation prompt for destructive operations
+    /// Skip confirmation prompt and bypass detached state validation (use for recovery)
     #[arg(long, short = 'f')]
     pub force: bool,
 }

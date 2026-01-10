@@ -256,7 +256,7 @@
           "type": "Milestone",
           "id": "P1.M4",
           "title": "Improve Reset Behavior in Detached State",
-          "status": "Planned",
+          "status": "Researching",
           "description": "Allow jin reset --hard --force to bypass detached state validation for recovery scenarios.",
           "tasks": [
             {
@@ -281,14 +281,14 @@
               "type": "Task",
               "id": "P1.M4.T2",
               "title": "Update Reset Help Text",
-              "status": "Researching",
+              "status": "Complete",
               "description": "Improve --force flag help text to indicate it bypasses detached state check.",
               "subtasks": [
                 {
                   "type": "Subtask",
                   "id": "P1.M4.T2.S1",
                   "title": "Update --force help text in ResetArgs",
-                  "status": "Researching",
+                  "status": "Complete",
                   "story_points": 0.5,
                   "dependencies": [
                     "P1.M4.T1.S1"
@@ -301,14 +301,14 @@
               "type": "Task",
               "id": "P1.M4.T3",
               "title": "Add Reset Detached State Test",
-              "status": "Planned",
+              "status": "Researching",
               "description": "Test that --hard --force works in detached state.",
               "subtasks": [
                 {
                   "type": "Subtask",
                   "id": "P1.M4.T3.S1",
                   "title": "Create test for reset --hard --force in detached state",
-                  "status": "Planned",
+                  "status": "Researching",
                   "story_points": 2,
                   "dependencies": [
                     "P1.M4.T1.S1"

@@ -4,6 +4,19 @@ use clap::Args;
 
 /// Arguments for the `add` command
 #[derive(Args, Debug)]
+#[command(after_help = r#"LAYER ROUTING:
+  Flags                  Target Layer
+  ──────────────────────────────────────────────────────
+  (no flags)             → Layer 7 (ProjectBase)
+  --mode                 → Layer 2 (ModeBase)
+  --mode --project       → Layer 5 (ModeProject)
+  --scope=<X>            → Layer 6 (ScopeBase)
+  --mode --scope=<X>     → Layer 3 (ModeScope)
+  --mode --scope=<X> --project
+                         → Layer 4 (ModeScopeProject)
+  --global               → Layer 1 (GlobalBase)
+  --local                → Layer 8 (UserLocal)
+"#)]
 pub struct AddArgs {
     /// Files to stage
     pub files: Vec<String>,

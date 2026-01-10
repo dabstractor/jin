@@ -323,7 +323,7 @@
           "type": "Milestone",
           "id": "P1.M5",
           "title": "Documentation and Clarification Updates",
-          "status": "Researching",
+          "status": "Complete",
           "description": "Update documentation to clarify layer routing behavior and command usage.",
           "tasks": [
             {
@@ -348,14 +348,14 @@
               "type": "Task",
               "id": "P1.M5.T2",
               "title": "Add Layer Routing Reference to Help Output",
-              "status": "Researching",
+              "status": "Complete",
               "description": "Add a quick reference showing which flags route to which layers.",
               "subtasks": [
                 {
                   "type": "Subtask",
                   "id": "P1.M5.T2.S1",
                   "title": "Add after_help with layer routing table to AddArgs",
-                  "status": "Researching",
+                  "status": "Complete",
                   "story_points": 1,
                   "dependencies": [
                     "P1.M5.T1.S1"

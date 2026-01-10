@@ -701,9 +701,13 @@ fn test_mode_switch_clears_metadata() -> Result<(), Box<dyn std::error::Error>> 
         .success();
 
     // Verify mode_a content is in workspace (JSON is pretty-printed)
-    assert_workspace_file(project_path, "config.json", r#"{
+    assert_workspace_file(
+        project_path,
+        "config.json",
+        r#"{
   "mode": "mode_a"
-}"#);
+}"#,
+    );
 
     // === STEP 2: Switch to mode_b ===
     let result = jin()
@@ -754,9 +758,13 @@ fn test_mode_switch_clears_metadata() -> Result<(), Box<dyn std::error::Error>> 
         .success();
 
     // Verify mode_b content is in workspace (JSON is pretty-printed)
-    assert_workspace_file(project_path, "config.json", r#"{
+    assert_workspace_file(
+        project_path,
+        "config.json",
+        r#"{
   "mode": "mode_b"
-}"#);
+}"#,
+    );
 
     Ok(())
 }
@@ -825,9 +833,13 @@ fn test_scope_switch_clears_metadata() -> Result<(), Box<dyn std::error::Error>>
         .success();
 
     // Verify scope_x content is in workspace (JSON is pretty-printed)
-    assert_workspace_file(project_path, "config.json", r#"{
+    assert_workspace_file(
+        project_path,
+        "config.json",
+        r#"{
   "scope": "scope_x"
-}"#);
+}"#,
+    );
 
     // === STEP 2: Switch to scope_y ===
     let result = jin()
@@ -844,8 +856,10 @@ fn test_scope_switch_clears_metadata() -> Result<(), Box<dyn std::error::Error>>
 
     assert!(
         stdout_str.contains(&format!("Cleared workspace metadata ("))
-            && (stdout_str.contains(&format!("scope changed from '{}' to '{}'", scope_x, scope_y))
-                || stdout_str.contains(&format!("activating scope '{}'", scope_y))),
+            && (stdout_str.contains(&format!(
+                "scope changed from '{}' to '{}'",
+                scope_x, scope_y
+            )) || stdout_str.contains(&format!("activating scope '{}'", scope_y))),
         "Expected metadata clear message. Got: {}",
         stdout_str
     );
@@ -878,9 +892,13 @@ fn test_scope_switch_clears_metadata() -> Result<(), Box<dyn std::error::Error>>
         .success();
 
     // Verify scope_y content is in workspace (JSON is pretty-printed)
-    assert_workspace_file(project_path, "config.json", r#"{
+    assert_workspace_file(
+        project_path,
+        "config.json",
+        r#"{
   "scope": "scope_y"
-}"#);
+}"#,
+    );
 
     Ok(())
 }

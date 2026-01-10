@@ -47,6 +47,4 @@ Cargo.lock
 # --- JIN MANAGED START ---
 .claude/config.json
 .claude/prompt.md
-/tmp/test_jin_commit/config.json
-readme.md
 # --- JIN MANAGED END ---

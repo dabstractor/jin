@@ -565,47 +565,81 @@ mod tests {
     fn test_add_to_git_success() {
         let _lock = TEST_LOCK.lock(); // Serialize with other directory-changing tests
 
-        let temp = TempDir::new().unwrap();
-        let temp_path = temp.path().to_path_buf();
+        // Create a manual temp directory with unique name (using timestamp)
+        let base_temp = std::env::temp_dir();
+        let unique_name = format!(
+            "jin_test_{}_{}",
+            std::process::id(),
+            std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .unwrap()
+                .as_nanos()
+        );
+        let temp_path = base_temp.join(&unique_name);
+        std::fs::create_dir_all(&temp_path).expect("Failed to create temp directory");
 
         // Set JIN_DIR to an isolated directory for this test
-        let jin_dir = temp.path().join(".jin_global");
+        let jin_dir = temp_path.join(".jin_global");
         std::env::set_var("JIN_DIR", &jin_dir);
 
-        // Save original directory (may fail if previous test left us in a deleted dir)
+        // Save original directory
         let original_dir = std::env::current_dir().ok();
 
         // Change to temp directory and initialize Git repo
-        std::env::set_current_dir(&temp_path).unwrap();
+        std::env::set_current_dir(&temp_path).expect("Failed to change to temp directory");
 
         // Initialize Git repo
-        Command::new("git").arg("init").output().unwrap();
+        Command::new("git")
+            .arg("init")
+            .output()
+            .expect("Failed to init git repo");
         Command::new("git")
             .arg("config")
             .arg("user.name")
             .arg("Test")
             .output()
-            .unwrap();
+            .expect("Failed to set git user.name");
         Command::new("git")
             .arg("config")
             .arg("user.email")
             .arg("test@example.com")
             .output()
-            .unwrap();
+            .expect("Failed to set git user.email");
 
-        // Create file after changing to temp directory
-        std::fs::write("test.json", b"{}").unwrap();
+        // Create file using absolute path
+        let test_file = temp_path.join("test.json");
+        std::fs::write(&test_file, b"{}").expect("Failed to write test file");
 
-        // Use relative path since we're in the git repo directory
-        let result = add_to_git(Path::new("test.json"));
+        // CRITICAL: Verify and fix current directory before calling add_to_git
+        let cwd = std::env::current_dir();
+        if cwd.is_err() || !temp_path.exists() {
+            // Try to restore current directory to temp_path
+            let _ = std::env::set_current_dir(&temp_path);
+            let cwd_after = std::env::current_dir();
+            eprintln!(
+                "Current directory was invalid, restored. cwd={:?}, temp_path.exists={}, cwd_after={:?}",
+                cwd,
+                temp_path.exists(),
+                cwd_after
+            );
+        }
 
-        // Always restore directory if we have a valid one
+        // Call add_to_git
+        let result = add_to_git(&test_file);
+
+        // Restore directory
         if let Some(ref dir) = original_dir {
             if dir.exists() {
                 let _ = std::env::set_current_dir(dir);
             }
         }
 
+        // Clean up temp directory manually
+        let _ = std::fs::remove_dir_all(&temp_path);
+
+        if let Err(ref e) = result {
+            eprintln!("add_to_git failed: {}", e);
+        }
         assert!(result.is_ok());
     }
 }

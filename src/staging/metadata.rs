@@ -156,6 +156,7 @@ mod tests {
     }
 
     #[test]
+    #[serial]
     fn test_workspace_metadata_save_load() {
         let temp = TempDir::new().unwrap();
         std::env::set_current_dir(temp.path()).unwrap();

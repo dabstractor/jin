@@ -456,6 +456,7 @@ fn parse_layer_name(name: &str) -> Result<Layer> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use serial_test::serial;
 
     #[test]
     fn test_execute_not_initialized() {
@@ -473,6 +474,7 @@ mod tests {
     }
 
     #[test]
+    #[serial]
     fn test_execute_staged_empty() {
         // setup_unit_test() already creates the staging index
         let _ctx = crate::test_utils::setup_unit_test();

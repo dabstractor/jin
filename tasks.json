@@ -4,14 +4,14 @@
       "type": "Phase",
       "id": "P1",
       "title": "Jin CLI Bug Fixes & Missing Features",
-      "status": "Researching",
+      "status": "Complete",
       "description": "Address all critical bugs and missing features identified in the PRD test results, ensuring full CLI functionality and user experience improvements.",
       "milestones": [
         {
           "type": "Milestone",
           "id": "P1.M1",
           "title": "Implement Missing --local Flag for Layer 8 Access",
-          "status": "Researching",
+          "status": "Complete",
           "description": "Enable access to Layer 8 (UserLocal) via the jin add --local command, allowing users to store machine-specific configuration overlays.",
           "tasks": [
             {
@@ -36,14 +36,14 @@
               "type": "Task",
               "id": "P1.M1.T2",
               "title": "Implement --local Routing Logic",
-              "status": "Researching",
+              "status": "Complete",
               "description": "Update the route_to_layer() function in src/staging/router.rs to handle the --local flag and route to Layer::UserLocal.",
               "subtasks": [
                 {
                   "type": "Subtask",
                   "id": "P1.M1.T2.S1",
                   "title": "Add local field to RoutingOptions struct",
-                  "status": "Researching",
+                  "status": "Complete",
                   "story_points": 0.5,
                   "dependencies": [
                     "P1.M1.T1.S1"

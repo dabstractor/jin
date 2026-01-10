@@ -59,11 +59,9 @@ pub fn execute(args: ResetArgs) -> Result<()> {
     // CRITICAL: Only validate for Hard mode (destructive) AND when --force is not set
     // CRITICAL: Validation happens BEFORE confirmation prompt - don't prompt if operation will be rejected
     // CRITICAL: When --force is set, skip both validation AND confirmation
-    if mode == ResetMode::Hard {
-        if !args.force {
-            let repo = JinRepo::open()?;
-            validate_workspace_attached(&context, &repo)?;
-        }
+    if mode == ResetMode::Hard && !args.force {
+        let repo = JinRepo::open()?;
+        validate_workspace_attached(&context, &repo)?;
         // If --force, skip validation and proceed to load staging
     }
 

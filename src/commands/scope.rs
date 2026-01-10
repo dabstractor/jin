@@ -446,8 +446,10 @@ mod tests {
         let _ = JinRepo::open_or_create();
 
         // Change to temp directory for project context
-        // Use .ok() because current_dir() can fail if previous test left us in deleted dir
-        let _ = std::env::set_current_dir(temp.path());
+        // CRITICAL: Verify current directory is valid after change
+        std::env::set_current_dir(temp.path()).expect("Failed to change to temp directory");
+        let _ =
+            std::env::current_dir().expect("Current directory is invalid after set_current_dir");
 
         // Initialize .jin directory and context
         std::fs::create_dir_all(temp.path().join(".jin")).unwrap();

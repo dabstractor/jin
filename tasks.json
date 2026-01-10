@@ -98,14 +98,14 @@
               "type": "Task",
               "id": "P1.M1.T4",
               "title": "Add Integration Tests for --local Flag",
-              "status": "Researching",
+              "status": "Complete",
               "description": "Create integration tests verifying --local flag routes to Layer 8 and validates properly.",
               "subtasks": [
                 {
                   "type": "Subtask",
                   "id": "P1.M1.T4.S1",
                   "title": "Create test file for --local flag functionality",
-                  "status": "Researching",
+                  "status": "Complete",
                   "story_points": 2,
                   "dependencies": [
                     "P1.M1.T3.S1"
@@ -134,7 +134,7 @@
                   "type": "Subtask",
                   "id": "P1.M2.T1.S1",
                   "title": "Add SIGPIPE reset in main.rs",
-                  "status": "Planned",
+                  "status": "Researching",
                   "story_points": 1,
                   "dependencies": [],
                   "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: src/main.rs is simple: parses CLI and calls jin::run(). SIGPIPE panic occurs when piping to head. See plan/architecture/identified_issues.md.\n2. INPUT: None - this is the entry point.\n3. LOGIC: Add a Unix-only function at the top of main.rs: `#[cfg(unix)] fn reset_sigpipe() { unsafe { libc::signal(libc::SIGPIPE, libc::SIG_DFL); } }`. Call this function at the very start of main() before CLI parsing. Add `#[cfg(unix)] extern crate libc;` and add libc to Cargo.toml dependencies. For non-Unix, no-op.\n4. OUTPUT: SIGPIPE signal is reset to default behavior, allowing graceful exit when pipe is broken."

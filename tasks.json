@@ -18,14 +18,14 @@
               "type": "Task",
               "id": "P1.M1.T1",
               "title": "Add --local Flag to CLI Arguments",
-              "status": "Planned",
+              "status": "Complete",
               "description": "Extend the AddArgs struct in src/cli/args.rs to include the --local flag for routing files to Layer 8.",
               "subtasks": [
                 {
                   "type": "Subtask",
                   "id": "P1.M1.T1.S1",
                   "title": "Add local field to AddArgs struct",
-                  "status": "Planned",
+                  "status": "Complete",
                   "story_points": 0.5,
                   "dependencies": [],
                   "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: AddArgs struct is in src/cli/args.rs. It currently has: files (Vec<String>), mode (bool), scope (Option<String>), project (bool), global (bool). See plan/architecture/system_context.md.\n2. INPUT: None - this is a standalone struct modification.\n3. LOGIC: Add a new field `local: bool` with clap attribute `#[arg(long)]` and help text 'Add to user-local layer (Layer 8, machine-specific)'. Place it after the `global` field for consistency.\n4. OUTPUT: Modified AddArgs struct with `local: bool` field available for pattern matching in route_to_layer()."
@@ -43,9 +43,11 @@
                   "type": "Subtask",
                   "id": "P1.M1.T2.S1",
                   "title": "Add local field to RoutingOptions struct",
-                  "status": "Planned",
+                  "status": "Researching",
                   "story_points": 0.5,
-                  "dependencies": ["P1.M1.T1.S1"],
+                  "dependencies": [
+                    "P1.M1.T1.S1"
+                  ],
                   "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: RoutingOptions struct in src/staging/router.rs has: mode (bool), scope (Option<String>), project (bool), global (bool). See plan/architecture/system_context.md.\n2. INPUT: P1.M1.T1.S1 added `local: bool` to AddArgs. RoutingOptions must mirror this.\n3. LOGIC: Add `pub local: bool` field to RoutingOptions struct.\n4. OUTPUT: RoutingOptions with local field for consumption by route_to_layer() function."
                 },
                 {
@@ -54,7 +56,9 @@
                   "title": "Add --local validation in route_to_layer()",
                   "status": "Planned",
                   "story_points": 1,
-                  "dependencies": ["P1.M1.T2.S1"],
+                  "dependencies": [
+                    "P1.M1.T2.S1"
+                  ],
                   "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: route_to_layer() validates flag combinations. --global cannot combine with others. See plan/architecture/fix_specifications.md.\n2. INPUT: RoutingOptions with local field from P1.M1.T2.S1.\n3. LOGIC: Add validation at the start of route_to_layer(): if options.local is true and any of (mode, scope.is_some(), project, global) is also true, return Err(JinError::Config('--local cannot be combined with other layer flags'.into())). Mirror the existing --global validation pattern.\n4. OUTPUT: Function returns error for invalid flag combinations involving --local."
                 },
                 {
@@ -63,7 +67,9 @@
                   "title": "Add --local routing case in route_to_layer()",
                   "status": "Planned",
                   "story_points": 0.5,
-                  "dependencies": ["P1.M1.T2.S2"],
+                  "dependencies": [
+                    "P1.M1.T2.S2"
+                  ],
                   "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: route_to_layer() uses if-else chain to determine target layer. See plan/architecture/system_context.md for routing table.\n2. INPUT: Validated RoutingOptions from P1.M1.T2.S2.\n3. LOGIC: Add routing case after --global check: `if options.local { return Ok(Layer::UserLocal); }`. This routes to Layer 8 which has storage path `~/.jin/local/`.\n4. OUTPUT: route_to_layer() returns Layer::UserLocal when --local flag is set."
                 }
               ]
@@ -81,7 +87,9 @@
                   "title": "Pass local flag in add command execute()",
                   "status": "Planned",
                   "story_points": 0.5,
-                  "dependencies": ["P1.M1.T2.S3"],
+                  "dependencies": [
+                    "P1.M1.T2.S3"
+                  ],
                   "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: src/commands/add.rs execute() creates RoutingOptions from AddArgs. See existing pattern for mode, scope, project, global fields.\n2. INPUT: AddArgs with local field from P1.M1.T1.S1, RoutingOptions with local field from P1.M1.T2.S1.\n3. LOGIC: In execute(), when constructing RoutingOptions, add `local: args.local` to include the flag value.\n4. OUTPUT: RoutingOptions passed to route_to_layer() includes the local flag value."
                 }
               ]
@@ -99,7 +107,9 @@
                   "title": "Create test file for --local flag functionality",
                   "status": "Planned",
                   "story_points": 2,
-                  "dependencies": ["P1.M1.T3.S1"],
+                  "dependencies": [
+                    "P1.M1.T3.S1"
+                  ],
                   "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: Tests are in tests/ directory. Use tests/common/ fixtures. Tests use assert_cmd, predicates, tempfile. See tests/cli_basic.rs for patterns.\n2. INPUT: Completed --local implementation from P1.M1.T3.S1.\n3. LOGIC: Create tests/cli_add_local.rs with tests: (1) 'test_add_local_routes_to_layer_8' - verify jin add .config --local stages to UserLocal layer; (2) 'test_add_local_rejects_mode_flag' - verify jin add .config --local --mode returns error; (3) 'test_add_local_rejects_global_flag' - verify jin add .config --local --global returns error; (4) 'test_add_local_commit_apply_workflow' - full workflow test. Use TestFixture from tests/common/fixtures.rs.\n4. OUTPUT: Test file that passes when --local flag is fully implemented."
                 }
               ]
@@ -153,7 +163,10 @@
                   "title": "Add SIGPIPE test instructions to test documentation",
                   "status": "Planned",
                   "story_points": 0.5,
-                  "dependencies": ["P1.M2.T1.S1", "P1.M2.T1.S2"],
+                  "dependencies": [
+                    "P1.M2.T1.S1",
+                    "P1.M2.T1.S2"
+                  ],
                   "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: Manual testing required for SIGPIPE: `jin log | head -1` should exit gracefully.\n2. INPUT: Completed SIGPIPE fix from P1.M2.T1.S1.\n3. LOGIC: Create tests/manual/SIGPIPE_TEST.md with instructions: (1) Build release binary; (2) Initialize test project with commits; (3) Run `jin log | head -1`; (4) Verify no panic, clean exit; (5) Run `jin log | cat` for comparison.\n4. OUTPUT: Documentation file for manual verification of SIGPIPE handling."
                 }
               ]
@@ -189,7 +202,9 @@
                   "title": "Compare modes and clear metadata if different",
                   "status": "Planned",
                   "story_points": 1,
-                  "dependencies": ["P1.M3.T1.S1"],
+                  "dependencies": [
+                    "P1.M3.T1.S1"
+                  ],
                   "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: Metadata stored at $JIN_DIR/workspace/last_applied.json or .jin/workspace/last_applied.json. Mode stored in metadata. See plan/architecture/identified_issues.md.\n2. INPUT: WorkspaceMetadata from P1.M3.T1.S1, new mode name from user input.\n3. LOGIC: If metadata exists and metadata.mode != new_mode: (1) Construct path to last_applied.json using jin_dir; (2) Delete the file using std::fs::remove_file; (3) Print informational message: 'Cleared workspace metadata (mode changed from {} to {}). Run \"jin apply\" to apply new mode configuration.' Handle file deletion errors gracefully.\n4. OUTPUT: Workspace metadata cleared when mode differs, user informed of next step."
                 }
               ]
@@ -207,7 +222,9 @@
                   "title": "Add metadata clearing logic to scope use handler",
                   "status": "Planned",
                   "story_points": 1,
-                  "dependencies": ["P1.M3.T1.S2"],
+                  "dependencies": [
+                    "P1.M3.T1.S2"
+                  ],
                   "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: ScopeAction::Use handler is in src/commands/scope.rs. Same pattern as mode. See plan/architecture/fix_specifications.md.\n2. INPUT: Pattern from P1.M3.T1.S2 for mode metadata clearing.\n3. LOGIC: Mirror the mode metadata clearing logic: (1) After updating ProjectContext with new scope, load WorkspaceMetadata; (2) If metadata.scope != new_scope, delete last_applied.json; (3) Print: 'Cleared workspace metadata (scope changed). Run \"jin apply\" to apply new scope configuration.'\n4. OUTPUT: Workspace metadata cleared when scope differs, consistent with mode behavior."
                 }
               ]
@@ -225,7 +242,10 @@
                   "title": "Create mode switching workflow test",
                   "status": "Planned",
                   "story_points": 2,
-                  "dependencies": ["P1.M3.T1.S2", "P1.M3.T2.S1"],
+                  "dependencies": [
+                    "P1.M3.T1.S2",
+                    "P1.M3.T2.S1"
+                  ],
                   "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: Mode/scope tests in tests/mode_scope_workflow.rs. TestFixture provides isolated environment. See tests/common/.\n2. INPUT: Completed metadata clearing from P1.M3.T1.S2 and P1.M3.T2.S1.\n3. LOGIC: Add test 'test_mode_switch_clears_metadata': (1) Create two modes A and B; (2) Activate mode A, add file, commit, apply; (3) Switch to mode B; (4) Verify no detached state error; (5) Run apply successfully; (6) Verify file from mode B is in workspace. Add similar test for scope switching.\n4. OUTPUT: Tests that verify mode/scope switching works without manual metadata clearing."
                 }
               ]
@@ -270,7 +290,9 @@
                   "title": "Update --force help text in ResetArgs",
                   "status": "Planned",
                   "story_points": 0.5,
-                  "dependencies": ["P1.M4.T1.S1"],
+                  "dependencies": [
+                    "P1.M4.T1.S1"
+                  ],
                   "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: ResetArgs is in src/cli/args.rs. force field has clap help attribute.\n2. INPUT: Behavior change from P1.M4.T1.S1.\n3. LOGIC: Update the help attribute for force field from 'Skip confirmation prompt' to 'Skip confirmation prompt and bypass detached state validation (use for recovery)'.\n4. OUTPUT: Clearer help text explaining --force behavior."
                 }
               ]
@@ -288,7 +310,9 @@
                   "title": "Create test for reset --hard --force in detached state",
                   "status": "Planned",
                   "story_points": 2,
-                  "dependencies": ["P1.M4.T1.S1"],
+                  "dependencies": [
+                    "P1.M4.T1.S1"
+                  ],
                   "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: Reset tests likely in tests/cli_reset.rs. Detached state created by modifying workspace files directly. See tests/common/.\n2. INPUT: Behavior from P1.M4.T1.S1.\n3. LOGIC: Create test 'test_reset_hard_force_in_detached_state': (1) Setup: init, add file, commit, apply; (2) Manually modify workspace file to create detached state; (3) Verify: jin reset --hard fails with detached error; (4) Verify: jin reset --hard --force succeeds; (5) Verify: workspace file is reset to committed state.\n4. OUTPUT: Test confirming --force recovery path works."
                 }
               ]
@@ -333,7 +357,9 @@
                   "title": "Add after_help with layer routing table to AddArgs",
                   "status": "Planned",
                   "story_points": 1,
-                  "dependencies": ["P1.M5.T1.S1"],
+                  "dependencies": [
+                    "P1.M5.T1.S1"
+                  ],
                   "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: Clap supports after_help for additional help text. AddArgs is in src/cli/args.rs.\n2. INPUT: Layer routing table from plan/architecture/system_context.md.\n3. LOGIC: Add #[command(after_help = ...)] attribute to AddArgs with a formatted layer routing table showing: (no flags) → Layer 7, --mode → Layer 2, --mode --project → Layer 5, --scope=X → Layer 6, --mode --scope=X → Layer 3, --mode --scope=X --project → Layer 4, --global → Layer 1, --local → Layer 8.\n4. OUTPUT: jin add --help shows layer routing quick reference."
                 }
               ]

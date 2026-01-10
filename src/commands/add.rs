@@ -320,6 +320,7 @@ mod tests {
             scope: None,
             project: false,
             global: false,
+            local: false,
         };
         let result = execute(args);
         assert!(result.is_err());
@@ -333,6 +334,7 @@ mod tests {
             scope: None,
             project: true,
             global: false,
+            local: false,
         };
         let result = execute(args);
         assert!(result.is_err());
@@ -346,6 +348,7 @@ mod tests {
             scope: None,
             project: false,
             global: true,
+            local: false,
         };
         let result = execute(args);
         assert!(result.is_err());

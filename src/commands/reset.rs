@@ -55,12 +55,16 @@ pub fn execute(args: ResetArgs) -> Result<()> {
     // 3. Determine target layer
     let layer = determine_target_layer(&args, &context)?;
 
-    // 3.5. Validate workspace is attached before destructive operation
-    // CRITICAL: Only validate for Hard mode (destructive)
+    // 3.5. Validate workspace is attached before destructive operation (unless --force)
+    // CRITICAL: Only validate for Hard mode (destructive) AND when --force is not set
     // CRITICAL: Validation happens BEFORE confirmation prompt - don't prompt if operation will be rejected
+    // CRITICAL: When --force is set, skip both validation AND confirmation
     if mode == ResetMode::Hard {
-        let repo = JinRepo::open()?;
-        validate_workspace_attached(&context, &repo)?;
+        if !args.force {
+            let repo = JinRepo::open()?;
+            validate_workspace_attached(&context, &repo)?;
+        }
+        // If --force, skip validation and proceed to load staging
     }
 
     // 4. Load staging

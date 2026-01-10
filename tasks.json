@@ -263,14 +263,14 @@
               "type": "Task",
               "id": "P1.M4.T1",
               "title": "Allow --hard --force to Bypass Detached State",
-              "status": "Researching",
+              "status": "Complete",
               "description": "Modify reset command to skip detached state validation when both --hard and --force are provided.",
               "subtasks": [
                 {
                   "type": "Subtask",
                   "id": "P1.M4.T1.S1",
                   "title": "Update reset --hard validation logic",
-                  "status": "Researching",
+                  "status": "Complete",
                   "story_points": 1,
                   "dependencies": [],
                   "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: src/commands/reset.rs has ResetArgs with hard, force flags. Currently validates workspace attached before hard reset. See plan/architecture/fix_specifications.md.\n2. INPUT: ResetArgs with hard and force boolean flags.\n3. LOGIC: In execute(), find the hard reset validation block. Change from: `if args.hard { validate_workspace_attached()?; if !args.force { prompt_confirmation()?; } }` to: `if args.hard { if !args.force { validate_workspace_attached()?; prompt_confirmation()?; } }`. This makes --force skip both validation AND confirmation.\n4. OUTPUT: reset --hard --force proceeds even in detached state, enabling recovery."
@@ -281,14 +281,14 @@
               "type": "Task",
               "id": "P1.M4.T2",
               "title": "Update Reset Help Text",
-              "status": "Planned",
+              "status": "Researching",
               "description": "Improve --force flag help text to indicate it bypasses detached state check.",
               "subtasks": [
                 {
                   "type": "Subtask",
                   "id": "P1.M4.T2.S1",
                   "title": "Update --force help text in ResetArgs",
-                  "status": "Planned",
+                  "status": "Researching",
                   "story_points": 0.5,
                   "dependencies": [
                     "P1.M4.T1.S1"

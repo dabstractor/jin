@@ -73,6 +73,13 @@ pub fn validate_routing_options(options: &RoutingOptions) -> Result<()> {
         ));
     }
 
+    // Can't use --local with other layer flags
+    if options.local && (options.mode || options.scope.is_some() || options.project || options.global) {
+        return Err(JinError::Config(
+            "Cannot combine --local with other layer flags".to_string(),
+        ));
+    }
+
     // Can't use --project without --mode
     if options.project && !options.mode {
         return Err(JinError::Config(
@@ -210,5 +217,59 @@ mod tests {
         };
         let result = validate_routing_options(&options);
         assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_validate_local_conflict_with_mode() {
+        let options = RoutingOptions {
+            local: true,
+            mode: true,
+            ..Default::default()
+        };
+        let result = validate_routing_options(&options);
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_validate_local_conflict_with_scope() {
+        let options = RoutingOptions {
+            local: true,
+            scope: Some("language:javascript".to_string()),
+            ..Default::default()
+        };
+        let result = validate_routing_options(&options);
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_validate_local_conflict_with_project() {
+        let options = RoutingOptions {
+            local: true,
+            project: true,
+            ..Default::default()
+        };
+        let result = validate_routing_options(&options);
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_validate_local_conflict_with_global() {
+        let options = RoutingOptions {
+            local: true,
+            global: true,
+            ..Default::default()
+        };
+        let result = validate_routing_options(&options);
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_validate_local_alone_passes() {
+        let options = RoutingOptions {
+            local: true,
+            ..Default::default()
+        };
+        let result = validate_routing_options(&options);
+        assert!(result.is_ok());
     }
 }

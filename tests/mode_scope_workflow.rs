@@ -636,3 +636,251 @@ fn test_multiple_modes_isolated() -> Result<(), Box<dyn std::error::Error>> {
 
     Ok(())
 }
+
+/// Test that switching modes automatically clears workspace metadata
+///
+/// Workflow:
+/// 1. Create two modes (mode_a, mode_b)
+/// 2. Activate mode_a, add file, commit, apply
+/// 3. Switch to mode_b (should clear metadata)
+/// 4. Add mode_b file, commit, apply (should work without --force)
+/// 5. Verify mode_b content is in workspace
+#[test]
+#[serial]
+fn test_mode_switch_clears_metadata() -> Result<(), Box<dyn std::error::Error>> {
+    // Setup test fixture
+    let fixture = TestFixture::new()?;
+    let project_path = fixture.path();
+    let jin_dir = fixture.jin_dir.as_ref().unwrap();
+
+    // CRITICAL: Set JIN_DIR BEFORE any Jin operations
+    fixture.set_jin_dir();
+
+    // Initialize Jin repository
+    jin_init(project_path, None)?;
+
+    // Create two unique mode names
+    let mode_a = format!("mode_a_{}", unique_test_id());
+    let mode_b = format!("mode_b_{}", unique_test_id());
+
+    // Create both modes
+    create_mode(&mode_a, Some(jin_dir))?;
+    create_mode(&mode_b, Some(jin_dir))?;
+
+    // === STEP 1: Activate mode_a and apply configuration ===
+    jin()
+        .args(["mode", "use", &mode_a])
+        .current_dir(project_path)
+        .env("JIN_DIR", jin_dir)
+        .assert()
+        .success();
+
+    // Add a file for mode_a
+    fs::write(project_path.join("config.json"), r#"{"mode": "mode_a"}"#)?;
+
+    jin()
+        .args(["add", "config.json", "--mode"])
+        .current_dir(project_path)
+        .env("JIN_DIR", jin_dir)
+        .assert()
+        .success();
+
+    jin()
+        .args(["commit", "-m", "Mode A config"])
+        .current_dir(project_path)
+        .env("JIN_DIR", jin_dir)
+        .assert()
+        .success();
+
+    // Apply mode_a configuration
+    jin()
+        .arg("apply")
+        .current_dir(project_path)
+        .env("JIN_DIR", jin_dir)
+        .assert()
+        .success();
+
+    // Verify mode_a content is in workspace (JSON is pretty-printed)
+    assert_workspace_file(project_path, "config.json", r#"{
+  "mode": "mode_a"
+}"#);
+
+    // === STEP 2: Switch to mode_b ===
+    let result = jin()
+        .args(["mode", "use", &mode_b])
+        .current_dir(project_path)
+        .env("JIN_DIR", jin_dir)
+        .assert();
+
+    // Verify metadata clear message appears
+    // Note: The actual message format may be "activating mode" or "mode changed from X to Y"
+    // depending on whether metadata has a mode layer. Both indicate metadata was cleared.
+    let output = result.get_output();
+    let stdout_str = String::from_utf8_lossy(&output.stdout);
+
+    assert!(
+        stdout_str.contains(&format!("Cleared workspace metadata ("))
+            && (stdout_str.contains(&format!("mode changed from '{}' to '{}'", mode_a, mode_b))
+                || stdout_str.contains(&format!("activating mode '{}'", mode_b))),
+        "Expected metadata clear message. Got: {}",
+        stdout_str
+    );
+
+    // === STEP 3: Add mode_b configuration and apply ===
+    // Note: File content changed to mode_b
+    fs::write(project_path.join("config.json"), r#"{"mode": "mode_b"}"#)?;
+
+    jin()
+        .args(["add", "config.json", "--mode"])
+        .current_dir(project_path)
+        .env("JIN_DIR", jin_dir)
+        .assert()
+        .success();
+
+    jin()
+        .args(["commit", "-m", "Mode B config"])
+        .current_dir(project_path)
+        .env("JIN_DIR", jin_dir)
+        .assert()
+        .success();
+
+    // CRITICAL: This apply must succeed without --force
+    // If metadata wasn't cleared, this would fail with "detached workspace" error
+    jin()
+        .arg("apply")
+        .current_dir(project_path)
+        .env("JIN_DIR", jin_dir)
+        .assert()
+        .success();
+
+    // Verify mode_b content is in workspace (JSON is pretty-printed)
+    assert_workspace_file(project_path, "config.json", r#"{
+  "mode": "mode_b"
+}"#);
+
+    Ok(())
+}
+
+/// Test that switching scopes automatically clears workspace metadata
+///
+/// Workflow:
+/// 1. Create two scopes (scope_x, scope_y)
+/// 2. Activate scope_x, add file, commit, apply
+/// 3. Switch to scope_y (should clear metadata)
+/// 4. Add scope_y file, commit, apply (should work without --force)
+/// 5. Verify scope_y content is in workspace
+#[test]
+#[serial]
+fn test_scope_switch_clears_metadata() -> Result<(), Box<dyn std::error::Error>> {
+    // Setup test fixture
+    let fixture = TestFixture::new()?;
+    let project_path = fixture.path();
+    let jin_dir = fixture.jin_dir.as_ref().unwrap();
+
+    // CRITICAL: Set JIN_DIR BEFORE any Jin operations
+    fixture.set_jin_dir();
+
+    // Initialize Jin repository
+    jin_init(project_path, None)?;
+
+    // Create two unique scope names
+    let scope_x = format!("scope_x_{}", unique_test_id());
+    let scope_y = format!("scope_y_{}", unique_test_id());
+
+    // Create both scopes
+    create_scope(&scope_x, Some(jin_dir))?;
+    create_scope(&scope_y, Some(jin_dir))?;
+
+    // === STEP 1: Activate scope_x and apply configuration ===
+    jin()
+        .args(["scope", "use", &scope_x])
+        .current_dir(project_path)
+        .env("JIN_DIR", jin_dir)
+        .assert()
+        .success();
+
+    // Add a file for scope_x (note: --scope= flag format)
+    fs::write(project_path.join("config.json"), r#"{"scope": "scope_x"}"#)?;
+
+    jin()
+        .args(["add", "config.json", &format!("--scope={}", scope_x)])
+        .current_dir(project_path)
+        .env("JIN_DIR", jin_dir)
+        .assert()
+        .success();
+
+    jin()
+        .args(["commit", "-m", "Scope X config"])
+        .current_dir(project_path)
+        .env("JIN_DIR", jin_dir)
+        .assert()
+        .success();
+
+    // Apply scope_x configuration
+    jin()
+        .arg("apply")
+        .current_dir(project_path)
+        .env("JIN_DIR", jin_dir)
+        .assert()
+        .success();
+
+    // Verify scope_x content is in workspace (JSON is pretty-printed)
+    assert_workspace_file(project_path, "config.json", r#"{
+  "scope": "scope_x"
+}"#);
+
+    // === STEP 2: Switch to scope_y ===
+    let result = jin()
+        .args(["scope", "use", &scope_y])
+        .current_dir(project_path)
+        .env("JIN_DIR", jin_dir)
+        .assert();
+
+    // Verify metadata clear message appears
+    // Note: The actual message format may be "activating scope" or "scope changed from X to Y"
+    // depending on whether metadata has a scope layer. Both indicate metadata was cleared.
+    let output = result.get_output();
+    let stdout_str = String::from_utf8_lossy(&output.stdout);
+
+    assert!(
+        stdout_str.contains(&format!("Cleared workspace metadata ("))
+            && (stdout_str.contains(&format!("scope changed from '{}' to '{}'", scope_x, scope_y))
+                || stdout_str.contains(&format!("activating scope '{}'", scope_y))),
+        "Expected metadata clear message. Got: {}",
+        stdout_str
+    );
+
+    // === STEP 3: Add scope_y configuration and apply ===
+    // Note: File content changed to scope_y
+    fs::write(project_path.join("config.json"), r#"{"scope": "scope_y"}"#)?;
+
+    jin()
+        .args(["add", "config.json", &format!("--scope={}", scope_y)])
+        .current_dir(project_path)
+        .env("JIN_DIR", jin_dir)
+        .assert()
+        .success();
+
+    jin()
+        .args(["commit", "-m", "Scope Y config"])
+        .current_dir(project_path)
+        .env("JIN_DIR", jin_dir)
+        .assert()
+        .success();
+
+    // CRITICAL: This apply must succeed without --force
+    // If metadata wasn't cleared, this would fail with "detached workspace" error
+    jin()
+        .arg("apply")
+        .current_dir(project_path)
+        .env("JIN_DIR", jin_dir)
+        .assert()
+        .success();
+
+    // Verify scope_y content is in workspace (JSON is pretty-printed)
+    assert_workspace_file(project_path, "config.json", r#"{
+  "scope": "scope_y"
+}"#);
+
+    Ok(())
+}

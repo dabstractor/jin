@@ -177,7 +177,7 @@
           "type": "Milestone",
           "id": "P1.M3",
           "title": "Improve Mode Switching UX",
-          "status": "Researching",
+          "status": "Complete",
           "description": "Eliminate the detached state issue when switching modes by auto-clearing workspace metadata.",
           "tasks": [
             {
@@ -233,14 +233,14 @@
               "type": "Task",
               "id": "P1.M3.T3",
               "title": "Add Integration Tests for Mode/Scope Switching",
-              "status": "Researching",
+              "status": "Complete",
               "description": "Create tests verifying smooth mode/scope switching without detached state.",
               "subtasks": [
                 {
                   "type": "Subtask",
                   "id": "P1.M3.T3.S1",
                   "title": "Create mode switching workflow test",
-                  "status": "Researching",
+                  "status": "Complete",
                   "story_points": 2,
                   "dependencies": [
                     "P1.M3.T1.S2",
@@ -263,14 +263,14 @@
               "type": "Task",
               "id": "P1.M4.T1",
               "title": "Allow --hard --force to Bypass Detached State",
-              "status": "Planned",
+              "status": "Researching",
               "description": "Modify reset command to skip detached state validation when both --hard and --force are provided.",
               "subtasks": [
                 {
                   "type": "Subtask",
                   "id": "P1.M4.T1.S1",
                   "title": "Update reset --hard validation logic",
-                  "status": "Planned",
+                  "status": "Researching",
                   "story_points": 1,
                   "dependencies": [],
                   "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: src/commands/reset.rs has ResetArgs with hard, force flags. Currently validates workspace attached before hard reset. See plan/architecture/fix_specifications.md.\n2. INPUT: ResetArgs with hard and force boolean flags.\n3. LOGIC: In execute(), find the hard reset validation block. Change from: `if args.hard { validate_workspace_attached()?; if !args.force { prompt_confirmation()?; } }` to: `if args.hard { if !args.force { validate_workspace_attached()?; prompt_confirmation()?; } }`. This makes --force skip both validation AND confirmation.\n4. OUTPUT: reset --hard --force proceeds even in detached state, enabling recovery."

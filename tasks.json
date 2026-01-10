@@ -120,14 +120,14 @@
           "type": "Milestone",
           "id": "P1.M2",
           "title": "Fix SIGPIPE Handling in jin log",
-          "status": "Planned",
+          "status": "Researching",
           "description": "Prevent panic when jin log output is piped to commands like head that close stdin early.",
           "tasks": [
             {
               "type": "Task",
               "id": "P1.M2.T1",
               "title": "Add SIGPIPE Signal Handler",
-              "status": "Researching",
+              "status": "Complete",
               "description": "Implement graceful SIGPIPE handling to prevent panic when stdout is closed by pipe consumer.",
               "subtasks": [
                 {
@@ -143,7 +143,7 @@
                   "type": "Subtask",
                   "id": "P1.M2.T1.S2",
                   "title": "Add libc dependency to Cargo.toml",
-                  "status": "Researching",
+                  "status": "Complete",
                   "story_points": 0.5,
                   "dependencies": [],
                   "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: Cargo.toml is at project root. It already has git2, clap, serde, etc. See plan/architecture/system_context.md for dependency list.\n2. INPUT: None - standalone change.\n3. LOGIC: Add `libc = \"0.2\"` under [dependencies] section. This provides the signal() function and SIGPIPE constant for Unix platforms.\n4. OUTPUT: libc crate available for import in src/main.rs."
@@ -154,14 +154,14 @@
               "type": "Task",
               "id": "P1.M2.T2",
               "title": "Add Manual Test Documentation for SIGPIPE",
-              "status": "Planned",
+              "status": "Researching",
               "description": "Document manual test procedure for SIGPIPE fix since automated pipe testing is complex.",
               "subtasks": [
                 {
                   "type": "Subtask",
                   "id": "P1.M2.T2.S1",
                   "title": "Add SIGPIPE test instructions to test documentation",
-                  "status": "Planned",
+                  "status": "Researching",
                   "story_points": 0.5,
                   "dependencies": [
                     "P1.M2.T1.S1",

@@ -635,6 +635,7 @@ dependencies = [
  "dirs",
  "git2",
  "indexmap",
+ "libc",
  "predicates",
  "regex",
  "rust-ini",

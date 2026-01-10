@@ -3,6 +3,7 @@
 use crate::cli::ModeAction;
 use crate::core::{JinError, ProjectContext, Result};
 use crate::git::{JinRepo, ObjectOps, RefOps};
+use crate::staging::metadata::WorkspaceMetadata;
 
 /// Execute a mode subcommand
 pub fn execute(action: ModeAction) -> Result<()> {
@@ -113,6 +114,14 @@ fn use_mode(name: &str) -> Result<()> {
 
     // Save context
     context.save()?;
+
+    // Load workspace metadata (may not exist yet)
+    let _metadata = match WorkspaceMetadata::load() {
+        Ok(meta) => Some(meta),
+        Err(JinError::NotFound(_)) => None, // Fresh workspace - no metadata yet
+        Err(e) => return Err(e),            // Other errors should propagate
+    };
+    // Metadata is now available for P1.M3.T1.S2 to compare and clear if needed
 
     println!("Activated mode '{}'", name);
     println!("Stage files with: jin add --mode");

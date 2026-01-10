@@ -184,14 +184,14 @@
               "type": "Task",
               "id": "P1.M3.T1",
               "title": "Auto-Clear Workspace Metadata on Mode Switch",
-              "status": "Planned",
+              "status": "Researching",
               "description": "When activating a new mode, automatically clear workspace metadata if it references a different mode.",
               "subtasks": [
                 {
                   "type": "Subtask",
                   "id": "P1.M3.T1.S1",
                   "title": "Load workspace metadata in mode use handler",
-                  "status": "Researching",
+                  "status": "Complete",
                   "story_points": 1,
                   "dependencies": [],
                   "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: ModeAction::Use handler is in src/commands/mode.rs. WorkspaceMetadata is in src/staging/metadata.rs with load()/save() methods. See plan/architecture/fix_specifications.md.\n2. INPUT: None - modifying existing mode use logic.\n3. LOGIC: In the ModeAction::Use match arm, after successfully updating ProjectContext, attempt to load WorkspaceMetadata. Handle missing metadata gracefully (it may not exist yet). Get the current mode from metadata if it exists.\n4. OUTPUT: Optional WorkspaceMetadata loaded, ready for comparison with new mode."
@@ -200,7 +200,7 @@
                   "type": "Subtask",
                   "id": "P1.M3.T1.S2",
                   "title": "Compare modes and clear metadata if different",
-                  "status": "Planned",
+                  "status": "Researching",
                   "story_points": 1,
                   "dependencies": [
                     "P1.M3.T1.S1"

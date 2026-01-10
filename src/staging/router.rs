@@ -79,7 +79,9 @@ pub fn validate_routing_options(options: &RoutingOptions) -> Result<()> {
     }
 
     // Can't use --local with other layer flags
-    if options.local && (options.mode || options.scope.is_some() || options.project || options.global) {
+    if options.local
+        && (options.mode || options.scope.is_some() || options.project || options.global)
+    {
         return Err(JinError::Config(
             "Cannot combine --local with other layer flags".to_string(),
         ));

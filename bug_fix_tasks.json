@@ -382,7 +382,7 @@
                   "type": "Subtask",
                   "id": "P2.M5.T1.S1",
                   "title": "Run all import integration tests",
-                  "status": "Planned",
+                  "status": "Complete",
                   "story_points": 1,
                   "dependencies": [
                     "P2.M4.T1.S1",

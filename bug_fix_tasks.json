@@ -38,21 +38,21 @@
           "type": "Milestone",
           "id": "P1.M2",
           "title": "Milestone 2: Fix test_import_multiple_files Staging Path",
-          "status": "Planned",
+          "status": "Complete",
           "description": "Update the test_import_multiple_files test to read staging index from the correct JIN_DIR-aware path.",
           "tasks": [
             {
               "type": "Task",
               "id": "P1.M2.T1",
               "title": "Fix Staging Index Path Read in test_import_multiple_files",
-              "status": "Planned",
+              "status": "Complete",
               "description": "Update the staging index file read to use JIN_DIR environment variable instead of hard-coded .jin path.",
               "subtasks": [
                 {
                   "type": "Subtask",
                   "id": "P1.M2.T1.S1",
                   "title": "Update staging_content read path to use JIN_DIR",
-                  "status": "Planned",
+                  "status": "Complete",
                   "story_points": 1,
                   "dependencies": [],
                   "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: Tests set JIN_DIR environment variable for isolation (plan/bugfix/architecture/test_patterns.md). StagingIndex::default_path() at src/staging/index.rs:68-74 checks JIN_DIR first.\n2. INPUT: test_import_multiple_files function in tests/cli_import.rs (lines 135-180). Test sets JIN_DIR to temp.path().join('.jin_global').\n3. LOGIC: Replace hard-coded path string '.jin/staging/index.json' at line 163 with JIN_DIR-aware logic. Construct staging_index_path by reading JIN_DIR env var. If set, use PathBuf::from(jin_dir).join('staging').join('index.json'). If not set, use temp.path().join('.jin/staging').join('index.json'). Then use staging_index_path.to_string_lossy() or fs::read_to_string(&staging_index_path) instead of unwrap() on hard-coded path.\n4. OUTPUT: Updated file read at line 163 that reads staging index from correct JIN_DIR-aware location. Test should pass after fix."

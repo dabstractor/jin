@@ -160,7 +160,7 @@ fn test_import_multiple_files() {
     assert!(!git_files.contains("config3.json"));
 
     // Verify all files in Jin staging
-    let staging_content = fs::read_to_string(jin_dir.join("staging").join("index.json")).unwrap();
+    let staging_content = fs::read_to_string(jin_dir.join("staging/index.json")).unwrap();
     assert!(staging_content.contains("config1.json"));
     assert!(staging_content.contains("config2.json"));
     assert!(staging_content.contains("config3.json"));

@@ -119,7 +119,7 @@
       "type": "Phase",
       "id": "P2",
       "title": "Phase 2: Add Layer Routing Flags to Import Command",
-      "status": "Planned",
+      "status": "Complete",
       "description": "Add full layer routing support (--local, --global, --mode, --scope, --project) to the jin import command to match jin add functionality.",
       "milestones": [
         {
@@ -368,14 +368,14 @@
           "type": "Milestone",
           "id": "P2.M5",
           "title": "Milestone 5: Verify Import Routing Implementation",
-          "status": "Planned",
+          "status": "Complete",
           "description": "Run all import tests and manual verification to confirm layer routing works correctly.",
           "tasks": [
             {
               "type": "Task",
               "id": "P2.M5.T1",
               "title": "Execute Import Routing Tests",
-              "status": "Planned",
+              "status": "Complete",
               "description": "Run the complete import test suite to verify all routing scenarios work correctly.",
               "subtasks": [
                 {
@@ -411,7 +411,7 @@
                   "type": "Subtask",
                   "id": "P2.M5.T1.S3",
                   "title": "Manual smoke test of import routing",
-                  "status": "Planned",
+                  "status": "Complete",
                   "story_points": 1,
                   "dependencies": [
                     "P2.M5.T1.S1"

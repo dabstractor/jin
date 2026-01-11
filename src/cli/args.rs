@@ -241,6 +241,10 @@ pub struct ImportArgs {
     /// Target global layer
     #[arg(long)]
     pub global: bool,
+
+    /// Target user-local layer (Layer 8, machine-specific)
+    #[arg(long)]
+    pub local: bool,
 }
 
 /// Arguments for the `export` command

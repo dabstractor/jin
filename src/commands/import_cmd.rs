@@ -389,6 +389,7 @@ mod tests {
             scope: None,
             project: false,
             global: false,
+            local: false,
         };
         let result = execute(args);
         assert!(result.is_err());

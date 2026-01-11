@@ -126,14 +126,14 @@
           "type": "Milestone",
           "id": "P2.M1",
           "title": "Milestone 1: Add Routing Flags to ImportArgs",
-          "status": "Planned",
+          "status": "Complete",
           "description": "Update ImportArgs struct in src/cli/args.rs to include all layer routing flags matching AddArgs.",
           "tasks": [
             {
               "type": "Task",
               "id": "P2.M1.T1",
               "title": "Add Layer Routing Fields to ImportArgs Struct",
-              "status": "Planned",
+              "status": "Complete",
               "description": "Add mode, scope, project, global, and local fields to ImportArgs with appropriate clap attributes and help text.",
               "subtasks": [
                 {
@@ -176,7 +176,7 @@
                   "type": "Subtask",
                   "id": "P2.M1.T1.S5",
                   "title": "Add local flag field to ImportArgs",
-                  "status": "Planned",
+                  "status": "Complete",
                   "story_points": 0.5,
                   "dependencies": [],
                   "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: Layer routing system documented in plan/bugfix/architecture/layer_routing_system.md. Local flag routes to Layer 8 (User Local).\n2. INPUT: ImportArgs struct at src/cli/args.rs:219-228. Need to add local field.\n3. LOGIC: Add new field after global field. Use exact same definition as AddArgs: '/// Target user-local layer (Layer 8, machine-specific)' doc comment, '#[arg(long)]' attribute, 'pub local: bool' field.\n4. OUTPUT: Updated ImportArgs struct with local field. Struct should compile. Field will be unused until P2.M2."

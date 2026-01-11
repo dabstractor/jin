@@ -129,7 +129,21 @@ pub fn merge_layers(config: &LayerMergeConfig, repo: &JinRepo) -> Result<LayerMe
                 result.conflict_files.push(path.clone());
                 continue; // Skip merge_file_across_layers() for this file
             }
-            // Same content in multiple layers - proceed with merge (will merge once)
+
+            // ============================================================
+            // NEW: Optimization for same content across multiple layers
+            // ============================================================
+            // All layers have identical content - use first layer directly
+            let first_layer = &layers_with_file[0];
+            let mut merged = create_merged_file_from_first_layer(path, first_layer, config, repo)?;
+
+            // CRITICAL: Add ALL layers to source_layers for metadata completeness
+            merged
+                .source_layers
+                .extend(layers_with_file.iter().copied());
+
+            result.merged_files.insert(path.clone(), merged);
+            continue; // Skip merge_file_across_layers() - optimization complete
         }
 
         // ============================================================
@@ -239,6 +253,65 @@ fn merge_file_across_layers(
         }),
         None => Err(JinError::NotFound(path.display().to_string())),
     }
+}
+
+/// Create a MergedFile directly from a single layer's content.
+///
+/// Used as an optimization when all layers containing a file have identical
+/// content. Instead of reading and merging from multiple layers, we read
+/// once from the first layer.
+///
+/// # Arguments
+///
+/// * `path` - Path to the file (relative to repo root)
+/// * `layer` - The layer to read content from
+/// * `config` - Merge configuration with mode/scope/project context
+/// * `repo` - Jin repository for Git operations
+///
+/// # Returns
+///
+/// * `Ok(MergedFile)` - File content with metadata
+/// * `Err(JinError)` - Git operation or parse failure
+fn create_merged_file_from_first_layer(
+    path: &std::path::Path,
+    layer: &Layer,
+    config: &LayerMergeConfig,
+    repo: &JinRepo,
+) -> Result<MergedFile> {
+    // Get the Git ref for this layer
+    let ref_path = layer.ref_path(
+        config.mode.as_deref(),
+        config.scope.as_deref(),
+        config.project.as_deref(),
+    );
+
+    // CRITICAL: Verify layer ref exists (it should since we found it earlier)
+    if !repo.ref_exists(&ref_path) {
+        return Err(JinError::NotFound(format!(
+            "Layer ref not found: {}",
+            ref_path
+        )));
+    }
+
+    // Resolve to commit and get tree
+    let commit_oid = repo.resolve_ref(&ref_path)?;
+    let commit = repo.inner().find_commit(commit_oid)?;
+    let tree_oid = commit.tree_id();
+
+    // Read file content from tree
+    let content_bytes = repo.read_file_from_tree(tree_oid, path)?;
+    let content_str = String::from_utf8_lossy(&content_bytes);
+
+    // Detect format and parse content
+    let format = detect_format(path);
+    let layer_value = parse_content(&content_str, format)?;
+
+    // Create MergedFile - source_layers will be extended in merge_layers()
+    Ok(MergedFile {
+        content: layer_value,
+        source_layers: Vec::new(),
+        format,
+    })
 }
 
 /// Detect file format from path extension.
@@ -1658,5 +1731,86 @@ mod tests {
             .contains(&PathBuf::from("conflict.json")));
         assert_eq!(result.merged_files.len(), 1);
         assert!(result.merged_files.contains_key(Path::new("safe.json")));
+    }
+
+    #[test]
+    fn test_merge_layers_same_content_optimized() {
+        let (_temp, repo) = create_layer_test_repo();
+
+        // Create 3 layers with identical content
+        let content = br#"{"port": 8080, "debug": true}"#;
+        create_layer_with_file(&repo, "refs/jin/layers/global", "config.json", content).unwrap();
+        create_layer_with_file(&repo, "refs/jin/layers/mode/test/_", "config.json", content)
+            .unwrap();
+        create_layer_with_file(
+            &repo,
+            "refs/jin/layers/mode/test/scope/dev/_",
+            "config.json",
+            content,
+        )
+        .unwrap();
+
+        let config = LayerMergeConfig {
+            layers: vec![Layer::GlobalBase, Layer::ModeBase, Layer::ModeScope],
+            mode: Some("test".to_string()),
+            scope: Some("dev".to_string()),
+            project: None,
+        };
+
+        let result = merge_layers(&config, &repo).unwrap();
+
+        // Verify merge succeeded with no conflicts
+        assert!(result.is_clean());
+        assert_eq!(result.merged_files.len(), 1);
+
+        // Verify content is correct
+        let merged = result
+            .merged_files
+            .get(&PathBuf::from("config.json"))
+            .unwrap();
+        assert_eq!(merged.format, FileFormat::Json);
+        assert!(matches!(&merged.content, MergeValue::Object(_)));
+
+        // CRITICAL: Verify all layers are in source_layers (metadata completeness)
+        assert_eq!(merged.source_layers.len(), 3);
+        assert!(merged.source_layers.contains(&Layer::GlobalBase));
+        assert!(merged.source_layers.contains(&Layer::ModeBase));
+        assert!(merged.source_layers.contains(&Layer::ModeScope));
+    }
+
+    #[test]
+    fn test_merge_layers_same_content_text_file_optimized() {
+        let (_temp, repo) = create_layer_test_repo();
+
+        // Test with text files (not just structured files)
+        let content = b"Hello, World!\nLine 2\nLine 3\n";
+        create_layer_with_file(&repo, "refs/jin/layers/global", "README.txt", content).unwrap();
+        create_layer_with_file(&repo, "refs/jin/layers/mode/test/_", "README.txt", content)
+            .unwrap();
+
+        let config = LayerMergeConfig {
+            layers: vec![Layer::GlobalBase, Layer::ModeBase],
+            mode: Some("test".to_string()),
+            scope: None,
+            project: None,
+        };
+
+        let result = merge_layers(&config, &repo).unwrap();
+
+        // Verify merge succeeded
+        assert!(result.is_clean());
+        assert_eq!(result.merged_files.len(), 1);
+
+        // Verify both layers are in source_layers
+        let merged = result
+            .merged_files
+            .get(&PathBuf::from("README.txt"))
+            .unwrap();
+        assert_eq!(merged.source_layers.len(), 2);
+        assert_eq!(merged.format, FileFormat::Text);
+        assert_eq!(
+            merged.content,
+            MergeValue::String(String::from_utf8_lossy(content).to_string())
+        );
     }
 }

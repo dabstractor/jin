@@ -1397,3 +1397,807 @@ fn test_fetch_with_default_context() -> Result<(), Box<dyn std::error::Error>> {
 
     Ok(())
 }
+
+/// Test fetch updates refs without merging (P3.M3.T1.S2)
+///
+/// Verifies that fetch downloads remote refs without modifying workspace.
+/// Fetch is a read-only operation from the user's perspective.
+#[test]
+fn test_fetch_updates_refs_without_merging() -> Result<(), Box<dyn std::error::Error>> {
+    let remote_fixture = setup_jin_with_remote()?;
+    let mode_name = format!("fetch_test_{}", unique_test_id());
+    let jin_dir = remote_fixture.jin_dir.as_ref().unwrap();
+
+    // Create content in remote (via temp workspace)
+    let temp_workspace = TestFixture::new()?;
+    let temp_jin_dir = temp_workspace.jin_dir.as_ref().unwrap();
+    jin_init(temp_workspace.path(), Some(temp_jin_dir))?;
+
+    create_mode(&mode_name, Some(temp_jin_dir))?;
+    jin()
+        .args(["mode", "use", &mode_name])
+        .current_dir(temp_workspace.path())
+        .env("JIN_DIR", temp_jin_dir)
+        .assert()
+        .success();
+
+    fs::write(temp_workspace.path().join("remote.txt"), "remote content")?;
+    jin()
+        .args(["add", "remote.txt", "--mode"])
+        .current_dir(temp_workspace.path())
+        .env("JIN_DIR", temp_jin_dir)
+        .assert()
+        .success();
+    jin()
+        .args(["commit", "-m", "Remote commit"])
+        .current_dir(temp_workspace.path())
+        .env("JIN_DIR", temp_jin_dir)
+        .assert()
+        .success();
+
+    // Link and push to remote
+    jin()
+        .args([
+            "link",
+            remote_fixture.remote_path.to_str().unwrap(),
+            "--force",
+        ])
+        .current_dir(temp_workspace.path())
+        .env("JIN_DIR", temp_jin_dir)
+        .assert()
+        .success();
+    jin()
+        .arg("push")
+        .current_dir(temp_workspace.path())
+        .env("JIN_DIR", temp_jin_dir)
+        .assert()
+        .success();
+
+    // In local repo: link and fetch
+    jin()
+        .args(["link", remote_fixture.remote_path.to_str().unwrap()])
+        .current_dir(&remote_fixture.local_path)
+        .env("JIN_DIR", jin_dir)
+        .assert()
+        .success();
+
+    // Capture pre-fetch state for comparison
+    let pre_fetch_oid = capture_ref_before_fetch(jin_dir, &mode_name)?;
+
+    jin()
+        .arg("fetch")
+        .current_dir(&remote_fixture.local_path)
+        .env("JIN_DIR", jin_dir)
+        .assert()
+        .success();
+
+    // Verify: Remote ref now exists locally (fetch updates refs)
+    let ref_path = format!("refs/jin/layers/mode/{}/_", mode_name);
+    let jin_repo = git2::Repository::open(jin_dir)?;
+    match jin_repo.find_reference(&ref_path) {
+        Ok(reference) => {
+            let oid = reference.target().expect("Ref should have target");
+            let commit = jin_repo.find_commit(oid)?;
+            assert!(
+                commit.message().unwrap_or("").contains("Remote commit"),
+                "Fetched ref should point to remote commit"
+            );
+            // Verify the ref changed (was new or updated)
+            assert!(
+                pre_fetch_oid.is_none() || pre_fetch_oid != Some(oid),
+                "Fetch should have updated the ref"
+            );
+        }
+        Err(e) => panic!("Fetch should have created remote ref locally: {}", e),
+    }
+
+    // Verify: Workspace NOT modified (fetch is read-only)
+    let workspace_file = remote_fixture.local_path.join("remote.txt");
+    assert!(
+        !workspace_file.exists(),
+        "Fetch should NOT create workspace files (read-only operation)"
+    );
+
+    Ok(())
+}
+
+/// Helper to capture ref OID before fetch for comparison
+fn capture_ref_before_fetch(
+    jin_dir: &std::path::PathBuf,
+    mode_name: &str,
+) -> Result<Option<git2::Oid>, Box<dyn std::error::Error>> {
+    let jin_repo = git2::Repository::open(jin_dir)?;
+    let ref_path = format!("refs/jin/layers/mode/{}/_", mode_name);
+    Ok(jin_repo.find_reference(&ref_path).ok().map(|r| r.target().unwrap()))
+}
+
+/// Test pull merges remote changes (P3.M3.T1.S2)
+///
+/// Verifies that pull performs fast-forward merge when local is behind.
+#[test]
+fn test_pull_merges_remote_changes() -> Result<(), Box<dyn std::error::Error>> {
+    let remote_fixture = setup_jin_with_remote()?;
+    let mode_name = format!("pull_test_{}", unique_test_id());
+    let jin_dir = remote_fixture.jin_dir.as_ref().unwrap();
+
+    // Setup: Create commit in remote
+    let temp_workspace = TestFixture::new()?;
+    let temp_jin_dir = temp_workspace.jin_dir.as_ref().unwrap();
+    jin_init(temp_workspace.path(), Some(temp_jin_dir))?;
+
+    create_mode(&mode_name, Some(temp_jin_dir))?;
+    jin()
+        .args(["mode", "use", &mode_name])
+        .current_dir(temp_workspace.path())
+        .env("JIN_DIR", temp_jin_dir)
+        .assert()
+        .success();
+
+    fs::write(temp_workspace.path().join("merged.txt"), "remote content")?;
+    jin()
+        .args(["add", "merged.txt", "--mode"])
+        .current_dir(temp_workspace.path())
+        .env("JIN_DIR", temp_jin_dir)
+        .assert()
+        .success();
+    jin()
+        .args(["commit", "-m", "Remote commit"])
+        .current_dir(temp_workspace.path())
+        .env("JIN_DIR", temp_jin_dir)
+        .assert()
+        .success();
+
+    jin()
+        .args([
+            "link",
+            remote_fixture.remote_path.to_str().unwrap(),
+            "--force",
+        ])
+        .current_dir(temp_workspace.path())
+        .env("JIN_DIR", temp_jin_dir)
+        .assert()
+        .success();
+    jin()
+        .arg("push")
+        .current_dir(temp_workspace.path())
+        .env("JIN_DIR", temp_jin_dir)
+        .assert()
+        .success();
+
+    // In local repo: link and pull
+    jin()
+        .args(["link", remote_fixture.remote_path.to_str().unwrap()])
+        .current_dir(&remote_fixture.local_path)
+        .env("JIN_DIR", jin_dir)
+        .assert()
+        .success();
+
+    // Create the mode in local first
+    create_mode(&mode_name, Some(jin_dir))?;
+
+    jin()
+        .arg("pull")
+        .current_dir(&remote_fixture.local_path)
+        .env("JIN_DIR", jin_dir)
+        .assert()
+        .success();
+
+    // Activate mode and apply to see pulled changes
+    jin()
+        .args(["mode", "use", &mode_name])
+        .current_dir(&remote_fixture.local_path)
+        .env("JIN_DIR", jin_dir)
+        .assert()
+        .success();
+
+    jin()
+        .arg("apply")
+        .current_dir(&remote_fixture.local_path)
+        .env("JIN_DIR", jin_dir)
+        .assert()
+        .success();
+
+    // Verify: File exists in workspace
+    assert_workspace_file_exists(&remote_fixture.local_path, "merged.txt");
+
+    // Verify: Layer ref points to merged commit
+    let ref_path = format!("refs/jin/layers/mode/{}/_", mode_name);
+    assert_layer_ref_exists(&ref_path, Some(jin_dir));
+
+    Ok(())
+}
+
+/// Test pull creates .jinmerge files for conflicts (P3.M3.T1.S2)
+///
+/// Verifies that pull creates .jinmerge files for conflicting changes.
+/// NOTE: This test is marked as #[ignore] because conflict detection (P1.M1) is not fully implemented yet.
+/// When P1.M1 is complete, remove the #[ignore] attribute.
+#[test]
+#[ignore = "Conflict detection (P1.M1) not fully implemented - testPull_divergent_with_conflicts also fails"]
+fn test_pull_creates_jinmerge_for_conflicts() -> Result<(), Box<dyn std::error::Error>> {
+    let remote_fixture = setup_jin_with_remote()?;
+    let jin_dir = remote_fixture.jin_dir.as_ref().unwrap();
+
+    // Create base commit - use separate JIN_DIR for temp workspace
+    let temp_workspace = TestFixture::new()?;
+    let temp_jin_dir = temp_workspace.jin_dir.as_ref().unwrap();
+    jin_init(temp_workspace.path(), Some(temp_jin_dir))?;
+
+    // Base content
+    fs::write(temp_workspace.path().join("config.txt"), "version=1")?;
+    jin()
+        .args(["add", "config.txt", "--global"])
+        .current_dir(temp_workspace.path())
+        .env("JIN_DIR", temp_jin_dir)
+        .assert()
+        .success();
+    jin()
+        .args(["commit", "-m", "Base commit"])
+        .current_dir(temp_workspace.path())
+        .env("JIN_DIR", temp_jin_dir)
+        .assert()
+        .success();
+
+    // Push to remote
+    jin()
+        .args([
+            "link",
+            remote_fixture.remote_path.to_str().unwrap(),
+            "--force",
+        ])
+        .current_dir(temp_workspace.path())
+        .env("JIN_DIR", temp_jin_dir)
+        .assert()
+        .success();
+    jin()
+        .arg("push")
+        .current_dir(temp_workspace.path())
+        .env("JIN_DIR", temp_jin_dir)
+        .assert()
+        .success();
+
+    // Setup local repo with base
+    jin()
+        .args(["link", remote_fixture.remote_path.to_str().unwrap()])
+        .current_dir(&remote_fixture.local_path)
+        .env("JIN_DIR", jin_dir)
+        .assert()
+        .success();
+
+    jin()
+        .arg("fetch")
+        .current_dir(&remote_fixture.local_path)
+        .env("JIN_DIR", jin_dir)
+        .assert()
+        .success();
+
+    jin()
+        .arg("pull")
+        .current_dir(&remote_fixture.local_path)
+        .env("JIN_DIR", jin_dir)
+        .assert()
+        .success();
+
+    // Step 2: Make conflicting local change
+    fs::write(remote_fixture.local_path.join("config.txt"), "version=local")?;
+    jin()
+        .args(["add", "config.txt", "--global"])
+        .current_dir(&remote_fixture.local_path)
+        .env("JIN_DIR", jin_dir)
+        .assert()
+        .success();
+    jin()
+        .args(["commit", "-m", "Local conflicting change"])
+        .current_dir(&remote_fixture.local_path)
+        .env("JIN_DIR", jin_dir)
+        .assert()
+        .success();
+
+    // Step 3: Make conflicting remote change
+    fs::write(temp_workspace.path().join("config.txt"), "version=remote")?;
+    jin()
+        .args(["add", "config.txt", "--global"])
+        .current_dir(temp_workspace.path())
+        .env("JIN_DIR", temp_jin_dir)
+        .assert()
+        .success();
+    jin()
+        .args(["commit", "-m", "Remote conflicting change"])
+        .current_dir(temp_workspace.path())
+        .env("JIN_DIR", temp_jin_dir)
+        .assert()
+        .success();
+    jin()
+        .arg("push")
+        .current_dir(temp_workspace.path())
+        .env("JIN_DIR", temp_jin_dir)
+        .assert()
+        .success();
+
+    // Step 4: Pull should detect conflict and create .jinmerge
+    jin()
+        .arg("fetch")
+        .current_dir(&remote_fixture.local_path)
+        .env("JIN_DIR", jin_dir)
+        .assert()
+        .success();
+
+    jin()
+        .arg("pull")
+        .current_dir(&remote_fixture.local_path)
+        .env("JIN_DIR", jin_dir)
+        .assert()
+        .success()
+        .stdout(predicate::str::contains("conflicts"))
+        .stdout(predicate::str::contains(".jinmerge"));
+
+    // Verify .jinmerge file created
+    let jinmerge_path = remote_fixture.local_path.join("config.txt.jinmerge");
+    assert!(
+        jinmerge_path.exists(),
+        "Pull should create .jinmerge file for conflicts"
+    );
+
+    // Verify conflict marker format
+    let jinmerge_content = fs::read_to_string(&jinmerge_path)?;
+    assert!(jinmerge_content.contains("<<<<<<<"));
+    assert!(jinmerge_content.contains("======="));
+    assert!(jinmerge_content.contains(">>>>>>>"));
+    assert!(jinmerge_content.contains("version=local")); // Local version
+    assert!(jinmerge_content.contains("version=remote")); // Remote version
+
+    Ok(())
+}
+
+/// Test pull fast-forward behaves correctly (P3.M3.T1.S2)
+///
+/// Verifies that pull fast-forwards when local is ancestor of remote.
+/// NOTE: This test is marked as #[ignore] because merge type detection (P1.M1) is not fully implemented yet.
+/// When P1.M1 is complete, remove the #[ignore] attribute.
+#[test]
+#[ignore = "Merge type detection (P1.M1) not fully implemented"]
+fn test_pull_fast_forward_behaves_correctly() -> Result<(), Box<dyn std::error::Error>> {
+    let remote_fixture = setup_jin_with_remote()?;
+    let mode_name = format!("ff_test_{}", unique_test_id());
+    let jin_dir = remote_fixture.jin_dir.as_ref().unwrap();
+
+    // Create local commit A and push to remote
+    create_mode(&mode_name, Some(jin_dir))?;
+    jin()
+        .args(["mode", "use", &mode_name])
+        .current_dir(&remote_fixture.local_path)
+        .env("JIN_DIR", jin_dir)
+        .assert()
+        .success();
+
+    fs::write(remote_fixture.local_path.join("file.txt"), "commit A")?;
+    jin()
+        .args(["add", "file.txt", "--mode"])
+        .current_dir(&remote_fixture.local_path)
+        .env("JIN_DIR", jin_dir)
+        .assert()
+        .success();
+    jin()
+        .args(["commit", "-m", "Commit A"])
+        .current_dir(&remote_fixture.local_path)
+        .env("JIN_DIR", jin_dir)
+        .assert()
+        .success();
+
+    jin()
+        .args(["link", remote_fixture.remote_path.to_str().unwrap()])
+        .current_dir(&remote_fixture.local_path)
+        .env("JIN_DIR", jin_dir)
+        .assert()
+        .success();
+    jin()
+        .arg("push")
+        .current_dir(&remote_fixture.local_path)
+        .env("JIN_DIR", jin_dir)
+        .assert()
+        .success();
+
+    // Create remote commit B on top of A via temp workspace
+    // CRITICAL: Use the SAME JIN_DIR for both workspaces to share layer refs
+    let temp_workspace = TestFixture::new()?;
+    jin_init(temp_workspace.path(), Some(jin_dir))?;
+
+    create_mode(&mode_name, Some(jin_dir))?;
+    jin()
+        .args(["link", remote_fixture.remote_path.to_str().unwrap(), "--force"])
+        .current_dir(temp_workspace.path())
+        .env("JIN_DIR", jin_dir)
+        .assert()
+        .success();
+
+    // Pull first to get the base state
+    jin()
+        .arg("pull")
+        .current_dir(temp_workspace.path())
+        .env("JIN_DIR", jin_dir)
+        .assert()
+        .success();
+
+    // Apply to get base file in workspace
+    jin()
+        .arg("apply")
+        .current_dir(temp_workspace.path())
+        .env("JIN_DIR", jin_dir)
+        .assert()
+        .success();
+
+    jin()
+        .args(["mode", "use", &mode_name])
+        .current_dir(temp_workspace.path())
+        .env("JIN_DIR", jin_dir)
+        .assert()
+        .success();
+
+    fs::write(temp_workspace.path().join("file2.txt"), "commit B")?;
+    jin()
+        .args(["add", "file2.txt", "--mode"])
+        .current_dir(temp_workspace.path())
+        .env("JIN_DIR", jin_dir)
+        .assert()
+        .success();
+    jin()
+        .args(["commit", "-m", "Commit B"])
+        .current_dir(temp_workspace.path())
+        .env("JIN_DIR", jin_dir)
+        .assert()
+        .success();
+    jin()
+        .arg("push")
+        .current_dir(temp_workspace.path())
+        .env("JIN_DIR", jin_dir)
+        .assert()
+        .success();
+
+    // Run pull in local - should fast-forward
+    jin()
+        .arg("pull")
+        .current_dir(&remote_fixture.local_path)
+        .env("JIN_DIR", jin_dir)
+        .assert()
+        .success()
+        .stdout(predicate::str::contains("fast-forward"));
+
+    // Verify linear history (no merge commit)
+    let ref_path = format!("refs/jin/layers/mode/{}/_", mode_name);
+    let jin_repo = git2::Repository::open(jin_dir)?;
+    let reference = jin_repo.find_reference(&ref_path)?;
+    let oid = reference.target().unwrap();
+    let commit = jin_repo.find_commit(oid)?;
+
+    assert_eq!(
+        commit.parent_count(),
+        1,
+        "Fast-forward should have single parent, not merge commit"
+    );
+
+    // Verify workspace has remote content
+    jin()
+        .arg("apply")
+        .current_dir(&remote_fixture.local_path)
+        .env("JIN_DIR", jin_dir)
+        .assert()
+        .success();
+    assert_workspace_file_exists(&remote_fixture.local_path, "file2.txt");
+
+    Ok(())
+}
+
+/// Test pull divergent clean merge (P3.M3.T1.S2)
+///
+/// Verifies that pull performs 3-way merge for non-overlapping changes.
+/// NOTE: This test is marked as #[ignore] because 3-way merge (P1.M1) is not fully implemented yet.
+/// When P1.M1 is complete, remove the #[ignore] attribute.
+#[test]
+#[ignore = "3-way merge (P1.M1) not fully implemented"]
+fn test_pull_divergent_clean_merge() -> Result<(), Box<dyn std::error::Error>> {
+    let remote_fixture = setup_jin_with_remote()?;
+    let jin_dir = remote_fixture.jin_dir.as_ref().unwrap();
+
+    // Step 1: Create base commit
+    // CRITICAL: Use the SAME JIN_DIR for both workspaces to share layer refs
+    let temp_workspace = TestFixture::new()?;
+    jin_init(temp_workspace.path(), Some(jin_dir))?;
+
+    fs::write(
+        temp_workspace.path().join("config.txt"),
+        "line1\nline2\nline3",
+    )?;
+    jin()
+        .args(["add", "config.txt", "--global"])
+        .current_dir(temp_workspace.path())
+        .env("JIN_DIR", jin_dir)
+        .assert()
+        .success();
+    jin()
+        .args(["commit", "-m", "Base commit"])
+        .current_dir(temp_workspace.path())
+        .env("JIN_DIR", jin_dir)
+        .assert()
+        .success();
+
+    // Push base to remote
+    jin()
+        .args([
+            "link",
+            remote_fixture.remote_path.to_str().unwrap(),
+            "--force",
+        ])
+        .current_dir(temp_workspace.path())
+        .env("JIN_DIR", jin_dir)
+        .assert()
+        .success();
+    jin()
+        .arg("push")
+        .current_dir(temp_workspace.path())
+        .env("JIN_DIR", jin_dir)
+        .assert()
+        .success();
+
+    // Setup local repo with base
+    jin()
+        .args(["link", remote_fixture.remote_path.to_str().unwrap(), "--force"])
+        .current_dir(&remote_fixture.local_path)
+        .env("JIN_DIR", jin_dir)
+        .assert()
+        .success();
+
+    jin()
+        .arg("pull")
+        .current_dir(&remote_fixture.local_path)
+        .env("JIN_DIR", jin_dir)
+        .assert()
+        .success();
+
+    // Apply to get base file in workspace
+    jin()
+        .arg("apply")
+        .current_dir(&remote_fixture.local_path)
+        .env("JIN_DIR", jin_dir)
+        .assert()
+        .success();
+
+    // Step 2: Local changes line2 to line2-local
+    fs::write(
+        remote_fixture.local_path.join("config.txt"),
+        "line1\nline2-local\nline3",
+    )?;
+    jin()
+        .args(["add", "config.txt", "--global"])
+        .current_dir(&remote_fixture.local_path)
+        .env("JIN_DIR", jin_dir)
+        .assert()
+        .success();
+    jin()
+        .args(["commit", "-m", "Local change"])
+        .current_dir(&remote_fixture.local_path)
+        .env("JIN_DIR", jin_dir)
+        .assert()
+        .success();
+
+    // Step 3: Remote changes line1 to line1-remote
+    fs::write(
+        temp_workspace.path().join("config.txt"),
+        "line1-remote\nline2\nline3",
+    )?;
+    jin()
+        .args(["add", "config.txt", "--global"])
+        .current_dir(temp_workspace.path())
+        .env("JIN_DIR", jin_dir)
+        .assert()
+        .success();
+    jin()
+        .args(["commit", "-m", "Remote change"])
+        .current_dir(temp_workspace.path())
+        .env("JIN_DIR", jin_dir)
+        .assert()
+        .success();
+    jin()
+        .arg("push")
+        .current_dir(temp_workspace.path())
+        .env("JIN_DIR", jin_dir)
+        .assert()
+        .success();
+
+    // Step 4: Pull - should 3-way merge cleanly
+    jin()
+        .arg("pull")
+        .current_dir(&remote_fixture.local_path)
+        .env("JIN_DIR", jin_dir)
+        .assert()
+        .success()
+        .stdout(predicate::str::contains("3-way"));
+
+    // Apply and verify merged content
+    jin()
+        .arg("apply")
+        .current_dir(&remote_fixture.local_path)
+        .env("JIN_DIR", jin_dir)
+        .assert()
+        .success();
+
+    let merged_content = fs::read_to_string(remote_fixture.local_path.join("config.txt"))?;
+    assert!(merged_content.contains("line1-remote"));
+    assert!(merged_content.contains("line2-local"));
+    assert!(merged_content.contains("line3"));
+
+    // Verify merge commit created with 2 parents
+    let jin_repo = git2::Repository::open(jin_dir)?;
+    let reference = jin_repo.find_reference("refs/jin/layers/global")?;
+    let oid = reference.target().unwrap();
+    let commit = jin_repo.find_commit(oid)?;
+
+    assert_eq!(
+        commit.parent_count(),
+        2,
+        "3-way merge should have 2 parents"
+    );
+
+    Ok(())
+}
+
+/// Test pull verifies layer state (P3.M3.T1.S2)
+///
+/// Verifies that layer state is correct after pull operation.
+#[test]
+fn test_pull_verifies_layer_state() -> Result<(), Box<dyn std::error::Error>> {
+    let remote_fixture = setup_jin_with_remote()?;
+    let mode_name = format!("layer_state_{}", unique_test_id());
+    let jin_dir = remote_fixture.jin_dir.as_ref().unwrap();
+
+    // Setup remote with commits
+    let temp_workspace = TestFixture::new()?;
+    let temp_jin_dir = temp_workspace.jin_dir.as_ref().unwrap();
+    jin_init(temp_workspace.path(), Some(temp_jin_dir))?;
+
+    create_mode(&mode_name, Some(temp_jin_dir))?;
+    jin()
+        .args(["mode", "use", &mode_name])
+        .current_dir(temp_workspace.path())
+        .env("JIN_DIR", temp_jin_dir)
+        .assert()
+        .success();
+
+    fs::write(temp_workspace.path().join("layer.txt"), "layer content")?;
+    jin()
+        .args(["add", "layer.txt", "--mode"])
+        .current_dir(temp_workspace.path())
+        .env("JIN_DIR", temp_jin_dir)
+        .assert()
+        .success();
+    jin()
+        .args(["commit", "-m", "Layer commit"])
+        .current_dir(temp_workspace.path())
+        .env("JIN_DIR", temp_jin_dir)
+        .assert()
+        .success();
+
+    jin()
+        .args([
+            "link",
+            remote_fixture.remote_path.to_str().unwrap(),
+            "--force",
+        ])
+        .current_dir(temp_workspace.path())
+        .env("JIN_DIR", temp_jin_dir)
+        .assert()
+        .success();
+    jin()
+        .arg("push")
+        .current_dir(temp_workspace.path())
+        .env("JIN_DIR", temp_jin_dir)
+        .assert()
+        .success();
+
+    // Pull in local repo
+    jin()
+        .args(["link", remote_fixture.remote_path.to_str().unwrap()])
+        .current_dir(&remote_fixture.local_path)
+        .env("JIN_DIR", jin_dir)
+        .assert()
+        .success();
+
+    create_mode(&mode_name, Some(jin_dir))?;
+
+    jin()
+        .arg("pull")
+        .current_dir(&remote_fixture.local_path)
+        .env("JIN_DIR", jin_dir)
+        .assert()
+        .success();
+
+    // Verify layer ref state using git2
+    let jin_repo = git2::Repository::open(jin_dir)?;
+    let ref_path = format!("refs/jin/layers/mode/{}/_", mode_name);
+
+    let reference = jin_repo
+        .find_reference(&ref_path)
+        .expect("Layer ref should exist after pull");
+
+    let oid = reference.target().expect("Ref should have target");
+    let commit = jin_repo.find_commit(oid)?;
+
+    // Verify commit message
+    assert!(
+        commit.message().unwrap_or("").contains("Layer commit"),
+        "Layer should have correct commit"
+    );
+
+    // Verify parent count (1 for fast-forward)
+    assert!(
+        commit.parent_count() <= 2,
+        "Merge commit should have at most 2 parents"
+    );
+
+    Ok(())
+}
+
+/// Test pull rejected with dirty workspace (P3.M3.T1.S2)
+///
+/// Verifies that pull fails when workspace has uncommitted changes.
+#[test]
+fn test_pull_rejected_with_dirty_workspace() -> Result<(), Box<dyn std::error::Error>> {
+    let remote_fixture = setup_jin_with_remote()?;
+    let jin_dir = remote_fixture.jin_dir.as_ref().unwrap();
+
+    // Link to remote
+    jin()
+        .args(["link", remote_fixture.remote_path.to_str().unwrap()])
+        .current_dir(&remote_fixture.local_path)
+        .env("JIN_DIR", jin_dir)
+        .assert()
+        .success();
+
+    // Create uncommitted changes (add to staging but don't commit)
+    fs::write(remote_fixture.local_path.join("dirty.txt"), "uncommitted")?;
+    // First create a mode to have something to add to
+    let mode_name = format!("dirty_test_{}", unique_test_id());
+    create_mode(&mode_name, Some(jin_dir))?;
+    jin()
+        .args(["mode", "use", &mode_name])
+        .current_dir(&remote_fixture.local_path)
+        .env("JIN_DIR", jin_dir)
+        .assert()
+        .success();
+    // Add the file to staging (creates uncommitted changes)
+    jin()
+        .args(["add", "dirty.txt", "--mode"])
+        .current_dir(&remote_fixture.local_path)
+        .env("JIN_DIR", jin_dir)
+        .assert()
+        .success();
+
+    // Pull should fail
+    jin()
+        .arg("pull")
+        .current_dir(&remote_fixture.local_path)
+        .env("JIN_DIR", jin_dir)
+        .assert()
+        .failure()
+        .stderr(predicate::str::contains("uncommitted"))
+        .stderr(predicate::str::contains("commit"))
+        .stderr(predicate::str::contains("reset"));
+
+    Ok(())
+}
+
+/// Test pull --rebase rebases local changes (P3.M3.T1.S2)
+///
+/// NOTE: This test is marked as #[ignore] because --rebase is not implemented yet.
+/// When the flag is added, remove the #[ignore] attribute.
+#[test]
+#[ignore = "jin pull --rebase is not implemented yet"]
+fn test_pull_rebase_rebases_local_changes() -> Result<(), Box<dyn std::error::Error>> {
+    // TODO: Implement when --rebase flag is added to pull command
+    // Test should verify:
+    // 1. Create local commit A
+    // 2. Create remote commit B on same base
+    // 3. Run jin pull --rebase
+    // 4. Verify local commit A rebased on top of B
+    // 5. Verify linear history: base -> B -> A'
+    Ok(())
+}

@@ -1562,6 +1562,582 @@ mod tests {
         assert!(!result.unwrap()); // No conflict with empty list
     }
 
+    // ========== N-LAYER TESTS (4+ layers) ==========
+
+    #[test]
+    fn test_has_different_content_four_layers_all_same() {
+        let (_temp, repo) = create_layer_test_repo();
+        let config = LayerMergeConfig {
+            layers: vec![
+                Layer::GlobalBase,
+                Layer::ModeBase,
+                Layer::ModeScope,
+                Layer::ModeScopeProject,
+            ],
+            mode: Some("test".to_string()),
+            scope: Some("web".to_string()),
+            project: Some("myproject".to_string()),
+        };
+
+        let content = br#"{"value": 42}"#;
+
+        // All four layers have SAME content
+        create_layer_with_file(&repo, "refs/jin/layers/global", "config.json", content).unwrap();
+        create_layer_with_file(&repo, "refs/jin/layers/mode/test/_", "config.json", content)
+            .unwrap();
+        create_layer_with_file(
+            &repo,
+            "refs/jin/layers/mode/test/scope/web/_",
+            "config.json",
+            content,
+        )
+        .unwrap();
+        create_layer_with_file(
+            &repo,
+            "refs/jin/layers/mode/test/scope/web/project/myproject",
+            "config.json",
+            content,
+        )
+        .unwrap();
+
+        let layers = vec![
+            Layer::GlobalBase,
+            Layer::ModeBase,
+            Layer::ModeScope,
+            Layer::ModeScopeProject,
+        ];
+        let result =
+            has_different_content_across_layers(Path::new("config.json"), &layers, &config, &repo);
+
+        assert!(result.is_ok());
+        assert!(!result.unwrap()); // FALSE = no conflict
+    }
+
+    #[test]
+    fn test_has_different_content_four_layers_one_different() {
+        let (_temp, repo) = create_layer_test_repo();
+        let config = LayerMergeConfig {
+            layers: vec![
+                Layer::GlobalBase,
+                Layer::ModeBase,
+                Layer::ModeScope,
+                Layer::ModeScopeProject,
+            ],
+            mode: Some("test".to_string()),
+            scope: Some("web".to_string()),
+            project: Some("myproject".to_string()),
+        };
+
+        // Global differs, others are same
+        let global_content = br#"{"value": 1}"#;
+        let mode_content = br#"{"value": 2}"#;
+
+        create_layer_with_file(
+            &repo,
+            "refs/jin/layers/global",
+            "config.json",
+            global_content,
+        )
+        .unwrap();
+        create_layer_with_file(
+            &repo,
+            "refs/jin/layers/mode/test/_",
+            "config.json",
+            mode_content,
+        )
+        .unwrap();
+        create_layer_with_file(
+            &repo,
+            "refs/jin/layers/mode/test/scope/web/_",
+            "config.json",
+            mode_content,
+        )
+        .unwrap();
+        create_layer_with_file(
+            &repo,
+            "refs/jin/layers/mode/test/scope/web/project/myproject",
+            "config.json",
+            mode_content,
+        )
+        .unwrap();
+
+        let layers = vec![
+            Layer::GlobalBase,
+            Layer::ModeBase,
+            Layer::ModeScope,
+            Layer::ModeScopeProject,
+        ];
+        let result =
+            has_different_content_across_layers(Path::new("config.json"), &layers, &config, &repo);
+
+        assert!(result.is_ok());
+        assert!(result.unwrap()); // TRUE = conflict detected
+    }
+
+    #[test]
+    fn test_has_different_content_five_layers_middle_differs() {
+        let (_temp, repo) = create_layer_test_repo();
+        let config = LayerMergeConfig {
+            layers: vec![
+                Layer::GlobalBase,
+                Layer::ModeBase,
+                Layer::ModeScope,
+                Layer::ModeScopeProject,
+                Layer::ModeProject,
+            ],
+            mode: Some("test".to_string()),
+            scope: Some("web".to_string()),
+            project: Some("myproject".to_string()),
+        };
+
+        let base_content = br#"{"value": 1}"#;
+        let different_content = br#"{"value": 99}"#;
+
+        // Pattern: [1, 1, 99, 1, 1] - middle differs
+        create_layer_with_file(&repo, "refs/jin/layers/global", "config.json", base_content)
+            .unwrap();
+        create_layer_with_file(
+            &repo,
+            "refs/jin/layers/mode/test/_",
+            "config.json",
+            base_content,
+        )
+        .unwrap();
+        create_layer_with_file(
+            &repo,
+            "refs/jin/layers/mode/test/scope/web/_",
+            "config.json",
+            different_content,
+        )
+        .unwrap(); // Differs!
+        create_layer_with_file(
+            &repo,
+            "refs/jin/layers/mode/test/scope/web/project/myproject",
+            "config.json",
+            base_content,
+        )
+        .unwrap();
+        create_layer_with_file(
+            &repo,
+            "refs/jin/layers/mode/test/project/myproject",
+            "config.json",
+            base_content,
+        )
+        .unwrap();
+
+        let layers = vec![
+            Layer::GlobalBase,
+            Layer::ModeBase,
+            Layer::ModeScope,
+            Layer::ModeScopeProject,
+            Layer::ModeProject,
+        ];
+        let result =
+            has_different_content_across_layers(Path::new("config.json"), &layers, &config, &repo);
+
+        assert!(result.is_ok());
+        assert!(result.unwrap()); // TRUE = conflict detected (ModeScope differs from GlobalBase)
+    }
+
+    #[test]
+    fn test_has_different_content_six_layers_alternating() {
+        let (_temp, repo) = create_layer_test_repo();
+        let config = LayerMergeConfig {
+            layers: vec![
+                Layer::GlobalBase,
+                Layer::ModeBase,
+                Layer::ModeScope,
+                Layer::ModeScopeProject,
+                Layer::ModeProject,
+                Layer::ScopeBase,
+            ],
+            mode: Some("test".to_string()),
+            scope: Some("web".to_string()),
+            project: Some("myproject".to_string()),
+        };
+
+        let content1 = br#"{"value": 1}"#;
+        let content2 = br#"{"value": 2}"#;
+
+        // Pattern: [1, 2, 1, 2, 1, 2] - alternating
+        create_layer_with_file(&repo, "refs/jin/layers/global", "config.json", content1).unwrap();
+        create_layer_with_file(
+            &repo,
+            "refs/jin/layers/mode/test/_",
+            "config.json",
+            content2,
+        )
+        .unwrap(); // Differs!
+        create_layer_with_file(
+            &repo,
+            "refs/jin/layers/mode/test/scope/web/_",
+            "config.json",
+            content1,
+        )
+        .unwrap();
+        create_layer_with_file(
+            &repo,
+            "refs/jin/layers/mode/test/scope/web/project/myproject",
+            "config.json",
+            content2,
+        )
+        .unwrap();
+        create_layer_with_file(
+            &repo,
+            "refs/jin/layers/mode/test/project/myproject",
+            "config.json",
+            content1,
+        )
+        .unwrap();
+        create_layer_with_file(&repo, "refs/jin/layers/scope/web", "config.json", content2)
+            .unwrap();
+
+        let layers = vec![
+            Layer::GlobalBase,
+            Layer::ModeBase,
+            Layer::ModeScope,
+            Layer::ModeScopeProject,
+            Layer::ModeProject,
+            Layer::ScopeBase,
+        ];
+        let result =
+            has_different_content_across_layers(Path::new("config.json"), &layers, &config, &repo);
+
+        assert!(result.is_ok());
+        assert!(result.unwrap()); // TRUE = conflict detected on first comparison
+    }
+
+    #[test]
+    fn test_has_different_content_seven_layers_last_differs() {
+        let (_temp, repo) = create_layer_test_repo();
+        let config = LayerMergeConfig {
+            layers: vec![
+                Layer::GlobalBase,
+                Layer::ModeBase,
+                Layer::ModeScope,
+                Layer::ModeScopeProject,
+                Layer::ModeProject,
+                Layer::ScopeBase,
+                Layer::ProjectBase,
+            ],
+            mode: Some("test".to_string()),
+            scope: Some("web".to_string()),
+            project: Some("myproject".to_string()),
+        };
+
+        let base_content = br#"{"value": 1}"#;
+        let different_content = br#"{"value": 999}"#;
+
+        // Pattern: [1, 1, 1, 1, 1, 1, 999] - last differs
+        create_layer_with_file(&repo, "refs/jin/layers/global", "config.json", base_content)
+            .unwrap();
+        create_layer_with_file(
+            &repo,
+            "refs/jin/layers/mode/test/_",
+            "config.json",
+            base_content,
+        )
+        .unwrap();
+        create_layer_with_file(
+            &repo,
+            "refs/jin/layers/mode/test/scope/web/_",
+            "config.json",
+            base_content,
+        )
+        .unwrap();
+        create_layer_with_file(
+            &repo,
+            "refs/jin/layers/mode/test/scope/web/project/myproject",
+            "config.json",
+            base_content,
+        )
+        .unwrap();
+        create_layer_with_file(
+            &repo,
+            "refs/jin/layers/mode/test/project/myproject",
+            "config.json",
+            base_content,
+        )
+        .unwrap();
+        create_layer_with_file(
+            &repo,
+            "refs/jin/layers/scope/web",
+            "config.json",
+            base_content,
+        )
+        .unwrap();
+        create_layer_with_file(
+            &repo,
+            "refs/jin/layers/project/myproject",
+            "config.json",
+            different_content,
+        )
+        .unwrap(); // Differs!
+
+        let layers = vec![
+            Layer::GlobalBase,
+            Layer::ModeBase,
+            Layer::ModeScope,
+            Layer::ModeScopeProject,
+            Layer::ModeProject,
+            Layer::ScopeBase,
+            Layer::ProjectBase,
+        ];
+        let result =
+            has_different_content_across_layers(Path::new("config.json"), &layers, &config, &repo);
+
+        assert!(result.is_ok());
+        assert!(result.unwrap()); // TRUE = conflict detected (last differs from first)
+    }
+
+    #[test]
+    fn test_has_different_content_eight_layers_all_different() {
+        let (_temp, repo) = create_layer_test_repo();
+        let config = LayerMergeConfig {
+            layers: vec![
+                Layer::GlobalBase,
+                Layer::ModeBase,
+                Layer::ModeScope,
+                Layer::ModeScopeProject,
+                Layer::ModeProject,
+                Layer::ScopeBase,
+                Layer::ProjectBase,
+                Layer::UserLocal,
+            ],
+            mode: Some("test".to_string()),
+            scope: Some("web".to_string()),
+            project: Some("myproject".to_string()),
+        };
+
+        // Each layer has unique content: [1, 2, 3, 4, 5, 6, 7, 8]
+        create_layer_with_file(
+            &repo,
+            "refs/jin/layers/global",
+            "config.json",
+            br#"{"value": 1}"#,
+        )
+        .unwrap();
+        create_layer_with_file(
+            &repo,
+            "refs/jin/layers/mode/test/_",
+            "config.json",
+            br#"{"value": 2}"#,
+        )
+        .unwrap();
+        create_layer_with_file(
+            &repo,
+            "refs/jin/layers/mode/test/scope/web/_",
+            "config.json",
+            br#"{"value": 3}"#,
+        )
+        .unwrap();
+        create_layer_with_file(
+            &repo,
+            "refs/jin/layers/mode/test/scope/web/project/myproject",
+            "config.json",
+            br#"{"value": 4}"#,
+        )
+        .unwrap();
+        create_layer_with_file(
+            &repo,
+            "refs/jin/layers/mode/test/project/myproject",
+            "config.json",
+            br#"{"value": 5}"#,
+        )
+        .unwrap();
+        create_layer_with_file(
+            &repo,
+            "refs/jin/layers/scope/web",
+            "config.json",
+            br#"{"value": 6}"#,
+        )
+        .unwrap();
+        create_layer_with_file(
+            &repo,
+            "refs/jin/layers/project/myproject",
+            "config.json",
+            br#"{"value": 7}"#,
+        )
+        .unwrap();
+        create_layer_with_file(
+            &repo,
+            "refs/jin/layers/local",
+            "config.json",
+            br#"{"value": 8}"#,
+        )
+        .unwrap();
+
+        let layers = vec![
+            Layer::GlobalBase,
+            Layer::ModeBase,
+            Layer::ModeScope,
+            Layer::ModeScopeProject,
+            Layer::ModeProject,
+            Layer::ScopeBase,
+            Layer::ProjectBase,
+            Layer::UserLocal,
+        ];
+        let result =
+            has_different_content_across_layers(Path::new("config.json"), &layers, &config, &repo);
+
+        assert!(result.is_ok());
+        assert!(result.unwrap()); // TRUE = conflict detected on first comparison
+    }
+
+    #[test]
+    fn test_has_different_content_nine_layers_complex_pattern() {
+        let (_temp, repo) = create_layer_test_repo();
+        let config = LayerMergeConfig {
+            layers: vec![
+                Layer::GlobalBase,
+                Layer::ModeBase,
+                Layer::ModeScope,
+                Layer::ModeScopeProject,
+                Layer::ModeProject,
+                Layer::ScopeBase,
+                Layer::ProjectBase,
+                Layer::UserLocal,
+                Layer::WorkspaceActive,
+            ],
+            mode: Some("dev".to_string()),
+            scope: Some("backend".to_string()),
+            project: Some("api-service".to_string()),
+        };
+
+        // Realistic pattern: base configs match, some overrides differ
+        let base = br#"{"port": 8080, "debug": false}"#;
+        let mode_override = br#"{"port": 9090, "debug": true}"#;
+        let project_override = br#"{"port": 3000, "debug": true}"#;
+
+        // Create layers with realistic content distribution
+        create_layer_with_file(&repo, "refs/jin/layers/global", "config.json", base).unwrap();
+        create_layer_with_file(
+            &repo,
+            "refs/jin/layers/mode/dev/_",
+            "config.json",
+            mode_override,
+        )
+        .unwrap(); // Differs!
+        create_layer_with_file(
+            &repo,
+            "refs/jin/layers/mode/dev/scope/backend/_",
+            "config.json",
+            mode_override,
+        )
+        .unwrap();
+        create_layer_with_file(
+            &repo,
+            "refs/jin/layers/mode/dev/scope/backend/project/api-service",
+            "config.json",
+            project_override,
+        )
+        .unwrap();
+        create_layer_with_file(
+            &repo,
+            "refs/jin/layers/mode/dev/project/api-service",
+            "config.json",
+            project_override,
+        )
+        .unwrap();
+        create_layer_with_file(&repo, "refs/jin/layers/scope/backend", "config.json", base)
+            .unwrap();
+        create_layer_with_file(
+            &repo,
+            "refs/jin/layers/project/api-service",
+            "config.json",
+            base,
+        )
+        .unwrap();
+        create_layer_with_file(&repo, "refs/jin/layers/local", "config.json", base).unwrap();
+        create_layer_with_file(&repo, "refs/jin/layers/workspace", "config.json", base).unwrap();
+
+        let all_layers = vec![
+            Layer::GlobalBase,
+            Layer::ModeBase,
+            Layer::ModeScope,
+            Layer::ModeScopeProject,
+            Layer::ModeProject,
+            Layer::ScopeBase,
+            Layer::ProjectBase,
+            Layer::UserLocal,
+            Layer::WorkspaceActive,
+        ];
+        let result = has_different_content_across_layers(
+            Path::new("config.json"),
+            &all_layers,
+            &config,
+            &repo,
+        );
+
+        assert!(result.is_ok());
+        assert!(result.unwrap()); // TRUE = conflict detected (ModeBase differs from GlobalBase)
+    }
+
+    #[test]
+    fn test_has_different_content_five_layers_text_file() {
+        let (_temp, repo) = create_layer_test_repo();
+        let config = LayerMergeConfig {
+            layers: vec![
+                Layer::GlobalBase,
+                Layer::ModeBase,
+                Layer::ModeScope,
+                Layer::ModeScopeProject,
+                Layer::ModeProject,
+            ],
+            mode: Some("test".to_string()),
+            scope: Some("web".to_string()),
+            project: Some("myproject".to_string()),
+        };
+
+        let base_content = b"Hello World\n";
+        let different_content = b"Different Content\n";
+
+        // Pattern: [base, base, different, base, base] - middle differs (text file)
+        create_layer_with_file(&repo, "refs/jin/layers/global", "README.txt", base_content)
+            .unwrap();
+        create_layer_with_file(
+            &repo,
+            "refs/jin/layers/mode/test/_",
+            "README.txt",
+            base_content,
+        )
+        .unwrap();
+        create_layer_with_file(
+            &repo,
+            "refs/jin/layers/mode/test/scope/web/_",
+            "README.txt",
+            different_content,
+        )
+        .unwrap(); // Differs!
+        create_layer_with_file(
+            &repo,
+            "refs/jin/layers/mode/test/scope/web/project/myproject",
+            "README.txt",
+            base_content,
+        )
+        .unwrap();
+        create_layer_with_file(
+            &repo,
+            "refs/jin/layers/mode/test/project/myproject",
+            "README.txt",
+            base_content,
+        )
+        .unwrap();
+
+        let layers = vec![
+            Layer::GlobalBase,
+            Layer::ModeBase,
+            Layer::ModeScope,
+            Layer::ModeScopeProject,
+            Layer::ModeProject,
+        ];
+        let result =
+            has_different_content_across_layers(Path::new("README.txt"), &layers, &config, &repo);
+
+        assert!(result.is_ok());
+        assert!(result.unwrap()); // TRUE = conflict detected (text file, middle differs)
+    }
+
     // ========== merge_layers() collision detection tests ==========
 
     #[test]

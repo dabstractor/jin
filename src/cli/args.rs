@@ -241,6 +241,12 @@ pub struct LinkArgs {
 
 /// Arguments for the `push` command
 #[derive(Args, Debug)]
+#[command(after_help = r#"PUSH SAFETY:
+  • Fetches automatically before pushing
+  • Requires clean merge state
+  • Rejects push if local is behind remote
+  • Use --force to bypass (caution: may overwrite remote changes)
+"#)]
 pub struct PushArgs {
     /// Force push (overwrite remote)
     #[arg(long)]

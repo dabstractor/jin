@@ -260,14 +260,14 @@
               "type": "Task",
               "id": "P2.M1.T1",
               "title": "Update Push Command Help",
-              "status": "Planned",
+              "status": "Complete",
               "description": "Add safety information to jin push --help explaining fetch requirements and conflict rules.",
               "subtasks": [
                 {
                   "type": "Subtask",
                   "id": "P2.M1.T1.S1",
                   "title": "Add after_help section to PushArgs",
-                  "status": "Planned",
+                  "status": "Complete",
                   "story_points": 1,
                   "dependencies": [],
                   "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: From Issue 4 in PRD - push help missing critical safety info.\n2. INPUT: src/cli/args.rs struct PushArgs.\n3. LOGIC: Add #[command(after_help = \"PUSH SAFETY:\\n  • Fetches automatically before pushing\\n  • Requires clean merge state\\n  • Rejects push if local is behind remote\\n  • Use --force to bypass (caution: may overwrite remote changes)\")] attribute to PushArgs struct.\n4. OUTPUT: jin push --help shows safety information.\n5. MOCKING: Manual test - run jin push --help and verify output."

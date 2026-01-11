@@ -29,6 +29,14 @@ pub struct RoutingOptions {
 /// | `jin add <file> --mode --scope=<scope>`           | Mode → Scope (3)           |
 /// | `jin add <file> --mode --scope=<scope> --project` | Mode → Scope → Project (4) |
 pub fn route_to_layer(options: &RoutingOptions, context: &ProjectContext) -> Result<Layer> {
+    // VALIDATION: --mode flag requires an active mode
+    // CONTRACT: Issue 9 from PRD - "--mode with no active mode should error"
+    if options.mode && context.mode.is_none() {
+        return Err(JinError::Config(
+            "--mode flag requires an active mode. Run 'jin mode use <mode>' first.".into(),
+        ));
+    }
+
     // Global flag takes precedence
     if options.global {
         return Ok(Layer::GlobalBase);

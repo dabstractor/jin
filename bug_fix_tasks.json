@@ -316,21 +316,21 @@
           "type": "Milestone",
           "id": "P2.M2",
           "title": "Add Error Validation",
-          "status": "Planned",
+          "status": "Complete",
           "description": "Add specific validation for incompatible flag combinations with clear error messages.",
           "tasks": [
             {
               "type": "Task",
               "id": "P2.M2.T1",
               "title": "Add --mode Without Active Mode Error",
-              "status": "Planned",
+              "status": "Complete",
               "description": "Validate --mode flag requires an active mode and provide clear error.",
               "subtasks": [
                 {
                   "type": "Subtask",
                   "id": "P2.M2.T1.S1",
                   "title": "Add mode validation in route_to_layer()",
-                  "status": "Planned",
+                  "status": "Complete",
                   "story_points": 1,
                   "dependencies": [],
                   "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: From Issue 9 in PRD - --mode with no active mode should error.\n2. INPUT: src/staging/router.rs route_to_layer() function.\n3. LOGIC: At start of function, check: if options.mode && context.mode.is_none() { return Err(JinError::Config(\"--mode flag requires an active mode. Run 'jin mode use <mode>' first.\".into())); }. Similar check for --project requiring active mode.\n4. OUTPUT: Clear error message when using --mode without active mode.\n5. MOCKING: Unit test with context.mode = None and options.mode = true."

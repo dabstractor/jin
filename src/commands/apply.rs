@@ -139,20 +139,20 @@ pub fn execute(args: ApplyArgs) -> Result<()> {
     let has_conflicts = !merged.conflict_files.is_empty();
 
     if has_conflicts {
-        eprintln!(
+        println!(
             "Merge conflicts detected in {} files:",
             merged.conflict_files.len()
         );
         for path in &merged.conflict_files {
-            eprintln!("  - {}", path.display());
+            println!("  - {}", path.display());
         }
     }
 
     // 7. Preview mode - show diff and exit
     if args.dry_run {
         if has_conflicts {
-            eprintln!();
-            eprintln!("Use --force to apply non-conflicting files, or resolve conflicts first.");
+            println!();
+            println!("Use --force to apply non-conflicting files, or resolve conflicts first.");
         }
         preview_changes(&merged)?;
         return Ok(());
@@ -166,21 +166,21 @@ pub fn execute(args: ApplyArgs) -> Result<()> {
         // Handle conflicts: generate .jinmerge files and save state
         let paused_state = handle_conflicts(&merged.conflict_files, &config, &merged.merged_files)?;
 
-        eprintln!();
-        eprintln!("Created .jinmerge files for manual resolution:");
+        println!();
+        println!("Created .jinmerge files for manual resolution:");
         for conflict_path in &merged.conflict_files {
             let merge_path = JinMergeConflict::merge_path_for_file(conflict_path);
-            eprintln!("  - {}", merge_path.display());
+            println!("  - {}", merge_path.display());
         }
 
         // Save paused state
         paused_state.save()?;
 
-        eprintln!();
-        eprintln!("Operation paused. Resolve conflicts with:");
-        eprintln!("  jin resolve <file>");
-        eprintln!();
-        eprintln!("For more information, run: jin status");
+        println!();
+        println!("Operation paused. Resolve conflicts with:");
+        println!("  jin resolve <file>");
+        println!();
+        println!("For more information, run: jin status");
 
         return Ok(());
     }

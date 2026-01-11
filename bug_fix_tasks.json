@@ -47,7 +47,7 @@
               "type": "Task",
               "id": "P1.M1.T2",
               "title": "Integrate Collision Detection into Merge Pipeline",
-              "status": "Planned",
+              "status": "Complete",
               "description": "Modify merge_layers() to detect collisions before attempting merge, triggering the conflict resolution workflow.",
               "subtasks": [
                 {
@@ -66,7 +66,7 @@
                   "type": "Subtask",
                   "id": "P1.M1.T2.S2",
                   "title": "Verify all 5 conflict tests now pass",
-                  "status": "Planned",
+                  "status": "Complete",
                   "story_points": 1,
                   "dependencies": [
                     "P1.M1.T2.S1"

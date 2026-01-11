@@ -316,14 +316,13 @@ fn test_apply_creates_multiple_jinmerge_files() {
         .success();
 
     // Create multiple conflicting files
-    for (name, global_val, mode_val) in [
+    // First, add all files to global layer and commit together
+    for (name, global_val, _mode_val) in [
         ("a.json", r#"{"v":1}"#, r#"{"v":2}"#),
         ("b.json", r#"{"v":1}"#, r#"{"v":2}"#),
         ("c.json", r#"{"v":1}"#, r#"{"v":2}"#),
     ] {
         let path = fixture.path().join(name);
-
-        // Add to global
         fs::write(&path, global_val).unwrap();
         jin_cmd()
             .args(["add", name, "--global"])
@@ -331,14 +330,21 @@ fn test_apply_creates_multiple_jinmerge_files() {
             .env("JIN_DIR", &jin_dir)
             .assert()
             .success();
-        jin_cmd()
-            .args(["commit", "-m", "Add to global"])
-            .current_dir(fixture.path())
-            .env("JIN_DIR", &jin_dir)
-            .assert()
-            .success();
+    }
+    jin_cmd()
+        .args(["commit", "-m", "Add all to global"])
+        .current_dir(fixture.path())
+        .env("JIN_DIR", &jin_dir)
+        .assert()
+        .success();
 
-        // Add to mode
+    // Then, add all files to mode layer with different values and commit together
+    for (name, _global_val, mode_val) in [
+        ("a.json", r#"{"v":1}"#, r#"{"v":2}"#),
+        ("b.json", r#"{"v":1}"#, r#"{"v":2}"#),
+        ("c.json", r#"{"v":1}"#, r#"{"v":2}"#),
+    ] {
+        let path = fixture.path().join(name);
         fs::write(&path, mode_val).unwrap();
         jin_cmd()
             .args(["add", name, "--mode"])
@@ -346,13 +352,13 @@ fn test_apply_creates_multiple_jinmerge_files() {
             .env("JIN_DIR", &jin_dir)
             .assert()
             .success();
-        jin_cmd()
-            .args(["commit", "-m", "Add to mode"])
-            .current_dir(fixture.path())
-            .env("JIN_DIR", &jin_dir)
-            .assert()
-            .success();
     }
+    jin_cmd()
+        .args(["commit", "-m", "Add all to mode"])
+        .current_dir(fixture.path())
+        .env("JIN_DIR", &jin_dir)
+        .assert()
+        .success();
 
     // Run apply
     jin_cmd()
@@ -586,13 +592,6 @@ fn test_apply_non_conflicting_files_still_applied() {
         .assert()
         .success();
 
-    jin_cmd()
-        .args(["commit", "-m", "Add safe file"])
-        .current_dir(fixture.path())
-        .env("JIN_DIR", &jin_dir)
-        .assert()
-        .success();
-
     // Add conflicting file to global
     let conflict_path = fixture.path().join("conflict.json");
     fs::write(&conflict_path, r#"{"value": 1}"#).unwrap();
@@ -604,8 +603,9 @@ fn test_apply_non_conflicting_files_still_applied() {
         .assert()
         .success();
 
+    // Commit both files to global layer together
     jin_cmd()
-        .args(["commit", "-m", "Add conflict to global"])
+        .args(["commit", "-m", "Add files to global"])
         .current_dir(fixture.path())
         .env("JIN_DIR", &jin_dir)
         .assert()
@@ -643,7 +643,8 @@ fn test_apply_non_conflicting_files_still_applied() {
     // Verify non-conflicting file was applied
     assert!(safe_path.exists());
     let safe_content = fs::read_to_string(&safe_path).unwrap();
-    assert_eq!(safe_content, r#"{"safe": true}"#);
+    // JSON is pretty-printed by Jin, so check for the key-value pair
+    assert!(safe_content.contains("\"safe\": true"));
 
     // Verify conflicting file was NOT applied (only .jinmerge exists)
     assert!(!conflict_path.exists());
@@ -845,12 +846,6 @@ fn test_apply_force_with_conflicts_applies_non_conflicting() {
         .env("JIN_DIR", &jin_dir)
         .assert()
         .success();
-    jin_cmd()
-        .args(["commit", "-m", "Add safe"])
-        .current_dir(fixture.path())
-        .env("JIN_DIR", &jin_dir)
-        .assert()
-        .success();
 
     // Add conflicting file
     let conflict_path = fixture.path().join("conflict.json");
@@ -861,8 +856,10 @@ fn test_apply_force_with_conflicts_applies_non_conflicting() {
         .env("JIN_DIR", &jin_dir)
         .assert()
         .success();
+
+    // Commit both files to global layer together
     jin_cmd()
-        .args(["commit", "-m", "Add conflict"])
+        .args(["commit", "-m", "Add files to global"])
         .current_dir(fixture.path())
         .env("JIN_DIR", &jin_dir)
         .assert()

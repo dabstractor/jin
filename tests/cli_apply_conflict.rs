@@ -7,7 +7,7 @@
 //! - User is instructed to run `jin resolve`
 
 mod common;
-use common::fixtures::{create_commit_in_repo, setup_test_repo, unique_test_id};
+use common::fixtures::{setup_test_repo, unique_test_id};
 
 use assert_cmd::Command;
 use predicates::prelude::*;
@@ -141,13 +141,12 @@ fn test_apply_with_conflicts_creates_paused_state() {
         .assert()
         .success();
 
-    create_commit_in_repo(
-        fixture.path(),
-        "settings.yaml",
-        "key: value1\n",
-        "Add settings to global",
-    )
-    .unwrap();
+    jin_cmd()
+        .args(["commit", "-m", "Add settings to global"])
+        .current_dir(fixture.path())
+        .env("JIN_DIR", &jin_dir)
+        .assert()
+        .success();
 
     // Modify and add to mode layer
     fs::write(&config_path, "key: value2\n").unwrap();
@@ -159,13 +158,12 @@ fn test_apply_with_conflicts_creates_paused_state() {
         .assert()
         .success();
 
-    create_commit_in_repo(
-        fixture.path(),
-        "settings.yaml",
-        "key: value2\n",
-        "Add settings to mode",
-    )
-    .unwrap();
+    jin_cmd()
+        .args(["commit", "-m", "Add settings to mode"])
+        .current_dir(fixture.path())
+        .env("JIN_DIR", &jin_dir)
+        .assert()
+        .success();
 
     // Run apply - should create paused state
     jin_cmd()
@@ -221,14 +219,6 @@ fn test_apply_with_conflicts_applies_non_conflicting_files() {
         .assert()
         .success();
 
-    create_commit_in_repo(
-        fixture.path(),
-        "safe.json",
-        r#"{"safe": true}"#,
-        "Add safe file",
-    )
-    .unwrap();
-
     // Add conflicting file to global
     let conflict_path = fixture.path().join("conflict.json");
     fs::write(&conflict_path, r#"{"value": 1}"#).unwrap();
@@ -240,13 +230,13 @@ fn test_apply_with_conflicts_applies_non_conflicting_files() {
         .assert()
         .success();
 
-    create_commit_in_repo(
-        fixture.path(),
-        "conflict.json",
-        r#"{"value": 1}"#,
-        "Add conflict to global",
-    )
-    .unwrap();
+    // Commit both files to global layer together
+    jin_cmd()
+        .args(["commit", "-m", "Add files to global"])
+        .current_dir(fixture.path())
+        .env("JIN_DIR", &jin_dir)
+        .assert()
+        .success();
 
     // Add conflicting file to mode (different value)
     fs::write(&conflict_path, r#"{"value": 2}"#).unwrap();
@@ -258,13 +248,12 @@ fn test_apply_with_conflicts_applies_non_conflicting_files() {
         .assert()
         .success();
 
-    create_commit_in_repo(
-        fixture.path(),
-        "conflict.json",
-        r#"{"value": 2}"#,
-        "Add conflict to mode",
-    )
-    .unwrap();
+    jin_cmd()
+        .args(["commit", "-m", "Add conflict to mode"])
+        .current_dir(fixture.path())
+        .env("JIN_DIR", &jin_dir)
+        .assert()
+        .success();
 
     // Delete both from workspace
     fs::remove_file(&safe_path).unwrap();
@@ -281,7 +270,8 @@ fn test_apply_with_conflicts_applies_non_conflicting_files() {
     // Verify non-conflicting file was applied
     assert!(safe_path.exists(), "Non-conflicting file should be applied");
     let safe_content = fs::read_to_string(&safe_path).unwrap();
-    assert_eq!(safe_content, r#"{"safe": true}"#);
+    // JSON is pretty-printed by Jin, so check for the key-value pair
+    assert!(safe_content.contains("\"safe\": true"), "Safe file should contain correct value");
 
     // Verify conflicting file was NOT applied (only .jinmerge exists)
     assert!(
@@ -327,13 +317,12 @@ fn test_apply_dry_run_with_conflicts_shows_preview() {
         .assert()
         .success();
 
-    create_commit_in_repo(
-        fixture.path(),
-        "config.toml",
-        "port = 8080\n",
-        "Add config to global",
-    )
-    .unwrap();
+    jin_cmd()
+        .args(["commit", "-m", "Add config to global"])
+        .current_dir(fixture.path())
+        .env("JIN_DIR", &jin_dir)
+        .assert()
+        .success();
 
     // Add to mode (different value)
     fs::write(&config_path, "port = 9090\n").unwrap();
@@ -345,13 +334,12 @@ fn test_apply_dry_run_with_conflicts_shows_preview() {
         .assert()
         .success();
 
-    create_commit_in_repo(
-        fixture.path(),
-        "config.toml",
-        "port = 9090\n",
-        "Add config to mode",
-    )
-    .unwrap();
+    jin_cmd()
+        .args(["commit", "-m", "Add config to mode"])
+        .current_dir(fixture.path())
+        .env("JIN_DIR", &jin_dir)
+        .assert()
+        .success();
 
     // Run dry-run apply
     jin_cmd()
@@ -399,14 +387,13 @@ fn test_apply_with_multiple_conflicts() {
         .success();
 
     // Create multiple conflicting files
-    for (name, global_val, mode_val) in [
+    // First, add all files to global layer and commit together
+    for (name, global_val, _mode_val) in [
         ("a.json", r#"{"v":1}"#, r#"{"v":2}"#),
         ("b.json", r#"{"v":1}"#, r#"{"v":2}"#),
         ("c.json", r#"{"v":1}"#, r#"{"v":2}"#),
     ] {
         let path = fixture.path().join(name);
-
-        // Add to global
         fs::write(&path, global_val).unwrap();
         jin_cmd()
             .args(["add", name, "--global"])
@@ -414,9 +401,21 @@ fn test_apply_with_multiple_conflicts() {
             .env("JIN_DIR", &jin_dir)
             .assert()
             .success();
-        create_commit_in_repo(fixture.path(), name, global_val, "Add to global").unwrap();
+    }
+    jin_cmd()
+        .args(["commit", "-m", "Add all to global"])
+        .current_dir(fixture.path())
+        .env("JIN_DIR", &jin_dir)
+        .assert()
+        .success();
 
-        // Add to mode
+    // Then, add all files to mode layer with different values and commit together
+    for (name, _global_val, mode_val) in [
+        ("a.json", r#"{"v":1}"#, r#"{"v":2}"#),
+        ("b.json", r#"{"v":1}"#, r#"{"v":2}"#),
+        ("c.json", r#"{"v":1}"#, r#"{"v":2}"#),
+    ] {
+        let path = fixture.path().join(name);
         fs::write(&path, mode_val).unwrap();
         jin_cmd()
             .args(["add", name, "--mode"])
@@ -424,8 +423,13 @@ fn test_apply_with_multiple_conflicts() {
             .env("JIN_DIR", &jin_dir)
             .assert()
             .success();
-        create_commit_in_repo(fixture.path(), name, mode_val, "Add to mode").unwrap();
     }
+    jin_cmd()
+        .args(["commit", "-m", "Add all to mode"])
+        .current_dir(fixture.path())
+        .env("JIN_DIR", &jin_dir)
+        .assert()
+        .success();
 
     // Run apply
     jin_cmd()

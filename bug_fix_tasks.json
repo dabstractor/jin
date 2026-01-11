@@ -206,14 +206,14 @@
           "type": "Milestone",
           "id": "P1.M4",
           "title": "Verify Text File Conflict Detection",
-          "status": "Planned",
+          "status": "Complete",
           "description": "Confirm that text file conflict detection works or fix the routing bug.",
           "tasks": [
             {
               "type": "Task",
               "id": "P1.M4.T1",
               "title": "Test Text File Merge Routing",
-              "status": "Planned",
+              "status": "Complete",
               "description": "Verify that non-structured files use text_merge() for conflict detection.",
               "subtasks": [
                 {
@@ -229,7 +229,7 @@
                   "type": "Subtask",
                   "id": "P1.M4.T1.S2",
                   "title": "Fix text file routing if needed",
-                  "status": "Planned",
+                  "status": "Complete",
                   "story_points": 2,
                   "dependencies": [
                     "P1.M4.T1.S1"

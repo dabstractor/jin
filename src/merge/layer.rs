@@ -10,7 +10,7 @@ use crate::git::{JinRepo, RefOps, TreeOps};
 use std::collections::HashSet;
 use std::path::PathBuf;
 
-use super::{deep_merge, MergeValue};
+use super::{deep_merge, text_merge, MergeValue, TextMergeResult};
 
 /// File format for parsing and serialization
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -258,18 +258,20 @@ fn collect_all_file_paths(
 /// Merge a single file across multiple layers.
 ///
 /// Reads the file content from each layer that contains it,
-/// parses according to file format, and deep-merges in precedence order.
+/// and merges according to file format:
+/// - Text files: 3-way line-level merge using text_merge()
+/// - Structured files: deep merge using deep_merge()
 fn merge_file_across_layers(
     path: &std::path::Path,
     layers: &[Layer],
     config: &LayerMergeConfig,
     repo: &JinRepo,
 ) -> Result<MergedFile> {
-    let mut accumulated: Option<MergeValue> = None;
+    // First, collect all layers with this file's content
+    let mut text_contents: Vec<(Layer, String)> = Vec::new();
     let mut source_layers = Vec::new();
     let mut format = FileFormat::Text;
 
-    // Process layers in precedence order (lowest first)
     for layer in layers {
         let ref_path = layer.ref_path(
             config.mode.as_deref(),
@@ -288,18 +290,71 @@ fn merge_file_across_layers(
 
             if let Ok(content) = repo.read_file_from_tree(tree_oid, path) {
                 let content_str = String::from_utf8_lossy(&content);
-
                 format = detect_format(path);
-                let layer_value = parse_content(&content_str, format)?;
-
                 source_layers.push(*layer);
-
-                accumulated = Some(match accumulated {
-                    Some(base) => deep_merge(base, layer_value)?,
-                    None => layer_value,
-                });
+                text_contents.push((*layer, content_str.to_string()));
             }
         }
+    }
+
+    // Handle empty result (no layers had this file)
+    if text_contents.is_empty() {
+        return Err(JinError::NotFound(path.display().to_string()));
+    }
+
+    // ============================================================
+    // TEXT FILE ROUTING: Use 3-way text_merge() for line-level merge
+    // ============================================================
+    if format == FileFormat::Text {
+        // Single layer: return content directly
+        if text_contents.len() == 1 {
+            return Ok(MergedFile {
+                content: MergeValue::String(text_contents[0].1.clone()),
+                source_layers,
+                format,
+            });
+        }
+
+        // Multiple layers: perform 3-way merge using text_merge()
+        // The lowest precedence layer (index 0) is the base
+        let base = &text_contents[0].1;
+        let mut merged = base.clone();
+
+        // Iterate through remaining layers, merging each into the accumulated result
+        for (_, theirs) in text_contents.iter().skip(1) {
+            match text_merge(base, &merged, theirs)? {
+                TextMergeResult::Clean(clean_content) => {
+                    merged = clean_content;
+                }
+                TextMergeResult::Conflict { content, .. } => {
+                    // Conflict detected - return the conflict content
+                    return Ok(MergedFile {
+                        content: MergeValue::String(content),
+                        source_layers,
+                        format,
+                    });
+                }
+            }
+        }
+
+        // All merges completed cleanly
+        return Ok(MergedFile {
+            content: MergeValue::String(merged),
+            source_layers,
+            format,
+        });
+    }
+
+    // ============================================================
+    // STRUCTURED FILE ROUTING: Use deep_merge() for JSON/YAML/TOML/INI
+    // ============================================================
+    let mut accumulated: Option<MergeValue> = None;
+    for (_layer, content_str) in text_contents {
+        let layer_value = parse_content(&content_str, format)?;
+        accumulated = Some(match accumulated {
+            Some(base) => deep_merge(base, layer_value)?,
+            None => layer_value,
+        });
     }
 
     match accumulated {

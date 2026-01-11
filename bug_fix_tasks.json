@@ -189,14 +189,14 @@
           "type": "Milestone",
           "id": "P2.M2",
           "title": "Milestone 2: Update import_cmd.rs to Use Routing Flags",
-          "status": "Planned",
+          "status": "Complete",
           "description": "Update the import command execution logic to build RoutingOptions from CLI arguments instead of using default.",
           "tasks": [
             {
               "type": "Task",
               "id": "P2.M2.T1",
               "title": "Replace RoutingOptions::default() with Explicit Construction",
-              "status": "Planned",
+              "status": "Complete",
               "description": "Update import command to build RoutingOptions from ImportArgs fields, matching the pattern used in add command.",
               "subtasks": [
                 {
@@ -218,7 +218,7 @@
                   "type": "Subtask",
                   "id": "P2.M2.T1.S2",
                   "title": "Add validate_routing_options() call to import command",
-                  "status": "Planned",
+                  "status": "Complete",
                   "story_points": 1,
                   "dependencies": [
                     "P2.M2.T1.S1"

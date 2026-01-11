@@ -1157,8 +1157,65 @@ fn test_import_with_mode_scope_and_project_flags() {
 
     // Verify target_layer is mode_scope_project (Layer 4)
     assert!(
-        staging_content.contains("ModeScopeProject") || staging_content.contains("mode_scope_project"),
+        staging_content.contains("ModeScopeProject")
+            || staging_content.contains("mode_scope_project"),
         "Staging index should contain ModeScopeProject layer reference. Content:\n{}",
         staging_content
     );
+}
+
+/// Test: `jin import` with invalid routing combinations should error
+///
+/// This test validates that the import command properly rejects invalid flag combinations:
+/// 1. --global combined with --local (mutually exclusive routing targets)
+/// 2. --project without --mode (missing required dependency)
+#[test]
+fn test_import_with_invalid_routing_combination() {
+    let temp = TempDir::new().unwrap();
+    let jin_dir = temp.path().join(".jin_global");
+
+    // Initialize Git repo
+    git_init_with_config(&temp);
+
+    // Create and commit a file to Git
+    let config_path = temp.path().join("config.json");
+    fs::write(&config_path, r#"{"key": "value"}"#).unwrap();
+
+    StdCommand::new("git")
+        .args(["add", "config.json"])
+        .current_dir(temp.path())
+        .output()
+        .unwrap();
+
+    StdCommand::new("git")
+        .args(["commit", "-m", "Initial"])
+        .current_dir(temp.path())
+        .output()
+        .unwrap();
+
+    // Initialize Jin
+    jin()
+        .arg("init")
+        .current_dir(temp.path())
+        .env("JIN_DIR", &jin_dir)
+        .assert()
+        .success();
+
+    // TEST 1: --global with --local (mutually exclusive)
+    jin()
+        .args(["import", "--global", "--local", "config.json"])
+        .current_dir(temp.path())
+        .env("JIN_DIR", &jin_dir)
+        .assert()
+        .failure()
+        .stderr(contains("Cannot combine"));
+
+    // TEST 2: --project without --mode (missing required flag)
+    jin()
+        .args(["import", "--project", "config.json"])
+        .current_dir(temp.path())
+        .env("JIN_DIR", &jin_dir)
+        .assert()
+        .failure()
+        .stderr(contains("requires --mode"));
 }

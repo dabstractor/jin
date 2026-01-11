@@ -262,14 +262,14 @@
           "type": "Milestone",
           "id": "P2.M4",
           "title": "Milestone 4: Add Integration Tests for Import Routing",
-          "status": "Planned",
+          "status": "Complete",
           "description": "Add comprehensive integration tests verifying all layer routing flag combinations work correctly with jin import.",
           "tasks": [
             {
               "type": "Task",
               "id": "P2.M4.T1",
               "title": "Add Import Routing Tests to cli_import.rs",
-              "status": "Planned",
+              "status": "Complete",
               "description": "Add test functions covering all routing scenarios: --local, --global, --mode, --scope, --project, and combinations.",
               "subtasks": [
                 {
@@ -353,7 +353,7 @@
                   "type": "Subtask",
                   "id": "P2.M4.T1.S8",
                   "title": "Add test_import_with_invalid_routing_combination test",
-                  "status": "Planned",
+                  "status": "Complete",
                   "story_points": 2,
                   "dependencies": [
                     "P2.M2.T1.S2"

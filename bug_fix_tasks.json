@@ -112,7 +112,7 @@
           "type": "Milestone",
           "id": "P1.M2",
           "title": "Fix Critical Safety Issues",
-          "status": "Planned",
+          "status": "Complete",
           "description": "Fix undefined behavior in unsafe code and verify SIGPIPE handling implementation.",
           "tasks": [
             {
@@ -137,7 +137,7 @@
               "type": "Task",
               "id": "P1.M2.T2",
               "title": "Verify SIGPIPE Handling",
-              "status": "Planned",
+              "status": "Complete",
               "description": "Confirm SIGPIPE reset is working and create manual test documentation.",
               "subtasks": [
                 {
@@ -153,7 +153,7 @@
                   "type": "Subtask",
                   "id": "P1.M2.T2.S2",
                   "title": "Verify reset_sigpipe() is called early enough",
-                  "status": "Planned",
+                  "status": "Complete",
                   "story_points": 1,
                   "dependencies": [
                     "P1.M2.T2.S1"

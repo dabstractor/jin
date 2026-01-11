@@ -5,6 +5,7 @@ build/
 
 # Jin local state
 .jin/
+.cargo/
 
 # Research and implementation documentation (kept local)
 plan/*/research/

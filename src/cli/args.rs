@@ -229,6 +229,10 @@ pub struct ImportArgs {
     /// Target mode layer
     #[arg(long)]
     pub mode: bool,
+
+    /// Target scope layer
+    #[arg(long)]
+    pub scope: Option<String>,
 }
 
 /// Arguments for the `export` command

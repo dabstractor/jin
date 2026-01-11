@@ -386,6 +386,7 @@ mod tests {
             files: vec![],
             force: false,
             mode: false,
+            scope: None,
         };
         let result = execute(args);
         assert!(result.is_err());

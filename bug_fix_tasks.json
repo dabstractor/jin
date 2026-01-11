@@ -393,7 +393,7 @@
                   "type": "Subtask",
                   "id": "P3.M1.T1.S1",
                   "title": "Identify all unused test functions",
-                  "status": "Planned",
+                  "status": "Complete",
                   "story_points": 1,
                   "dependencies": [],
                   "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: From Issue 11 in PRD - 19+ warnings about unused test helpers.\n2. INPUT: tests/common/ directory and compiler warnings.\n3. LOGIC: Run cargo build --tests 2>&1 | grep 'warning: unused'. List all unused functions in common::assertions, common::fixtures, common::git_helpers. Create decision matrix: keep if planned use, remove if obsolete, use if gaps in test coverage.\n4. OUTPUT: List of unused functions with recommended actions.\n5. MOCKING: Compiler output analysis - no test needed."

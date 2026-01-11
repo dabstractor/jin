@@ -246,7 +246,7 @@
       "type": "Phase",
       "id": "P2",
       "title": "Documentation & Help Text Improvements",
-      "status": "Planned",
+      "status": "Complete",
       "description": "Improve CLI help text, error messages, and user-facing documentation to align with PRD expectations.",
       "milestones": [
         {
@@ -343,21 +343,21 @@
           "type": "Milestone",
           "id": "P2.M3",
           "title": "Document Recovery Procedures",
-          "status": "Planned",
+          "status": "Complete",
           "description": "Add documentation for recovering from detached states and other error conditions.",
           "tasks": [
             {
               "type": "Task",
               "id": "P2.M3.T1",
               "title": "Add Detached State Recovery Docs",
-              "status": "Planned",
+              "status": "Complete",
               "description": "Document how to recover from detached workspace state.",
               "subtasks": [
                 {
                   "type": "Subtask",
                   "id": "P2.M3.T1.S1",
                   "title": "Create recovery documentation section",
-                  "status": "Planned",
+                  "status": "Complete",
                   "story_points": 1,
                   "dependencies": [],
                   "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: From Issue 12 in PRD - unclear how to recover from detached state.\n2. INPUT: README.md or create docs/RECOVERY.md.\n3. LOGIC: Add section 'RECOVERING FROM DETACHED STATE' with steps: Run jin reset --hard --force to clear workspace, Then run jin apply to reapply from committed layer state. Explain what detached state means (workspace not synchronized with any layer state).\n4. OUTPUT: Documentation section explaining recovery procedure.\n5. MOCKING: Documentation only - no test needed."

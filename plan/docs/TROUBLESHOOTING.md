@@ -624,6 +624,104 @@ Error: Invalid context file
 
 ---
 
+### Q: How do I recover from a detached state?
+
+**Symptom:**
+```bash
+$ jin apply
+Error: Workspace is in a detached state.
+
+Workspace files have been modified outside of Jin operations.
+Expected: active context (mode=dev, project=jin)
+Found: 3 files with content mismatches
+
+Recovery: Run 'jin apply' to restore from active context
+```
+
+**Explanation:**
+
+A **detached state** occurs when your workspace files no longer match the expected state from Jin's layer system. This is similar to Git's "detached HEAD" state - your workspace is out of sync with what Jin expects.
+
+**Three Common Causes:**
+
+1. **External File Modification**: You edited a Jin-managed file manually
+2. **Missing Layer Commits**: Layer references were deleted (e.g., running `git gc` in `.jin`)
+3. **Invalid Context**: Active mode or scope was deleted
+
+**Solutions:**
+
+**Solution 1: External File Modification (Most Common)**
+
+```bash
+# Step 1: Clear workspace state
+$ jin reset --hard --force
+⚠️  This will discard workspace file(s) from staging and workspace
+Reset complete
+
+# Step 2: Reapply from committed layers
+$ jin apply
+Applied 3 files to workspace
+```
+
+**Solution 2: Missing Layer Commits**
+
+```bash
+# Rebuild workspace from current active context
+$ jin apply
+# This rebuilds layers using current mode/scope/project
+
+# Verify recovery
+$ jin status
+Workspace is clean
+```
+
+**Solution 3: Invalid Context (Deleted Mode/Scope)**
+
+```bash
+# Check available modes
+$ jin mode list
+Available modes: dev, prod
+
+# Activate a valid mode
+$ jin mode use dev
+Activated mode: dev
+
+# Apply with valid context
+$ jin apply
+Applied files from mode: dev
+```
+
+**Verification:**
+
+```bash
+# Confirm workspace is attached
+$ jin status
+Workspace is clean
+
+# Check active layers
+$ jin layers
+Active layers (precedence order, lowest to highest):
+  1. global/
+  2. mode/dev/
+  7. project/jin/
+  9. workspace/ (derived)
+```
+
+**Prevention:**
+
+- Always use `jin add` and `jin commit` for tracked files
+- Avoid manual edits to Jin-managed files
+- Don't run `git gc` inside the `.jin/` directory
+- Deactivate modes/scopes before deleting them
+
+**See Also:**
+
+- [Layer System](LAYER_SYSTEM.md) - Understanding layer precedence
+- [Commands](COMMANDS.md#reset) - reset command reference
+- [Commands](COMMANDS.md#apply) - apply command reference
+
+---
+
 ## Getting More Help
 
 If your issue isn't covered here:

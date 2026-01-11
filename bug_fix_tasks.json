@@ -417,14 +417,14 @@
           "type": "Milestone",
           "id": "P3.M2",
           "title": "Verify Resolve Command",
-          "status": "Planned",
+          "status": "Complete",
           "description": "Confirm jin resolve command exists and works correctly for conflict resolution.",
           "tasks": [
             {
               "type": "Task",
               "id": "P3.M2.T1",
               "title": "Verify Resolve Command Implementation",
-              "status": "Planned",
+              "status": "Complete",
               "description": "Check if jin resolve exists and test its functionality.",
               "subtasks": [
                 {
@@ -440,7 +440,7 @@
                   "type": "Subtask",
                   "id": "P3.M2.T1.S2",
                   "title": "Test resolve command workflow if implemented",
-                  "status": "Planned",
+                  "status": "Complete",
                   "story_points": 2,
                   "dependencies": [
                     "P3.M2.T1.S1"

@@ -597,3 +597,73 @@ fn test_import_file_not_found() {
         .failure()
         .stderr(contains("not found"));
 }
+
+/// Test: `jin import --local` routes to Layer 8 (UserLocal)
+#[test]
+fn test_import_with_local_flag() {
+    let temp = TempDir::new().unwrap();
+    let jin_dir = temp.path().join(".jin_global");
+
+    // Initialize Git repo
+    git_init_with_config(&temp);
+
+    // Create and commit a file to Git
+    let config_path = temp.path().join("local_config.json");
+    fs::write(&config_path, r#"{"local": "setting"}"#).unwrap();
+
+    StdCommand::new("git")
+        .args(["add", "local_config.json"])
+        .current_dir(temp.path())
+        .output()
+        .unwrap();
+
+    StdCommand::new("git")
+        .args(["commit", "-m", "Initial"])
+        .current_dir(temp.path())
+        .output()
+        .unwrap();
+
+    // Initialize Jin
+    jin()
+        .arg("init")
+        .current_dir(temp.path())
+        .env("JIN_DIR", &jin_dir)
+        .assert()
+        .success();
+
+    // Import with --local flag
+    jin()
+        .args(["import", "--local", "local_config.json"])
+        .current_dir(temp.path())
+        .env("JIN_DIR", &jin_dir)
+        .assert()
+        .success()
+        .stdout(contains("Imported 1 file(s)"));
+
+    // Verify file removed from Git index
+    let git_files_output = StdCommand::new("git")
+        .args(["ls-files"])
+        .current_dir(temp.path())
+        .output()
+        .unwrap();
+    let git_files = String::from_utf8_lossy(&git_files_output.stdout);
+    assert!(!git_files.contains("local_config.json"));
+
+    // Verify file still exists in workspace
+    assert!(config_path.exists());
+
+    // Verify staging index exists at JIN_DIR-aware path
+    let staging_index_path = jin_dir.join("staging").join("index.json");
+    assert!(staging_index_path.exists());
+    let staging_content = fs::read_to_string(&staging_index_path).unwrap();
+
+    // Verify file in staging index
+    assert!(staging_content.contains("local_config.json"));
+
+    // Verify target_layer is user_local (Layer 8)
+    assert!(
+        staging_content.contains("UserLocal") || staging_content.contains("user_local"),
+        "Staging index should contain UserLocal layer reference. Content:\n{}",
+        staging_content
+    );
+}

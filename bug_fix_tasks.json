@@ -278,14 +278,14 @@
               "type": "Task",
               "id": "P2.M1.T2",
               "title": "Update Apply Command Help",
-              "status": "Planned",
+              "status": "Complete",
               "description": "Add conflict resolution workflow information to jin apply --help.",
               "subtasks": [
                 {
                   "type": "Subtask",
                   "id": "P2.M1.T2.S1",
                   "title": "Add after_help section to ApplyArgs",
-                  "status": "Planned",
+                  "status": "Complete",
                   "story_points": 1,
                   "dependencies": [],
                   "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: From Issue 5 in PRD - apply help missing conflict resolution info.\n2. INPUT: src/cli/args.rs struct ApplyArgs.\n3. LOGIC: Add #[command(after_help = \"CONFLICT RESOLUTION:\\n  When merge conflicts are detected:\\n  • Operation pauses and creates .jinmerge files\\n  • Non-conflicting files are still applied\\n  • Resolve conflicts: jin resolve <file>\\n  • Continue: jin apply --continue\\n\\n  Use --dry-run to preview changes before applying.\")] attribute.\n4. OUTPUT: jin apply --help shows conflict workflow.\n5. MOCKING: Manual test - run jin apply --help and verify output."

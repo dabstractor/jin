@@ -56,6 +56,24 @@ pub struct CommitArgs {
 
 /// Arguments for the `apply` command
 #[derive(Args, Debug)]
+#[command(after_help = r#"CONFLICT RESOLUTION:
+  When merge conflicts are detected:
+  • Operation pauses and creates .jinmerge files
+  • Non-conflicting files are still applied
+  • Resolve conflicts manually in .jinmerge files
+  • Validate resolution: jin resolve <file>
+  • Check status: jin status
+
+  .jinmerge files contain Git-style conflict markers:
+    <<<<<<< layer1/ref/path/
+    content from layer 1
+    =======
+    content from layer 2
+    >>>>>>> layer2/ref/path/
+
+  Remove conflict markers and keep desired content,
+  then run 'jin resolve' to apply the resolution.
+"#)]
 pub struct ApplyArgs {
     /// Force apply even if workspace is dirty
     #[arg(long)]

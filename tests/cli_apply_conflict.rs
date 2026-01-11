@@ -271,7 +271,10 @@ fn test_apply_with_conflicts_applies_non_conflicting_files() {
     assert!(safe_path.exists(), "Non-conflicting file should be applied");
     let safe_content = fs::read_to_string(&safe_path).unwrap();
     // JSON is pretty-printed by Jin, so check for the key-value pair
-    assert!(safe_content.contains("\"safe\": true"), "Safe file should contain correct value");
+    assert!(
+        safe_content.contains("\"safe\": true"),
+        "Safe file should contain correct value"
+    );
 
     // Verify conflicting file was NOT applied (only .jinmerge exists)
     assert!(
@@ -504,4 +507,189 @@ fn test_apply_no_conflicts_works_normally() {
         !paused_state_path.exists(),
         "Paused state should NOT be created when there are no conflicts"
     );
+}
+
+#[test]
+fn test_apply_with_identical_content_no_conflict() {
+    let fixture = setup_test_repo().unwrap();
+    let jin_dir = fixture.jin_dir.clone().unwrap();
+
+    // Create a mode for testing
+    let mode_name = format!("test_mode_{}", unique_test_id());
+    jin_cmd()
+        .args(["mode", "create", &mode_name])
+        .env("JIN_DIR", &jin_dir)
+        .assert()
+        .success();
+
+    // Activate the mode in the project
+    jin_cmd()
+        .args(["mode", "use", &mode_name])
+        .current_dir(fixture.path())
+        .env("JIN_DIR", &jin_dir)
+        .assert()
+        .success();
+
+    // Add the same file to global layer with identical content
+    let config_path = fixture.path().join("config.json");
+    let identical_content = r#"{"port": 8080, "debug": true}"#;
+    fs::write(&config_path, identical_content).unwrap();
+
+    jin_cmd()
+        .args(["add", "config.json", "--global"])
+        .current_dir(fixture.path())
+        .env("JIN_DIR", &jin_dir)
+        .assert()
+        .success();
+
+    // Commit to Jin (global layer)
+    jin_cmd()
+        .args(["commit", "-m", "Add config to global"])
+        .current_dir(fixture.path())
+        .env("JIN_DIR", &jin_dir)
+        .assert()
+        .success();
+
+    // Add SAME content to mode layer (this is intentional - NOT a conflict)
+    fs::write(&config_path, identical_content).unwrap();
+
+    jin_cmd()
+        .args(["add", "config.json", "--mode"])
+        .current_dir(fixture.path())
+        .env("JIN_DIR", &jin_dir)
+        .assert()
+        .success();
+
+    // Commit to Jin (mode layer)
+    jin_cmd()
+        .args(["commit", "-m", "Add config to mode"])
+        .current_dir(fixture.path())
+        .env("JIN_DIR", &jin_dir)
+        .assert()
+        .success();
+
+    // Remove the file from workspace to test apply
+    fs::remove_file(&config_path).unwrap();
+
+    // Run apply - should NOT create .jinmerge file, should apply normally
+    jin_cmd()
+        .arg("apply")
+        .current_dir(fixture.path())
+        .env("JIN_DIR", &jin_dir)
+        .assert()
+        .success()
+        .stdout(predicate::str::contains("Applied 1 files"));
+
+    // Verify .jinmerge file was NOT created (no conflict!)
+    let jinmerge_path = fixture.path().join("config.json.jinmerge");
+    assert!(
+        !jinmerge_path.exists(),
+        ".jinmerge file should NOT be created for identical content"
+    );
+
+    // Verify file was applied normally with correct content
+    assert!(config_path.exists(), "Config file should be applied");
+    let applied_content = fs::read_to_string(&config_path).unwrap();
+    assert!(
+        applied_content.contains("8080"),
+        "Applied file should contain port value"
+    );
+    assert!(
+        applied_content.contains("debug"),
+        "Applied file should contain debug key"
+    );
+
+    // Verify no paused state was created
+    let paused_state_path = fixture.path().join(".jin/.paused_apply.yaml");
+    assert!(
+        !paused_state_path.exists(),
+        "Paused state should NOT be created when content is identical"
+    );
+}
+
+#[test]
+fn test_apply_with_identical_content_different_formatting() {
+    let fixture = setup_test_repo().unwrap();
+    let jin_dir = fixture.jin_dir.clone().unwrap();
+
+    // Create a mode for testing
+    let mode_name = format!("test_mode_{}", unique_test_id());
+    jin_cmd()
+        .args(["mode", "create", &mode_name])
+        .env("JIN_DIR", &jin_dir)
+        .assert()
+        .success();
+
+    // Activate the mode in the project
+    jin_cmd()
+        .args(["mode", "use", &mode_name])
+        .current_dir(fixture.path())
+        .env("JIN_DIR", &jin_dir)
+        .assert()
+        .success();
+
+    // Add file to global layer (no spaces formatting)
+    let config_path = fixture.path().join("config.json");
+    let compact_json = r#"{"port":8080,"debug":true}"#;
+    fs::write(&config_path, compact_json).unwrap();
+
+    jin_cmd()
+        .args(["add", "config.json", "--global"])
+        .current_dir(fixture.path())
+        .env("JIN_DIR", &jin_dir)
+        .assert()
+        .success();
+
+    jin_cmd()
+        .args(["commit", "-m", "Add config to global"])
+        .current_dir(fixture.path())
+        .env("JIN_DIR", &jin_dir)
+        .assert()
+        .success();
+
+    // Add semantically identical JSON to mode layer (pretty-printed with spaces)
+    let pretty_json = r#"{"port": 8080, "debug": true}"#;
+    fs::write(&config_path, pretty_json).unwrap();
+
+    jin_cmd()
+        .args(["add", "config.json", "--mode"])
+        .current_dir(fixture.path())
+        .env("JIN_DIR", &jin_dir)
+        .assert()
+        .success();
+
+    jin_cmd()
+        .args(["commit", "-m", "Add config to mode"])
+        .current_dir(fixture.path())
+        .env("JIN_DIR", &jin_dir)
+        .assert()
+        .success();
+
+    // Remove the file from workspace
+    fs::remove_file(&config_path).unwrap();
+
+    // Run apply - should NOT create .jinmerge (semantic comparison ignores formatting)
+    jin_cmd()
+        .arg("apply")
+        .current_dir(fixture.path())
+        .env("JIN_DIR", &jin_dir)
+        .assert()
+        .success()
+        .stdout(predicate::str::contains("Applied 1 files"));
+
+    // Verify .jinmerge file was NOT created
+    let jinmerge_path = fixture.path().join("config.json.jinmerge");
+    assert!(
+        !jinmerge_path.exists(),
+        ".jinmerge file should NOT be created for semantically identical content"
+    );
+
+    // Verify file was applied normally
+    assert!(config_path.exists());
+    let applied_content = fs::read_to_string(&config_path).unwrap();
+    assert!(applied_content.contains("8080"));
+
+    // Verify no paused state was created
+    let paused_state_path = fixture.path().join(".jin/.paused_apply.yaml");
+    assert!(!paused_state_path.exists());
 }

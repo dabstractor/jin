@@ -121,7 +121,8 @@ pub fn merge_layers(config: &LayerMergeConfig, repo: &JinRepo) -> Result<LayerMe
 
         if layers_with_file.len() > 1 {
             // File exists in multiple layers - check for content conflicts
-            let has_conflict = has_different_content_across_layers(path, &layers_with_file, config, repo)?;
+            let has_conflict =
+                has_different_content_across_layers(path, &layers_with_file, config, repo)?;
 
             if has_conflict {
                 // Different content detected - add to conflicts and skip merge
@@ -1526,21 +1527,10 @@ mod tests {
         let content = br#"{"port": 8080}"#;
 
         // Both layers have identical content
-        create_layer_with_file(
-            &repo,
-            "refs/jin/layers/global",
-            "config.json",
-            content,
-        )
-        .unwrap();
+        create_layer_with_file(&repo, "refs/jin/layers/global", "config.json", content).unwrap();
 
-        create_layer_with_file(
-            &repo,
-            "refs/jin/layers/mode/dev/_",
-            "config.json",
-            content,
-        )
-        .unwrap();
+        create_layer_with_file(&repo, "refs/jin/layers/mode/dev/_", "config.json", content)
+            .unwrap();
 
         let layers = vec![Layer::GlobalBase, Layer::ModeBase];
         let config = LayerMergeConfig {
@@ -1638,7 +1628,14 @@ mod tests {
         let tree = repo.inner().find_tree(tree_oid).unwrap();
         let commit_oid = repo
             .inner()
-            .commit(None, &sig, &sig, "test commit with multiple files", &tree, &[])
+            .commit(
+                None,
+                &sig,
+                &sig,
+                "test commit with multiple files",
+                &tree,
+                &[],
+            )
             .unwrap();
         repo.set_ref("refs/jin/layers/global", commit_oid, "test layer")
             .unwrap();
@@ -1656,7 +1653,9 @@ mod tests {
         // conflict.json should be in conflict_files
         // safe.json should be merged
         assert_eq!(result.conflict_files.len(), 1);
-        assert!(result.conflict_files.contains(&PathBuf::from("conflict.json")));
+        assert!(result
+            .conflict_files
+            .contains(&PathBuf::from("conflict.json")));
         assert_eq!(result.merged_files.len(), 1);
         assert!(result.merged_files.contains_key(Path::new("safe.json")));
     }

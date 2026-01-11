@@ -508,7 +508,7 @@
                   "type": "Subtask",
                   "id": "P3.M3.T1.S1",
                   "title": "Verify Issue 1 (Test Path Resolution) is resolved",
-                  "status": "Planned",
+                  "status": "Complete",
                   "story_points": 0.5,
                   "dependencies": [
                     "P3.M1.T1.S1"

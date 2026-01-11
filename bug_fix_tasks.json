@@ -233,21 +233,21 @@
           "type": "Milestone",
           "id": "P2.M3",
           "title": "Milestone 3: Add Help Documentation for Import Routing",
-          "status": "Planned",
+          "status": "Complete",
           "description": "Update jin import --help output to include layer routing documentation table matching jin add.",
           "tasks": [
             {
               "type": "Task",
               "id": "P2.M3.T1",
               "title": "Add Layer Routing Table to ImportArgs Help",
-              "status": "Planned",
+              "status": "Complete",
               "description": "Add after_help documentation to ImportArgs showing all layer routing options and their target layers.",
               "subtasks": [
                 {
                   "type": "Subtask",
                   "id": "P2.M3.T1.S1",
                   "title": "Add after_help attribute to ImportArgs",
-                  "status": "Planned",
+                  "status": "Complete",
                   "story_points": 1,
                   "dependencies": [
                     "P2.M1.T1.S5"

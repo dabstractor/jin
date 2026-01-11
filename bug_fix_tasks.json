@@ -1,0 +1,495 @@
+{
+  "backlog": [
+    {
+      "type": "Phase",
+      "id": "P1",
+      "title": "Critical Bug Fixes - Conflict Detection & Safety",
+      "status": "Planned",
+      "description": "Fix critical bugs blocking PRD compliance: conflict detection, unsafe code, and documentation gaps. These fixes are required for production readiness.",
+      "milestones": [
+        {
+          "type": "Milestone",
+          "id": "P1.M1",
+          "title": "Fix Conflict Detection System",
+          "status": "Planned",
+          "description": "Implement the missing conflict detection layer that causes all 5 conflict tests to fail. This is the highest priority bug blocking PRD compliance.",
+          "tasks": [
+            {
+              "type": "Task",
+              "id": "P1.M1.T1",
+              "title": "Add Collision Detection Helper Functions",
+              "status": "Planned",
+              "description": "Create helper functions to detect when the same file exists in multiple layers with different content.",
+              "subtasks": [
+                {
+                  "type": "Subtask",
+                  "id": "P1.M1.T1.S1",
+                  "title": "Implement find_layers_containing_file() helper",
+                  "status": "Complete",
+                  "story_points": 2,
+                  "dependencies": [],
+                  "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: From plan_bugfix/architecture/merge_analysis.md - merge system needs pre-merge collision detection.\n2. INPUT: file_path (PathBuf), layers (Vec<Layer>), config (LayerConfig), repo (JinRepo).\n3. LOGIC: Iterate through applicable layers in precedence order. For each layer, check if file_path exists in that layer's Git tree using repo.tree().get_path(). Return Vec<Layer> of layers containing this file.\n4. OUTPUT: Vec<Layer> containing all layers that have this file. Empty vec if file not found in any layer.\n5. MOCKING: Mock JinRepo.tree() and Tree.get_path() for testing. Use test fixtures from tests/common/fixtures.rs."
+                },
+                {
+                  "type": "Subtask",
+                  "id": "P1.M1.T1.S2",
+                  "title": "Implement has_different_content_across_layers() helper",
+                  "status": "Planned",
+                  "story_points": 2,
+                  "dependencies": [
+                    "P1.M1.T1.S1"
+                  ],
+                  "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: From plan_bugfix/architecture/test_failure_analysis.md - need to compare file content across layers.\n2. INPUT: file_path (PathBuf), layers_with_file (Vec<Layer> from S1), repo (JinRepo).\n3. LOGIC: If layers_with_file.len() <= 1, return false (no conflict possible). For structured files (.json, .yaml, .toml, .ini), parse content from each layer into MergeValue and compare. For text files, compare raw string content. Return true if any layer's content differs from any other.\n4. OUTPUT: bool - true if content differs across layers (conflict detected), false if all identical.\n5. MOCKING: Mock content reading and parse_content() function. Use test fixtures with known same/different content."
+                }
+              ]
+            },
+            {
+              "type": "Task",
+              "id": "P1.M1.T2",
+              "title": "Integrate Collision Detection into Merge Pipeline",
+              "status": "Planned",
+              "description": "Modify merge_layers() to detect collisions before attempting merge, triggering the conflict resolution workflow.",
+              "subtasks": [
+                {
+                  "type": "Subtask",
+                  "id": "P1.M1.T2.S1",
+                  "title": "Add collision detection loop in merge_layers()",
+                  "status": "Planned",
+                  "story_points": 2,
+                  "dependencies": [
+                    "P1.M1.T1.S1",
+                    "P1.M1.T1.S2"
+                  ],
+                  "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: From plan_bugfix/architecture/test_failure_analysis.md - collision detection must happen BEFORE merge_file_across_layers().\n2. INPUT: Existing merge_layers() function at src/merge/layer.rs:110.\n3. LOGIC: Before the existing 'for path in all_paths' loop, insert new logic: Call find_layers_containing_file(path, ...). If result.len() > 1, call has_different_content_across_layers(path, ...). If true, add path to result.conflict_files and continue (skip merge). Otherwise, proceed with existing merge logic.\n4. OUTPUT: Modified MergeResult with conflict_files populated when collisions detected.\n5. MOCKING: Unit test with mock layer data. Integration test uses real test fixtures."
+                },
+                {
+                  "type": "Subtask",
+                  "id": "P1.M1.T2.S2",
+                  "title": "Verify all 5 conflict tests now pass",
+                  "status": "Planned",
+                  "story_points": 1,
+                  "dependencies": [
+                    "P1.M1.T2.S1"
+                  ],
+                  "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: From plan_bugfix/architecture/test_failure_analysis.md - all 5 tests fail for same reason.\n2. INPUT: Existing test suite in tests/cli_apply_conflict.rs.\n3. LOGIC: Run cargo test cli_apply_conflict. Verify: test_apply_with_conflicts_creates_jinmerge_files passes, test_apply_dry_run_with_conflicts_shows_preview passes, test_apply_with_conflicts_applies_non_conflicting_files passes, test_apply_with_multiple_conflicts passes, test_apply_with_conflicts_creates_paused_state passes.\n4. OUTPUT: All 5 tests pass with 100% success rate.\n5. MOCKING: No mocking - integration test against real apply command."
+                }
+              ]
+            },
+            {
+              "type": "Task",
+              "id": "P1.M1.T3",
+              "title": "Add Edge Case Handling",
+              "status": "Planned",
+              "description": "Handle edge cases in conflict detection: same content in multiple layers, 3+ layers, file deletions.",
+              "subtasks": [
+                {
+                  "type": "Subtask",
+                  "id": "P1.M1.T3.S1",
+                  "title": "Handle same content in multiple layers (no conflict)",
+                  "status": "Planned",
+                  "story_points": 1,
+                  "dependencies": [
+                    "P1.M1.T2.S1"
+                  ],
+                  "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: From plan_bugfix/architecture/test_failure_analysis.md edge cases section.\n2. INPUT: Two layers with identical file content.\n3. LOGIC: In has_different_content_across_layers(), when comparing parsed MergeValue objects, use PartialEq to check equality. If all layers have identical content, return false (no conflict). Optimize by using first layer's content directly without merge.\n4. OUTPUT: No conflict detected, file merged normally.\n5. MOCKING: Test with two layers containing same JSON object."
+                },
+                {
+                  "type": "Subtask",
+                  "id": "P1.M1.T3.S2",
+                  "title": "Handle files in 3+ layers",
+                  "status": "Planned",
+                  "story_points": 1,
+                  "dependencies": [
+                    "P1.M1.T2.S1"
+                  ],
+                  "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: From plan_bugfix/architecture/test_failure_analysis.md - need to handle N layers.\n2. INPUT: File exists in 3 or more layers with varying content.\n3. LOGIC: In has_different_content_across_layers(), compare all layers pairwise or find any difference. If ANY layer differs from ANY other layer, return true (conflict). The conflict markers will show the two highest-precedence layers.\n4. OUTPUT: Conflict detected if any content differs.\n5. MOCKING: Test with 3 layers: global (value: 1), mode (value: 2), project (value: 3)."
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "Milestone",
+          "id": "P1.M2",
+          "title": "Fix Critical Safety Issues",
+          "status": "Planned",
+          "description": "Fix undefined behavior in unsafe code and verify SIGPIPE handling implementation.",
+          "tasks": [
+            {
+              "type": "Task",
+              "id": "P1.M2.T1",
+              "title": "Fix Undefined Behavior in git/merge.rs",
+              "status": "Planned",
+              "description": "Replace std::mem::zeroed() on reference types with proper error handling.",
+              "subtasks": [
+                {
+                  "type": "Subtask",
+                  "id": "P1.M2.T1.S1",
+                  "title": "Replace unsafe std::mem::zeroed() with Result",
+                  "status": "Planned",
+                  "story_points": 1,
+                  "dependencies": [],
+                  "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: From Issue 7 in PRD - std::mem::zeroed() on [&git2::Commit; 1] is UB.\n2. INPUT: src/git/merge.rs:194 - match commit_count with _ => unsafe { std::mem::zeroed() }.\n3. LOGIC: Replace the entire match expression to return Result: match commit_count { 0 => Ok(None), 1 => Ok(Some([&commits[0]])), _ => Err(JinError::Other(format!(\"Expected 0-1 commits, got {}\", commit_count))) }.\n4. OUTPUT: Function returns Result<Option<[&git2::Commit; 1]>, JinError> instead of using unsafe.\n5. MOCKING: Unit test with commit_count values 0, 1, 2."
+                }
+              ]
+            },
+            {
+              "type": "Task",
+              "id": "P1.M2.T2",
+              "title": "Verify SIGPIPE Handling",
+              "status": "Planned",
+              "description": "Confirm SIGPIPE reset is working and create manual test documentation.",
+              "subtasks": [
+                {
+                  "type": "Subtask",
+                  "id": "P1.M2.T2.S1",
+                  "title": "Create manual SIGPIPE test documentation",
+                  "status": "Planned",
+                  "story_points": 1,
+                  "dependencies": [],
+                  "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: From Issue 6 in PRD - SIGPIPE fix implemented but untested.\n2. INPUT: src/main.rs shows reset_sigpipe() called at line 28.\n3. LOGIC: Create tests/manual/SIGPIPE_TEST.md documenting: Test setup (jin init, add file, commit), Test execution (jin log | head -1), Expected behavior (exit gracefully, no panic), How to verify (check exit code 0 or 141), Platform differences (Unix only, Windows no SIGPIPE).\n4. OUTPUT: File tests/manual/SIGPIPE_TEST.md with complete test procedure.\n5. MOCKING: Manual test - no mocking."
+                },
+                {
+                  "type": "Subtask",
+                  "id": "P1.M2.T2.S2",
+                  "title": "Verify reset_sigpipe() is called early enough",
+                  "status": "Planned",
+                  "story_points": 1,
+                  "dependencies": [
+                    "P1.M2.T2.S1"
+                  ],
+                  "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: From plan_bugfix/architecture/external_dependencies.md - SIGPIPE must be reset before any I/O.\n2. INPUT: src/main.rs function main().\n3. LOGIC: Verify reset_sigpipe() is the VERY FIRST line of main() before any CLI parsing or I/O. Check that no code before it could trigger pipe writes. Confirm platform-specific cfg attributes are correct.\n4. OUTPUT: Verification that SIGPIPE reset happens before any other operations.\n5. MOCKING: Code review - no test needed."
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "Milestone",
+          "id": "P1.M3",
+          "title": "Fix Dry Run and Apply Output",
+          "status": "Planned",
+          "description": "Fix the dry run showing '0 files' bug and improve apply command output clarity.",
+          "tasks": [
+            {
+              "type": "Task",
+              "id": "P1.M3.T1",
+              "title": "Debug and Fix Dry Run File Count",
+              "status": "Planned",
+              "description": "Investigate why merge_layers() returns empty merged_files in dry run mode.",
+              "subtasks": [
+                {
+                  "type": "Subtask",
+                  "id": "P1.M3.T1.S1",
+                  "title": "Debug merge_layers() return value in dry run",
+                  "status": "Planned",
+                  "story_points": 2,
+                  "dependencies": [],
+                  "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: From Issue 3 in PRD - dry-run shows 'Would apply 0 files' even with files in layers.\n2. INPUT: src/commands/apply.rs:415 preview_changes() function.\n3. LOGIC: Add debug logging to trace: merged.merged_files hashmap size, individual file paths in hashmap, whether path.exists() check affects count. Add logging to merge_layers() to trace file collection. Run test with logging enabled.\n4. OUTPUT: Understanding of why merged_files is empty - likely in collect_all_file_paths() or merge_file_across_layers().\n5. MOCKING: Use existing test test_apply_dry_run_with_conflicts_shows_preview."
+                },
+                {
+                  "type": "Subtask",
+                  "id": "P1.M3.T1.S2",
+                  "title": "Fix root cause of empty merged_files",
+                  "status": "Planned",
+                  "story_points": 2,
+                  "dependencies": [
+                    "P1.M3.T1.S1"
+                  ],
+                  "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: Debug output from S1 will identify the specific failure point.\n2. INPUT: Debug logs showing where files are lost.\n3. LOGIC: Based on debug findings, fix the bug. Likely causes: collect_all_file_paths() not finding files in layer trees, merge_file_across_layers() returning None for all files, or filter logic removing files incorrectly. Add unit tests for the failing function.\n4. OUTPUT: Dry run correctly shows files that would be applied.\n5. MOCKING: Unit test for the specific function that was buggy."
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "Milestone",
+          "id": "P1.M4",
+          "title": "Verify Text File Conflict Detection",
+          "status": "Planned",
+          "description": "Confirm that text file conflict detection works or fix the routing bug.",
+          "tasks": [
+            {
+              "type": "Task",
+              "id": "P1.M4.T1",
+              "title": "Test Text File Merge Routing",
+              "status": "Planned",
+              "description": "Verify that non-structured files use text_merge() for conflict detection.",
+              "subtasks": [
+                {
+                  "type": "Subtask",
+                  "id": "P1.M4.T1.S1",
+                  "title": "Create integration test for .txt file conflicts",
+                  "status": "Planned",
+                  "story_points": 2,
+                  "dependencies": [],
+                  "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: From Issue 2 in PRD - text_merge() may never be called due to routing bug.\n2. INPUT: Test setup creates .txt file (not .json/.yaml), adds to global and mode layers with different content.\n3. LOGIC: Create test in tests/cli_apply_conflict.rs: test_text_file_conflicts_create_jinmerge. Setup: echo 'line1\nline2\nline3' > config.txt, add to global, echo 'line1\nMODIFIED\nline3' > config.txt, add to mode, rm config.txt, run jin apply. Assert: .jinmerge file created, conflict markers show text-style conflicts.\n4. OUTPUT: Passing test verifying text file conflict detection.\n5. MOCKING: Integration test - no mocking."
+                },
+                {
+                  "type": "Subtask",
+                  "id": "P1.M4.T1.S2",
+                  "title": "Fix text file routing if needed",
+                  "status": "Planned",
+                  "story_points": 2,
+                  "dependencies": [
+                    "P1.M4.T1.S1"
+                  ],
+                  "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: From plan_bugfix/architecture/merge_analysis.md - text files may be wrapped as MergeValue::String.\n2. INPUT: Test failure from S1 or code analysis of src/merge/layer.rs:242.\n3. LOGIC: If test fails, investigate: In merge_file_across_layers(), check if FileFormat::Text files are being converted to MergeValue::String at line 242. If so, this bypasses text_merge(). Fix: For text files, read raw content and call text_merge() directly instead of deep_merge(). Ensure 3-way merge with base works correctly.\n4. OUTPUT: Text files use text_merge() and create proper conflict markers.\n5. MOCKING: Unit test for merge_file_across_layers() with FileFormat::Text."
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "Phase",
+      "id": "P2",
+      "title": "Documentation & Help Text Improvements",
+      "status": "Planned",
+      "description": "Improve CLI help text, error messages, and user-facing documentation to align with PRD expectations.",
+      "milestones": [
+        {
+          "type": "Milestone",
+          "id": "P2.M1",
+          "title": "Enhance Command Help Text",
+          "status": "Planned",
+          "description": "Add comprehensive help text for push and apply commands explaining safety features and workflows.",
+          "tasks": [
+            {
+              "type": "Task",
+              "id": "P2.M1.T1",
+              "title": "Update Push Command Help",
+              "status": "Planned",
+              "description": "Add safety information to jin push --help explaining fetch requirements and conflict rules.",
+              "subtasks": [
+                {
+                  "type": "Subtask",
+                  "id": "P2.M1.T1.S1",
+                  "title": "Add after_help section to PushArgs",
+                  "status": "Planned",
+                  "story_points": 1,
+                  "dependencies": [],
+                  "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: From Issue 4 in PRD - push help missing critical safety info.\n2. INPUT: src/cli/args.rs struct PushArgs.\n3. LOGIC: Add #[command(after_help = \"PUSH SAFETY:\\n  • Fetches automatically before pushing\\n  • Requires clean merge state\\n  • Rejects push if local is behind remote\\n  • Use --force to bypass (caution: may overwrite remote changes)\")] attribute to PushArgs struct.\n4. OUTPUT: jin push --help shows safety information.\n5. MOCKING: Manual test - run jin push --help and verify output."
+                }
+              ]
+            },
+            {
+              "type": "Task",
+              "id": "P2.M1.T2",
+              "title": "Update Apply Command Help",
+              "status": "Planned",
+              "description": "Add conflict resolution workflow information to jin apply --help.",
+              "subtasks": [
+                {
+                  "type": "Subtask",
+                  "id": "P2.M1.T2.S1",
+                  "title": "Add after_help section to ApplyArgs",
+                  "status": "Planned",
+                  "story_points": 1,
+                  "dependencies": [],
+                  "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: From Issue 5 in PRD - apply help missing conflict resolution info.\n2. INPUT: src/cli/args.rs struct ApplyArgs.\n3. LOGIC: Add #[command(after_help = \"CONFLICT RESOLUTION:\\n  When merge conflicts are detected:\\n  • Operation pauses and creates .jinmerge files\\n  • Non-conflicting files are still applied\\n  • Resolve conflicts: jin resolve <file>\\n  • Continue: jin apply --continue\\n\\n  Use --dry-run to preview changes before applying.\")] attribute.\n4. OUTPUT: jin apply --help shows conflict workflow.\n5. MOCKING: Manual test - run jin apply --help and verify output."
+                }
+              ]
+            },
+            {
+              "type": "Task",
+              "id": "P2.M1.T3",
+              "title": "Enhance Layer Routing Help",
+              "status": "Planned",
+              "description": "Add storage paths and descriptions to layer routing help table.",
+              "subtasks": [
+                {
+                  "type": "Subtask",
+                  "id": "P2.M1.T3.S1",
+                  "title": "Add storage path column to layer routing table",
+                  "status": "Planned",
+                  "story_points": 1,
+                  "dependencies": [],
+                  "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: From Issue 8 in PRD - layer routing help could show storage paths.\n2. INPUT: src/cli/args.rs AddArgs help text.\n3. LOGIC: Update LAYER ROUTING table to add 'Storage' column. Format: 'Flags | Layer | Description | Storage'. Add paths: Layer 1 → jin/global/, Layer 2 → jin/mode/<mode>/, Layer 7 → jin/project/<project>/, etc. Use plan_bugfix/architecture/codebase_structure.md for correct paths.\n4. OUTPUT: Enhanced routing table with storage paths.\n5. MOCKING: Manual test - run jin add --help and verify table."
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "Milestone",
+          "id": "P2.M2",
+          "title": "Add Error Validation",
+          "status": "Planned",
+          "description": "Add specific validation for incompatible flag combinations with clear error messages.",
+          "tasks": [
+            {
+              "type": "Task",
+              "id": "P2.M2.T1",
+              "title": "Add --mode Without Active Mode Error",
+              "status": "Planned",
+              "description": "Validate --mode flag requires an active mode and provide clear error.",
+              "subtasks": [
+                {
+                  "type": "Subtask",
+                  "id": "P2.M2.T1.S1",
+                  "title": "Add mode validation in route_to_layer()",
+                  "status": "Planned",
+                  "story_points": 1,
+                  "dependencies": [],
+                  "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: From Issue 9 in PRD - --mode with no active mode should error.\n2. INPUT: src/staging/router.rs route_to_layer() function.\n3. LOGIC: At start of function, check: if options.mode && context.mode.is_none() { return Err(JinError::Config(\"--mode flag requires an active mode. Run 'jin mode use <mode>' first.\".into())); }. Similar check for --project requiring active mode.\n4. OUTPUT: Clear error message when using --mode without active mode.\n5. MOCKING: Unit test with context.mode = None and options.mode = true."
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "Milestone",
+          "id": "P2.M3",
+          "title": "Document Recovery Procedures",
+          "status": "Planned",
+          "description": "Add documentation for recovering from detached states and other error conditions.",
+          "tasks": [
+            {
+              "type": "Task",
+              "id": "P2.M3.T1",
+              "title": "Add Detached State Recovery Docs",
+              "status": "Planned",
+              "description": "Document how to recover from detached workspace state.",
+              "subtasks": [
+                {
+                  "type": "Subtask",
+                  "id": "P2.M3.T1.S1",
+                  "title": "Create recovery documentation section",
+                  "status": "Planned",
+                  "story_points": 1,
+                  "dependencies": [],
+                  "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: From Issue 12 in PRD - unclear how to recover from detached state.\n2. INPUT: README.md or create docs/RECOVERY.md.\n3. LOGIC: Add section 'RECOVERING FROM DETACHED STATE' with steps: Run jin reset --hard --force to clear workspace, Then run jin apply to reapply from committed layer state. Explain what detached state means (workspace not synchronized with any layer state).\n4. OUTPUT: Documentation section explaining recovery procedure.\n5. MOCKING: Documentation only - no test needed."
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "Phase",
+      "id": "P3",
+      "title": "Code Quality & Test Coverage",
+      "status": "Planned",
+      "description": "Clean up unused code, add missing test coverage, and verify resolve command implementation.",
+      "milestones": [
+        {
+          "type": "Milestone",
+          "id": "P3.M1",
+          "title": "Clean Up Unused Test Utilities",
+          "status": "Planned",
+          "description": "Remove or use unused test helper functions to reduce maintenance burden.",
+          "tasks": [
+            {
+              "type": "Task",
+              "id": "P3.M1.T1",
+              "title": "Audit and Remove Unused Test Functions",
+              "status": "Planned",
+              "description": "Identify and remove unused test utilities from tests/common/.",
+              "subtasks": [
+                {
+                  "type": "Subtask",
+                  "id": "P3.M1.T1.S1",
+                  "title": "Identify all unused test functions",
+                  "status": "Planned",
+                  "story_points": 1,
+                  "dependencies": [],
+                  "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: From Issue 11 in PRD - 19+ warnings about unused test helpers.\n2. INPUT: tests/common/ directory and compiler warnings.\n3. LOGIC: Run cargo build --tests 2>&1 | grep 'warning: unused'. List all unused functions in common::assertions, common::fixtures, common::git_helpers. Create decision matrix: keep if planned use, remove if obsolete, use if gaps in test coverage.\n4. OUTPUT: List of unused functions with recommended actions.\n5. MOCKING: Compiler output analysis - no test needed."
+                },
+                {
+                  "type": "Subtask",
+                  "id": "P3.M1.T1.S2",
+                  "title": "Remove or use identified unused functions",
+                  "status": "Planned",
+                  "story_points": 2,
+                  "dependencies": [
+                    "P3.M1.T1.S1"
+                  ],
+                  "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: Based on decisions from S1.\n2. INPUT: List of unused functions.\n3. LOGIC: For functions to remove: delete from tests/common/*.rs files. For functions to use: write tests that use them, addressing gaps in coverage. Add #[allow(dead_code)] if keeping for future planned use.\n4. OUTPUT: Clean test codebase with no unused warnings.\n5. MOCKING: Run cargo build --tests and verify no unused warnings."
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "Milestone",
+          "id": "P3.M2",
+          "title": "Verify Resolve Command",
+          "status": "Planned",
+          "description": "Confirm jin resolve command exists and works correctly for conflict resolution.",
+          "tasks": [
+            {
+              "type": "Task",
+              "id": "P3.M2.T1",
+              "title": "Verify Resolve Command Implementation",
+              "status": "Planned",
+              "description": "Check if jin resolve exists and test its functionality.",
+              "subtasks": [
+                {
+                  "type": "Subtask",
+                  "id": "P3.M2.T1.S1",
+                  "title": "Check if jin resolve command exists",
+                  "status": "Planned",
+                  "story_points": 1,
+                  "dependencies": [],
+                  "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: From Issue 10 in PRD - resolve command existence unverified.\n2. INPUT: src/commands/ directory and src/cli/args.rs.\n3. LOGIC: Search for resolve.rs in commands. Check if ResolveArgs exists in cli/args.rs. Check if resolve is wired up in commands/mod.rs. If missing, note that implementation is needed. If exists, examine the implementation.\n4. OUTPUT: Confirmation of resolve command existence or gap identified.\n5. MOCKING: Code review - no test needed."
+                },
+                {
+                  "type": "Subtask",
+                  "id": "P3.M2.T1.S2",
+                  "title": "Test resolve command workflow if implemented",
+                  "status": "Planned",
+                  "story_points": 2,
+                  "dependencies": [
+                    "P3.M2.T1.S1"
+                  ],
+                  "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: From PRD §11.3 - resolve workflow: jin resolve <file>, user edits, apply continues.\n2. INPUT: resolve command implementation from S1.\n3. LOGIC: If resolve exists: Create integration test test_resolve_command_workflows. Setup: Create conflict with jin apply, run jin resolve config.json, select resolution option, verify .jinmerge file removed, run jin apply --continue, verify file applied.\n4. OUTPUT: Working resolve command test or implementation task created.\n5. MOCKING: Integration test - no mocking."
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "Milestone",
+          "id": "P3.M3",
+          "title": "Add Sync Integration Tests",
+          "status": "Planned",
+          "description": "Add test coverage for push/pull/fetch synchronization workflows.",
+          "tasks": [
+            {
+              "type": "Task",
+              "id": "P3.M3.T1",
+              "title": "Create Push/Pull Integration Tests",
+              "status": "Planned",
+              "description": "Add comprehensive tests for Git synchronization operations.",
+              "subtasks": [
+                {
+                  "type": "Subtask",
+                  "id": "P3.M3.T1.S1",
+                  "title": "Add push workflow integration test",
+                  "status": "Planned",
+                  "story_points": 2,
+                  "dependencies": [],
+                  "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: From test_failure_analysis.md - no sync integration tests found.\n2. INPUT: tests/ directory structure.\n3. LOGIC: Create tests/cli_sync_workflow.rs (may exist but verify). Test: jin init, make local changes, jin push, verify refs on remote. Test push rejection when behind. Test --force bypass. Use test fixtures for remote setup.\n4. OUTPUT: Comprehensive sync test coverage.\n5. MOCKING: Integration test - no mocking."
+                },
+                {
+                  "type": "Subtask",
+                  "id": "P3.M3.T1.S2",
+                  "title": "Add pull/fetch workflow integration test",
+                  "status": "Planned",
+                  "story_points": 2,
+                  "dependencies": [
+                    "P3.M3.T1.S1"
+                  ],
+                  "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: Pull/fetch workflows need test coverage.\n2. INPUT: tests/cli_sync_workflow.rs.\n3. LOGIC: Add tests: jin fetch updates remote refs without merging, jin pull merges remote changes, jin pull with conflicts creates .jinmerge, jin pull --rebase rebases local changes. Verify layer state after each operation.\n4. OUTPUT: Fetch and pull test coverage.\n5. MOCKING: Integration test - no mocking."
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

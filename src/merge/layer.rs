@@ -273,9 +273,85 @@ pub fn get_applicable_layers(
     layers
 }
 
+/// Find which layers contain a specific file.
+///
+/// Iterates through the provided layers in precedence order and checks
+/// if each layer's Git tree contains the specified file. Layers that
+/// don't exist yet are gracefully skipped.
+///
+/// # Arguments
+///
+/// * `file_path` - Path to the file to search for (relative to repo root)
+/// * `layers` - Layers to search, in precedence order
+/// * `config` - Merge configuration with mode/scope/project context
+/// * `repo` - Jin repository for Git operations
+///
+/// # Returns
+///
+/// * `Ok(Vec<Layer>)` - Layers containing the file, in input order
+/// * `Err(JinError)` - Git operation failure
+///
+/// # Examples
+///
+/// ```ignore
+/// use jin::merge::{find_layers_containing_file, LayerMergeConfig};
+/// use jin::core::Layer;
+/// use std::path::Path;
+///
+/// let config = LayerMergeConfig { /* ... */ };
+/// let layers = vec![Layer::GlobalBase, Layer::ModeBase];
+/// let containing = find_layers_containing_file(
+///     Path::new("config.json"),
+///     &layers,
+///     &config,
+///     &repo
+/// )?;
+/// ```
+pub fn find_layers_containing_file(
+    file_path: &std::path::Path,
+    layers: &[Layer],
+    config: &LayerMergeConfig,
+    repo: &JinRepo,
+) -> Result<Vec<Layer>> {
+    let mut containing_layers = Vec::new();
+
+    for layer in layers {
+        let ref_path = layer.ref_path(
+            config.mode.as_deref(),
+            config.scope.as_deref(),
+            config.project.as_deref(),
+        );
+
+        // CRITICAL: Check ref_exists() before resolve_ref()
+        // Layer refs may not exist yet - skip gracefully
+        if !repo.ref_exists(&ref_path) {
+            continue;
+        }
+
+        // Resolve the commit for this layer
+        let commit_oid = repo.resolve_ref(&ref_path);
+        if let Ok(commit_oid) = commit_oid {
+            let commit = repo.inner().find_commit(commit_oid)?;
+            let tree_oid = commit.tree_id();
+
+            // Check if file exists in this layer's tree
+            // get_tree_entry() returns Err if file not found
+            if repo.get_tree_entry(tree_oid, file_path).is_ok() {
+                containing_layers.push(*layer);
+            }
+        }
+        // If resolve_ref fails, skip this layer (may not be initialized)
+    }
+
+    Ok(containing_layers)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::git::objects::ObjectOps;
+    use std::path::Path;
+    use tempfile;
 
     // ========== FileFormat & MergedFile Tests ==========
 
@@ -509,5 +585,297 @@ mod tests {
         assert_eq!(Layer::ProjectBase.precedence(), 7);
         assert_eq!(Layer::UserLocal.precedence(), 8);
         assert_eq!(Layer::WorkspaceActive.precedence(), 9);
+    }
+
+    // ========== find_layers_containing_file Tests ==========
+
+    // Helper function to create a test repository for layer tests
+    fn create_layer_test_repo() -> (tempfile::TempDir, JinRepo) {
+        let temp = tempfile::TempDir::new().unwrap();
+        let repo_path = temp.path().join(".jin");
+        let repo = JinRepo::create_at(&repo_path).unwrap();
+        (temp, repo)
+    }
+
+    // Helper to create a commit with a file and set a ref
+    fn create_layer_with_file(
+        repo: &JinRepo,
+        ref_name: &str,
+        file_path: &str,
+        content: &[u8],
+    ) -> Result<()> {
+        let blob_oid = repo.create_blob(content)?;
+        let tree_oid = repo.create_tree_from_paths(&[(file_path.to_string(), blob_oid)])?;
+
+        let sig = git2::Signature::now("test", "test@test.com")?;
+        let tree = repo.inner().find_tree(tree_oid)?;
+        let commit_oid = repo
+            .inner()
+            .commit(None, &sig, &sig, "test commit", &tree, &[])?;
+
+        repo.set_ref(ref_name, commit_oid, "test layer")?;
+        Ok(())
+    }
+
+    #[test]
+    fn test_find_layers_single_layer_containing_file() {
+        let (_temp, repo) = create_layer_test_repo();
+
+        // Create a layer with a file
+        create_layer_with_file(
+            &repo,
+            "refs/jin/layers/global",
+            "config.json",
+            br#"{"key":"global"}"#,
+        )
+        .unwrap();
+
+        let layers = vec![Layer::GlobalBase];
+        let config = LayerMergeConfig {
+            layers,
+            mode: None,
+            scope: None,
+            project: None,
+        };
+
+        let result =
+            find_layers_containing_file(Path::new("config.json"), &config.layers, &config, &repo)
+                .unwrap();
+        assert_eq!(result.len(), 1);
+        assert_eq!(result[0], Layer::GlobalBase);
+    }
+
+    #[test]
+    fn test_find_layers_multiple_layers_containing_file() {
+        let (_temp, repo) = create_layer_test_repo();
+
+        // Create two layers with the same file
+        create_layer_with_file(
+            &repo,
+            "refs/jin/layers/global",
+            "config.json",
+            br#"{"key":"global"}"#,
+        )
+        .unwrap();
+
+        create_layer_with_file(
+            &repo,
+            "refs/jin/layers/mode/dev/_",
+            "config.json",
+            br#"{"key":"mode"}"#,
+        )
+        .unwrap();
+
+        let layers = vec![Layer::GlobalBase, Layer::ModeBase];
+        let config = LayerMergeConfig {
+            layers,
+            mode: Some("dev".to_string()),
+            scope: None,
+            project: None,
+        };
+
+        let result =
+            find_layers_containing_file(Path::new("config.json"), &config.layers, &config, &repo)
+                .unwrap();
+        assert_eq!(result.len(), 2);
+        assert_eq!(result[0], Layer::GlobalBase);
+        assert_eq!(result[1], Layer::ModeBase);
+    }
+
+    #[test]
+    fn test_find_layers_file_not_in_any_layer() {
+        let (_temp, repo) = create_layer_test_repo();
+
+        // Create a layer with a different file
+        create_layer_with_file(
+            &repo,
+            "refs/jin/layers/global",
+            "other.json",
+            br#"{"key":"value"}"#,
+        )
+        .unwrap();
+
+        let layers = vec![Layer::GlobalBase];
+        let config = LayerMergeConfig {
+            layers,
+            mode: None,
+            scope: None,
+            project: None,
+        };
+
+        let result =
+            find_layers_containing_file(Path::new("config.json"), &config.layers, &config, &repo)
+                .unwrap();
+        assert!(result.is_empty());
+    }
+
+    #[test]
+    fn test_find_layers_nonexistent_file_path() {
+        let (_temp, repo) = create_layer_test_repo();
+
+        let layers = vec![Layer::GlobalBase];
+        let config = LayerMergeConfig {
+            layers,
+            mode: None,
+            scope: None,
+            project: None,
+        };
+
+        // Non-existent file should return empty vec, not error
+        let result = find_layers_containing_file(
+            Path::new("does/not/exist.json"),
+            &config.layers,
+            &config,
+            &repo,
+        )
+        .unwrap();
+        assert!(result.is_empty());
+    }
+
+    #[test]
+    fn test_find_layers_empty_layer_list() {
+        let (_temp, repo) = create_layer_test_repo();
+
+        let layers: Vec<Layer> = vec![];
+        let config = LayerMergeConfig {
+            layers,
+            mode: None,
+            scope: None,
+            project: None,
+        };
+
+        let result =
+            find_layers_containing_file(Path::new("config.json"), &config.layers, &config, &repo)
+                .unwrap();
+        assert!(result.is_empty());
+    }
+
+    #[test]
+    fn test_find_layers_nonexistent_layer_refs_skipped() {
+        let (_temp, repo) = create_layer_test_repo();
+
+        // Create only the GlobalBase layer
+        create_layer_with_file(
+            &repo,
+            "refs/jin/layers/global",
+            "config.json",
+            br#"{"key":"global"}"#,
+        )
+        .unwrap();
+
+        // Include layers that don't exist yet
+        let layers = vec![Layer::GlobalBase, Layer::ModeBase, Layer::ProjectBase];
+        let config = LayerMergeConfig {
+            layers,
+            mode: Some("dev".to_string()),
+            scope: None,
+            project: Some("myproject".to_string()),
+        };
+
+        let result =
+            find_layers_containing_file(Path::new("config.json"), &config.layers, &config, &repo)
+                .unwrap();
+        // Only GlobalBase should be returned; non-existent layers are skipped
+        assert_eq!(result.len(), 1);
+        assert_eq!(result[0], Layer::GlobalBase);
+    }
+
+    #[test]
+    fn test_find_layers_precedence_order_maintained() {
+        let (_temp, repo) = create_layer_test_repo();
+
+        // Create multiple layers with the same file in reverse precedence order
+        create_layer_with_file(
+            &repo,
+            "refs/jin/layers/project/myproject",
+            "config.json",
+            br#"{"key":"project"}"#,
+        )
+        .unwrap();
+
+        create_layer_with_file(
+            &repo,
+            "refs/jin/layers/global",
+            "config.json",
+            br#"{"key":"global"}"#,
+        )
+        .unwrap();
+
+        // Pass layers in specific order
+        let layers = vec![Layer::ProjectBase, Layer::GlobalBase];
+        let config = LayerMergeConfig {
+            layers,
+            mode: None,
+            scope: None,
+            project: Some("myproject".to_string()),
+        };
+
+        let result =
+            find_layers_containing_file(Path::new("config.json"), &config.layers, &config, &repo)
+                .unwrap();
+        assert_eq!(result.len(), 2);
+        // Order should match input order (ProjectBase first, then GlobalBase)
+        assert_eq!(result[0], Layer::ProjectBase);
+        assert_eq!(result[1], Layer::GlobalBase);
+    }
+
+    #[test]
+    fn test_find_layers_nested_directory_files() {
+        let (_temp, repo) = create_layer_test_repo();
+
+        // Create a layer with a nested file
+        create_layer_with_file(
+            &repo,
+            "refs/jin/layers/global",
+            "src/config/app.json",
+            br#"{"key":"value"}"#,
+        )
+        .unwrap();
+
+        let layers = vec![Layer::GlobalBase];
+        let config = LayerMergeConfig {
+            layers,
+            mode: None,
+            scope: None,
+            project: None,
+        };
+
+        let result = find_layers_containing_file(
+            Path::new("src/config/app.json"),
+            &config.layers,
+            &config,
+            &repo,
+        )
+        .unwrap();
+        assert_eq!(result.len(), 1);
+        assert_eq!(result[0], Layer::GlobalBase);
+    }
+
+    #[test]
+    fn test_find_layers_mode_scope_with_context() {
+        let (_temp, repo) = create_layer_test_repo();
+
+        // Create ModeScope layer with proper ref path
+        create_layer_with_file(
+            &repo,
+            "refs/jin/layers/mode/dev/scope/frontend/_",
+            "config.json",
+            br#"{"key":"mode-scope"}"#,
+        )
+        .unwrap();
+
+        let layers = vec![Layer::ModeScope];
+        let config = LayerMergeConfig {
+            layers,
+            mode: Some("dev".to_string()),
+            scope: Some("frontend".to_string()),
+            project: None,
+        };
+
+        let result =
+            find_layers_containing_file(Path::new("config.json"), &config.layers, &config, &repo)
+                .unwrap();
+        assert_eq!(result.len(), 1);
+        assert_eq!(result[0], Layer::ModeScope);
     }
 }

@@ -31,8 +31,8 @@ pub use deep::{deep_merge, deep_merge_with_config, MergeConfig};
 
 // Layer merge orchestration
 pub use layer::{
-    detect_format, get_applicable_layers, merge_layers, parse_content, FileFormat,
-    LayerMergeConfig, LayerMergeResult, MergedFile,
+    detect_format, find_layers_containing_file, get_applicable_layers, merge_layers, parse_content,
+    FileFormat, LayerMergeConfig, LayerMergeResult, MergedFile,
 };
 
 // Text merge

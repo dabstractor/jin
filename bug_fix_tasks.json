@@ -435,21 +435,21 @@
           "type": "Milestone",
           "id": "P3.M1",
           "title": "Milestone 1: Full Test Suite Validation",
-          "status": "Planned",
+          "status": "Complete",
           "description": "Run complete test suite to ensure no regressions and all fixes work correctly.",
           "tasks": [
             {
               "type": "Task",
               "id": "P3.M1.T1",
               "title": "Run Complete Test Suite",
-              "status": "Planned",
+              "status": "Complete",
               "description": "Execute all unit and integration tests to verify no regressions from bug fixes.",
               "subtasks": [
                 {
                   "type": "Subtask",
                   "id": "P3.M1.T1.S1",
                   "title": "Run cargo test --all and verify pass rate",
-                  "status": "Planned",
+                  "status": "Complete",
                   "story_points": 1,
                   "dependencies": [
                     "P1.M3.T1.S3",

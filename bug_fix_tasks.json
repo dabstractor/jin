@@ -309,7 +309,7 @@
                   "type": "Subtask",
                   "id": "P2.M4.T1.S4",
                   "title": "Add test_import_with_scope_flag test",
-                  "status": "Planned",
+                  "status": "Complete",
                   "story_points": 2,
                   "dependencies": [
                     "P2.M2.T1.S2"

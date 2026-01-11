@@ -92,6 +92,12 @@ impl LayerMergeResult {
 /// This function collects all unique file paths across all layers,
 /// then merges each file according to layer precedence (lowest first).
 ///
+/// # COLLISION DETECTION
+///
+/// Before merging each file, this function checks if the file exists in
+/// multiple layers with different content. If so, the file is added to
+/// `conflict_files` and merging is skipped for that file.
+///
 /// # Arguments
 ///
 /// * `config` - The merge configuration containing layers and context
@@ -107,13 +113,33 @@ pub fn merge_layers(config: &LayerMergeConfig, repo: &JinRepo) -> Result<LayerMe
     let all_paths = collect_all_file_paths(&config.layers, config, repo)?;
 
     // Merge each file path
-    for path in all_paths {
-        match merge_file_across_layers(&path, &config.layers, config, repo) {
+    for path in &all_paths {
+        // ============================================================
+        // NEW: Collision detection BEFORE merge_file_across_layers()
+        // ============================================================
+        let layers_with_file = find_layers_containing_file(path, &config.layers, config, repo)?;
+
+        if layers_with_file.len() > 1 {
+            // File exists in multiple layers - check for content conflicts
+            let has_conflict = has_different_content_across_layers(path, &layers_with_file, config, repo)?;
+
+            if has_conflict {
+                // Different content detected - add to conflicts and skip merge
+                result.conflict_files.push(path.clone());
+                continue; // Skip merge_file_across_layers() for this file
+            }
+            // Same content in multiple layers - proceed with merge (will merge once)
+        }
+
+        // ============================================================
+        // EXISTING: Merge logic (for non-conflicting files)
+        // ============================================================
+        match merge_file_across_layers(path, &config.layers, config, repo) {
             Ok(merged) => {
-                result.merged_files.insert(path, merged);
+                result.merged_files.insert(path.clone(), merged);
             }
             Err(JinError::MergeConflict { .. }) => {
-                result.conflict_files.push(path);
+                result.conflict_files.push(path.clone());
             }
             Err(e) => return Err(e),
         }
@@ -1460,5 +1486,178 @@ mod tests {
 
         assert!(result.is_ok());
         assert!(!result.unwrap()); // No conflict with empty list
+    }
+
+    // ========== merge_layers() collision detection tests ==========
+
+    #[test]
+    fn test_merge_layers_single_layer_no_conflict() {
+        let (_temp, repo) = create_layer_test_repo();
+
+        // Create single layer with a file
+        create_layer_with_file(
+            &repo,
+            "refs/jin/layers/global",
+            "config.json",
+            br#"{"port": 8080}"#,
+        )
+        .unwrap();
+
+        let layers = vec![Layer::GlobalBase];
+        let config = LayerMergeConfig {
+            layers,
+            mode: None,
+            scope: None,
+            project: None,
+        };
+
+        let result = merge_layers(&config, &repo).unwrap();
+
+        // Should merge normally (no conflicts)
+        assert_eq!(result.conflict_files.len(), 0);
+        assert_eq!(result.merged_files.len(), 1);
+        assert!(result.merged_files.contains_key(Path::new("config.json")));
+    }
+
+    #[test]
+    fn test_merge_layers_two_layers_same_content_no_conflict() {
+        let (_temp, repo) = create_layer_test_repo();
+
+        let content = br#"{"port": 8080}"#;
+
+        // Both layers have identical content
+        create_layer_with_file(
+            &repo,
+            "refs/jin/layers/global",
+            "config.json",
+            content,
+        )
+        .unwrap();
+
+        create_layer_with_file(
+            &repo,
+            "refs/jin/layers/mode/dev/_",
+            "config.json",
+            content,
+        )
+        .unwrap();
+
+        let layers = vec![Layer::GlobalBase, Layer::ModeBase];
+        let config = LayerMergeConfig {
+            layers,
+            mode: Some("dev".to_string()),
+            scope: None,
+            project: None,
+        };
+
+        let result = merge_layers(&config, &repo).unwrap();
+
+        // Should merge normally (same content = no conflict)
+        assert_eq!(result.conflict_files.len(), 0);
+        assert_eq!(result.merged_files.len(), 1);
+    }
+
+    #[test]
+    fn test_merge_layers_two_layers_different_content_conflict() {
+        let (_temp, repo) = create_layer_test_repo();
+
+        // Layers have different content
+        create_layer_with_file(
+            &repo,
+            "refs/jin/layers/global",
+            "config.json",
+            br#"{"port": 8080}"#,
+        )
+        .unwrap();
+
+        create_layer_with_file(
+            &repo,
+            "refs/jin/layers/mode/dev/_",
+            "config.json",
+            br#"{"port": 9090}"#,
+        )
+        .unwrap();
+
+        let layers = vec![Layer::GlobalBase, Layer::ModeBase];
+        let config = LayerMergeConfig {
+            layers,
+            mode: Some("dev".to_string()),
+            scope: None,
+            project: None,
+        };
+
+        let result = merge_layers(&config, &repo).unwrap();
+
+        // Should detect conflict and skip merge
+        assert_eq!(result.conflict_files.len(), 1);
+        assert_eq!(result.conflict_files[0], Path::new("config.json"));
+        assert_eq!(result.merged_files.len(), 0); // Not merged due to conflict
+    }
+
+    #[test]
+    fn test_merge_layers_partial_merge_some_conflicts() {
+        let (_temp, repo) = create_layer_test_repo();
+
+        // File 1: Conflict (different content)
+        // Create conflict.json in global layer first
+        create_layer_with_file(
+            &repo,
+            "refs/jin/layers/global",
+            "conflict.json",
+            br#"{"v": 1}"#,
+        )
+        .unwrap();
+
+        // File 2: No conflict (single layer)
+        // Create safe.json in global layer (doesn't overwrite conflict.json because we'll re-create the layer with both files)
+        // Actually, we need a helper that creates multiple files in one layer
+        // For now, let's use the workaround of creating the global layer last with both files
+
+        // Create the mode layer with conflict.json
+        create_layer_with_file(
+            &repo,
+            "refs/jin/layers/mode/dev/_",
+            "conflict.json",
+            br#"{"v": 2}"#,
+        )
+        .unwrap();
+
+        // Now re-create the global layer with BOTH files (conflict.json and safe.json)
+        // We need to create both blobs, then create a tree with both paths
+        let conflict_blob = repo.create_blob(br#"{"v": 1}"#).unwrap();
+        let safe_blob = repo.create_blob(br#"{"safe": true}"#).unwrap();
+
+        let tree_oid = repo
+            .create_tree_from_paths(&[
+                ("conflict.json".to_string(), conflict_blob),
+                ("safe.json".to_string(), safe_blob),
+            ])
+            .unwrap();
+
+        let sig = git2::Signature::now("test", "test@test.com").unwrap();
+        let tree = repo.inner().find_tree(tree_oid).unwrap();
+        let commit_oid = repo
+            .inner()
+            .commit(None, &sig, &sig, "test commit with multiple files", &tree, &[])
+            .unwrap();
+        repo.set_ref("refs/jin/layers/global", commit_oid, "test layer")
+            .unwrap();
+
+        let layers = vec![Layer::GlobalBase, Layer::ModeBase];
+        let config = LayerMergeConfig {
+            layers,
+            mode: Some("dev".to_string()),
+            scope: None,
+            project: None,
+        };
+
+        let result = merge_layers(&config, &repo).unwrap();
+
+        // conflict.json should be in conflict_files
+        // safe.json should be merged
+        assert_eq!(result.conflict_files.len(), 1);
+        assert!(result.conflict_files.contains(&PathBuf::from("conflict.json")));
+        assert_eq!(result.merged_files.len(), 1);
+        assert!(result.merged_files.contains_key(Path::new("safe.json")));
     }
 }

@@ -1,0 +1,1886 @@
+[0;34m========================================[0m
+[0;34mPhase 1: Linting (Clippy)[0m
+[0;34m========================================[0m
+    Checking jin v0.1.0 (/home/dustin/projects/jin)
+error: unnecessary `if let` since only the `Ok` variant of the iterator element is used
+   --> src/commands/push.rs:169:13
+    |
+169 | /             for ref_result in all_refs {
+170 | |                 if let Ok(reference) = ref_result {
+171 | |                     if let Some(name) = reference.name() {
+...   |
+178 | |             }
+    | |_____________^
+    |
+help: try `.flatten()` and remove the `if let` statement in the for loop
+   --> src/commands/push.rs:170:17
+    |
+170 | /                 if let Ok(reference) = ref_result {
+171 | |                     if let Some(name) = reference.name() {
+172 | |                         // Skip user-local layer
+173 | |                         if !name.contains("/local") {
+...   |
+177 | |                 }
+    | |_________________^
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.92.0/index.html#manual_flatten
+    = note: `-D clippy::manual-flatten` implied by `-D warnings`
+    = help: to override `-D warnings` add `#[allow(clippy::manual_flatten)]`
+help: try
+    |
+169 ~             for reference in all_refs.flatten() {
+170 +                 if let Some(name) = reference.name() {
+171 +                     // Skip user-local layer
+172 +                     if !name.contains("/local") {
+173 +                         remote_refs.insert(name.to_string());
+174 +                     }
+175 +                 }
+176 +             }
+    |
+
+error: could not compile `jin` (lib) due to 1 previous error
+[0;31m✗ Clippy failed[0m
+[0;34m========================================[0m
+[0;34mPhase 2: Type Checking (cargo check)[0m
+[0;34m========================================[0m
+    Checking jin v0.1.0 (/home/dustin/projects/jin)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.35s
+[0;32m✓ Type checking passed[0m
+[0;34m========================================[0m
+[0;34mPhase 3: Code Formatting (rustfmt)[0m
+[0;34m========================================[0m
+Diff in /home/dustin/projects/jin/tests/sync_workflow.rs:1508:
+ ) -> Result<Option<git2::Oid>, Box<dyn std::error::Error>> {
+     let jin_repo = git2::Repository::open(jin_dir)?;
+     let ref_path = format!("refs/jin/layers/mode/{}/_", mode_name);
+[31m-    Ok(jin_repo.find_reference(&ref_path).ok().map(|r| r.target().unwrap()))
+[m[32m+    Ok(jin_repo
+[m[32m+        .find_reference(&ref_path)
+[m[32m+        .ok()
+[m[32m+        .map(|r| r.target().unwrap()))
+[m }
+ 
+ /// Test pull merges remote changes (P3.M3.T1.S2)
+Diff in /home/dustin/projects/jin/tests/sync_workflow.rs:1679:
+         .success();
+ 
+     // Step 2: Make conflicting local change
+[31m-    fs::write(remote_fixture.local_path.join("config.txt"), "version=local")?;
+[m[32m+    fs::write(
+[m[32m+        remote_fixture.local_path.join("config.txt"),
+[m[32m+        "version=local",
+[m[32m+    )?;
+[m     jin()
+         .args(["add", "config.txt", "--global"])
+         .current_dir(&remote_fixture.local_path)
+Diff in /home/dustin/projects/jin/tests/sync_workflow.rs:1804:
+ 
+     create_mode(&mode_name, Some(jin_dir))?;
+     jin()
+[31m-        .args(["link", remote_fixture.remote_path.to_str().unwrap(), "--force"])
+[m[32m+        .args([
+[m[32m+            "link",
+[m[32m+            remote_fixture.remote_path.to_str().unwrap(),
+[m[32m+            "--force",
+[m[32m+        ])
+[m         .current_dir(temp_workspace.path())
+         .env("JIN_DIR", jin_dir)
+         .assert()
+Diff in /home/dustin/projects/jin/tests/sync_workflow.rs:1940:
+ 
+     // Setup local repo with base
+     jin()
+[31m-        .args(["link", remote_fixture.remote_path.to_str().unwrap(), "--force"])
+[m[32m+        .args([
+[m[32m+            "link",
+[m[32m+            remote_fixture.remote_path.to_str().unwrap(),
+[m[32m+            "--force",
+[m[32m+        ])
+[m         .current_dir(&remote_fixture.local_path)
+         .env("JIN_DIR", jin_dir)
+         .assert()
+[0;31m✗ Code formatting check failed - run 'cargo fmt' to fix[0m
+[0;34m========================================[0m
+[0;34mPhase 4: Build Verification[0m
+[0;34m========================================[0m
+   Compiling jin v0.1.0 (/home/dustin/projects/jin)
+    Finished `release` profile [optimized] target(s) in 23.02s
+[0;32m✓ Release build succeeded[0m
+[0;34m========================================[0m
+[0;34mPhase 5: Unit Tests[0m
+[0;34m========================================[0m
+warning: function `create_test_jinmap` is never used
+   --> src/core/jinmap.rs:243:8
+    |
+243 |     fn create_test_jinmap() -> (TempDir, JinMap) {
+    |        ^^^^^^^^^^^^^^^^^^
+    |
+    = note: `#[warn(dead_code)]` (part of `#[warn(unused)]`) on by default
+
+warning: `jin` (lib test) generated 1 warning
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.09s
+     Running unittests src/lib.rs (target/debug/deps/jin-8f5c46eea4d762d5)
+
+running 598 tests
+test audit::entry::tests::test_audit_entry_from_commit_no_context ... ok
+test audit::logger::tests::test_audit_logger_from_project ... ok
+test audit::logger::tests::test_audit_logger_today_path_format ... ok
+test commands::add::tests::test_execute_global_with_mode ... ok
+test audit::entry::tests::test_audit_context_skips_none ... ok
+test audit::entry::tests::test_audit_entry_deserialization ... ok
+test audit::logger::tests::test_audit_entry_from_commit_helper ... ok
+test audit::entry::tests::test_audit_context_serialization ... ok
+test audit::entry::tests::test_audit_entry_serialization ... ok
+test audit::logger::tests::test_audit_logger_audit_dir_accessor ... ok
+test commands::add::tests::test_format_layer_name_with_context ... ok
+test audit::logger::tests::test_audit_logger_new_creates_directory ... ok
+test commands::add::tests::test_validate_file_is_directory ... ok
+test commands::add::tests::test_validate_file_not_found ... ok
+test audit::logger::tests::test_audit_logger_append_multiple_entries ... ok
+test audit::logger::tests::test_audit_logger_log_entry_json_format ... ok
+test commands::add::tests::test_execute_project_without_mode ... ok
+test audit::entry::tests::test_audit_entry_from_commit ... ok
+test audit::entry::tests::test_audit_entry_serialization_skips_none ... ok
+test audit::logger::tests::test_audit_logger_log_entry_creates_file ... ok
+test commands::add::tests::test_execute_no_files ... ok
+test commands::apply::tests::test_check_workspace_dirty_no_metadata ... ok
+test commands::add::tests::test_validate_file_symlink ... ok
+test commands::apply::tests::test_execute_not_initialized ... ok
+test commands::apply::tests::test_serialize_merged_content_text ... ok
+test commands::commit_cmd::tests::test_execute_no_message ... ok
+test commands::commit_cmd::tests::test_execute_with_dry_run ... ok
+test commands::apply::tests::test_serialize_merged_content_json ... ok
+test commands::add::tests::test_stage_file_creates_blob ... ok
+test commands::add::tests::test_validate_file_success ... ok
+test commands::diff::tests::test_execute_not_initialized ... ok
+test commands::config::tests::test_execute_get ... ok
+test commands::diff::tests::test_parse_layer_name ... ok
+test commands::config::tests::test_execute_list ... ok
+test commands::config::tests::test_execute_set ... ok
+test commands::config::tests::test_get_config_value_helper ... ok
+test commands::export::tests::test_execute_no_files ... ok
+test commands::config::tests::test_get_jin_dir ... ok
+test commands::export::tests::test_validate_jin_tracked_file_not_found ... ok
+test commands::config::tests::test_get_jin_dir_display_with_env_var ... ok
+test commands::export::tests::test_validate_jin_tracked_not_in_staging ... ok
+test commands::config::tests::test_get_remote_url ... ok
+test commands::fetch::tests::test_categorize_layer ... ok
+test commands::import_cmd::tests::test_execute_no_files ... ok
+test commands::import_cmd::tests::test_format_layer_name ... ok
+test commands::import_cmd::tests::test_validate_import_file_is_directory ... ok
+test commands::import_cmd::tests::test_validate_import_file_not_found ... ok
+test commands::import_cmd::tests::test_validate_import_file_symlink ... ok
+test commands::export::tests::test_validate_jin_tracked_success ... ok
+test commands::config::tests::test_get_remote_url_not_set ... ok
+test commands::layers::tests::test_count_files_empty_layer ... ok
+test commands::config::tests::test_get_unknown_key ... ok
+test commands::config::tests::test_list_empty_config ... ok
+test commands::config::tests::test_list_with_values ... ok
+test commands::config::tests::test_set_jin_dir_fails ... ok
+test commands::config::tests::test_set_overwrites_existing_value ... ok
+test commands::config::tests::test_set_remote_fetch_on_init_false ... ok
+test commands::config::tests::test_set_remote_fetch_on_init_invalid ... ok
+test commands::config::tests::test_set_remote_fetch_on_init_true ... ok
+test commands::list::tests::test_execute_not_initialized ... ok
+test commands::list::tests::test_parse_mode_ref ... ok
+test commands::list::tests::test_parse_mode_ref_ignores_non_matching_patterns ... ok
+test commands::list::tests::test_parse_mode_ref_with_scope ... ok
+test commands::list::tests::test_parse_ref_path ... ok
+test commands::list::tests::test_parse_ref_path_ignore_global ... ok
+test commands::list::tests::test_parse_ref_path_standalone_project ... ok
+test commands::list::tests::test_parse_ref_path_with_project ... ok
+test commands::list::tests::test_parse_ref_path_with_scope ... ok
+test commands::log::tests::test_count_files_empty_commit ... ok
+test commands::log::tests::test_execute_not_initialized ... ok
+test commands::log::tests::test_parse_layer_name ... ok
+test commands::config::tests::test_set_remote_url ... ok
+test commands::link::tests::test_validate_file_url ... ok
+test commands::config::tests::test_set_unknown_key ... ok
+test commands::link::tests::test_validate_git_protocol_url ... ok
+test commands::config::tests::test_set_user_email ... ok
+test commands::link::tests::test_validate_https_url ... ok
+test commands::config::tests::test_set_user_name ... ok
+test commands::context::tests::test_execute_default_context ... ok
+test commands::context::tests::test_execute_not_initialized ... ok
+test commands::link::tests::test_validate_url_error_message ... ok
+test commands::link::tests::test_validate_ssh_colon_url ... ok
+test commands::link::tests::test_validate_ssh_scheme_url ... ok
+test commands::mode::tests::test_show_with_mode ... ok
+test commands::mode::tests::test_validate_mode_name_empty ... ok
+test commands::mode::tests::test_validate_mode_name_invalid_chars ... ok
+test commands::mode::tests::test_validate_mode_name_reserved ... ok
+test commands::mode::tests::test_validate_mode_name_valid ... ok
+test commands::diff::tests::test_execute_staged_empty ... ok
+test commands::export::tests::test_add_to_git_no_git_repo ... ok
+test commands::link::tests::test_validate_invalid_url ... ok
+test commands::mv::tests::test_execute_no_files ... ok
+test commands::mv::tests::test_execute_not_initialized ... ok
+test commands::mv::tests::test_execute_odd_number_of_files ... ok
+test commands::mv::tests::test_format_layer_name ... ok
+test commands::export::tests::test_add_to_git_success ... ok
+test commands::export::tests::test_execute_file_not_jin_tracked ... ok
+test commands::export::tests::test_validate_jin_tracked_committed_file ... ok
+test commands::pull::tests::test_format_ref_path ... ok
+test commands::pull::tests::test_parse_ref_path_global ... ok
+test commands::pull::tests::test_parse_ref_path_invalid ... ok
+test commands::pull::tests::test_parse_ref_path_mode ... ok
+test commands::pull::tests::test_parse_ref_path_mode_project ... ok
+test commands::pull::tests::test_parse_ref_path_mode_scope ... ok
+test commands::push::tests::test_push_args_force ... ok
+test commands::export::tests::test_validate_jin_tracked_not_in_jinmap ... ok
+test commands::layers::tests::test_execute_default_context ... ok
+test commands::layers::tests::test_execute_not_initialized ... ok
+test commands::layers::tests::test_execute_with_mode_and_scope ... ok
+test commands::mode::tests::test_create_mode ... ok
+test commands::mode::tests::test_create_mode_duplicate ... ok
+test commands::repair::tests::test_create_default_jinmap ... ok
+test commands::mode::tests::test_delete_active_mode ... ok
+test commands::mode::tests::test_delete_mode ... ok
+test commands::mode::tests::test_delete_nonexistent ... ok
+test commands::mode::tests::test_list_empty ... ok
+test commands::reset::tests::test_determine_target_layer_default ... ok
+test commands::reset::tests::test_determine_target_layer_global ... ok
+test commands::reset::tests::test_determine_target_layer_mode ... ok
+test commands::reset::tests::test_determine_target_layer_mode_project ... ok
+test commands::reset::tests::test_determine_target_layer_mode_scope ... ok
+test commands::reset::tests::test_determine_target_layer_project_without_mode ... ok
+test commands::reset::tests::test_execute_not_initialized ... ok
+test commands::reset::tests::test_layer_name ... ok
+test commands::mode::tests::test_list_with_modes ... ok
+test commands::reset::tests::test_reset_staging_empty ... ok
+test commands::resolve::tests::test_apply_resolved_file_creates_parent_dir ... ok
+test commands::resolve::tests::test_validate_no_conflict_markers_empty ... ok
+test commands::resolve::tests::test_validate_no_conflict_markers_resolved ... ok
+test commands::resolve::tests::test_validate_no_conflict_markers_with_markers ... ok
+test commands::mode::tests::test_show_no_mode ... ok
+test commands::context::tests::test_execute_with_mode_and_scope ... ok
+test commands::rm::tests::test_execute_no_files ... ok
+test commands::rm::tests::test_execute_not_initialized ... ok
+test commands::mode::tests::test_unset ... ok
+test commands::rm::tests::test_format_layer_name ... ok
+test commands::mode::tests::test_unset_no_mode ... ok
+test commands::mode::tests::test_use_mode ... ok
+test commands::mode::tests::test_use_mode_nonexistent ... ok
+test commands::mv::tests::test_execute_dry_run ... ok
+test commands::mv::tests::test_execute_global_with_mode ... ok
+test commands::mv::tests::test_execute_project_without_mode ... ok
+test commands::mv::tests::test_move_file_destination_exists ... ok
+test commands::mv::tests::test_move_file_not_staged ... ok
+test commands::mv::tests::test_move_file_success ... ok
+test commands::repair::tests::test_check_jinmap_invalid_yaml ... ok
+test commands::repair::tests::test_check_jinmap_valid_yaml ... ok
+test commands::repair::tests::test_check_staging_index_corrupted ... ok
+test commands::repair::tests::test_check_staging_index_missing ... ok
+test commands::repair::tests::test_check_workspace_metadata_missing ... ok
+test commands::repair::tests::test_create_default_context ... ok
+test commands::repair::tests::test_execute_dry_run ... ok
+test commands::repair::tests::test_execute_no_issues ... ok
+test commands::repair::tests::test_rebuild_staging_index ... ok
+test commands::repair::tests::test_rebuild_workspace_metadata ... ok
+test commands::reset::tests::test_reset_hard_with_force ... ok
+test commands::scope::tests::test_validate_scope_name_empty ... ok
+test commands::scope::tests::test_validate_scope_name_invalid_chars ... ok
+test commands::scope::tests::test_validate_scope_name_reserved ... ok
+test commands::scope::tests::test_validate_scope_name_valid ... ok
+test commands::rm::tests::test_execute_dry_run ... ok
+test commands::rm::tests::test_execute_global_with_mode ... ok
+test commands::status::tests::test_check_workspace_state_clean_no_metadata ... ok
+test commands::status::tests::test_execute_not_initialized ... ok
+test commands::sync::tests::test_sync_execute_signature ... ok
+test commit::pipeline::tests::test_abort ... ok
+test commands::rm::tests::test_execute_project_without_mode ... ok
+test commit::pipeline::tests::test_build_layer_tree_all_deletions ... ok
+test commit::pipeline::tests::test_build_layer_tree_deletes_from_parent ... ok
+test commands::rm::tests::test_unstage_file_not_in_staging ... ok
+test commit::pipeline::tests::test_build_layer_tree_multiple_files ... ok
+test commit::pipeline::tests::test_build_layer_tree_merges_with_parent ... ok
+test commit::pipeline::tests::test_build_layer_tree_nested_paths ... ok
+test commands::rm::tests::test_unstage_file_success ... ok
+test commit::pipeline::tests::test_commit_config_dry_run ... ok
+test commit::pipeline::tests::test_build_layer_tree_single_file ... ok
+test commit::pipeline::tests::test_commit_config_new ... ok
+test commit::pipeline::tests::test_commit_pipeline_empty ... ok
+test commit::pipeline::tests::test_commit_pipeline_with_entries_dry_run ... ok
+test commit::pipeline::tests::test_build_layer_tree_with_deletions ... ok
+test commit::pipeline::tests::test_dry_run_mode ... ok
+test commit::pipeline::tests::test_build_layer_tree_updates_parent_entry ... ok
+test commit::pipeline::tests::test_get_parent_commits_no_ref ... ok
+test commit::pipeline::tests::test_create_layer_commit_initial ... ok
+test core::config::tests::test_config_serialization ... ok
+test commit::pipeline::tests::test_create_layer_commit_with_parent ... ok
+test commands::rm::tests::test_unstage_file_with_force ... ok
+test core::config::tests::test_default_config ... ok
+test core::config::tests::test_context_serialization ... ok
+test core::config::tests::test_default_context ... ok
+test core::config::tests::test_require_mode_error ... ok
+test core::config::tests::test_require_mode_success ... ok
+test core::error::tests::test_config_error ... ok
+test core::error::tests::test_detached_workspace_error_deleted_mode ... ok
+test core::error::tests::test_detached_workspace_error ... ok
+test core::error::tests::test_detached_workspace_error_no_commit ... ok
+test core::error::tests::test_error_display ... ok
+test core::error::tests::test_git_tracked_error ... ok
+test core::error::tests::test_merge_conflict_error ... ok
+test core::error::tests::test_no_active_context_error ... ok
+test core::error::tests::test_parse_error ... ok
+test core::error::tests::test_staging_failed_error ... ok
+test core::error::tests::test_symlink_error ... ok
+test commit::pipeline::tests::test_invalid_content_hash ... ok
+test core::jinmap::tests::test_jinmap_add_layer_mapping ... ok
+test core::jinmap::tests::test_jinmap_add_empty_mapping_removes_entry ... ok
+test core::jinmap::tests::test_jinmap_contains_file ... ok
+test core::jinmap::tests::test_jinmap_default ... ok
+test core::jinmap::tests::test_jinmap_get_layer_files ... ok
+test core::jinmap::tests::test_jinmap_layer_refs ... ok
+test core::jinmap::tests::test_jinmap_load_creates_default ... ok
+test commit::pipeline::tests::test_get_parent_commits_with_existing_ref ... ok
+test core::jinmap::tests::test_jinmap_meta_timestamp_updated ... ok
+test core::jinmap::tests::test_jinmap_total_file_count ... ok
+test core::layer::tests::test_all_layers_count ... ok
+test core::jinmap::tests::test_jinmap_yaml_format ... ok
+test core::layer::tests::test_display ... ok
+test core::jinmap::tests::test_jinmap_serialize_deserialize ... ok
+test core::jinmap::tests::test_jinmap_save_load_roundtrip ... ok
+test core::layer::tests::test_precedence_ordering ... ok
+test core::layer::tests::test_precedence_values ... ok
+test core::layer::tests::test_ref_paths ... ok
+test core::layer::tests::test_requires_mode ... ok
+test core::layer::tests::test_requires_scope ... ok
+test core::layer::tests::test_storage_paths ... ok
+test git::merge::tests::test_detect_merge_type_divergent ... ok
+test git::merge::tests::test_detect_merge_type_fast_forward ... ok
+test git::merge::tests::test_detect_merge_type_local_ahead ... ok
+test core::jinmap::tests::test_jinmap_update_from_commits ... ok
+test git::merge::tests::test_detect_merge_type_equal ... ok
+test git::merge::tests::test_merge_type_derive_traits ... ok
+test commands::scope::tests::test_create_mode_bound_scope ... ok
+test git::merge::tests::test_detect_merge_type_with_base_equal ... ok
+test git::merge::tests::test_detect_merge_type_with_base_divergent ... ok
+test git::merge::tests::test_detect_merge_type_with_base_fast_forward ... ok
+test git::objects::tests::test_create_blob ... ok
+test git::merge::tests::test_detect_merge_type_with_base_local_ahead ... ok
+test git::objects::tests::test_entry_mode ... ok
+test git::objects::tests::test_create_tree_simple ... ok
+test git::objects::tests::test_create_tree_nested ... ok
+test git::objects::tests::test_tree_entry_constructors ... ok
+test git::objects::tests::test_deeply_nested_paths ... ok
+test git::objects::tests::test_create_commit_with_parent ... ok
+test git::objects::tests::test_create_commit_initial ... ok
+test git::refs::tests::test_compare_refs_ahead ... ok
+test git::refs::tests::test_compare_refs_diverged ... ok
+test commands::scope::tests::test_create_scope_duplicate ... ok
+test git::refs::tests::test_ref_ops_trait_exists ... ok
+test git::refs::tests::test_compare_refs_equal ... ok
+test git::objects::tests::test_find_objects ... ok
+test git::remote::tests::test_auth_counter ... ok
+test git::remote::tests::test_build_fetch_options ... ok
+test git::remote::tests::test_build_push_options ... ok
+test git::remote::tests::test_setup_callbacks ... ok
+test git::refs::tests::test_delete_ref ... ok
+test git::refs::tests::test_invalid_ref_name ... ok
+test git::repo::tests::test_create_jin_repo ... ok
+test git::refs::tests::test_set_and_find_ref ... ok
+test git::repo::tests::test_open_nonexistent_fails ... ok
+test git::repo::tests::test_debug_impl ... ok
+test git::repo::tests::test_has_jin_refs_empty ... ok
+test commands::scope::tests::test_create_scope_nonexistent_mode ... ok
+test git::repo::tests::test_open_or_create_new ... ok
+test git::refs::tests::test_ref_exists ... ok
+test git::repo::tests::test_open_existing_repo ... ok
+test git::repo::tests::test_open_or_create_existing ... ok
+test git::repo::tests::test_repo_is_bare ... ok
+test git::refs::tests::test_list_refs_glob ... ok
+test git::refs::tests::test_resolve_ref ... ok
+test git::transaction::tests::test_auto_recover ... ok
+test git::transaction::tests::test_concurrent_transaction_blocked ... ok
+test git::transaction::tests::test_layer_update_creation ... ok
+test git::transaction::tests::test_layer_transaction_empty ... ok
+test git::transaction::tests::test_incomplete_transaction_inspection ... ok
+test git::transaction::tests::test_layer_transaction_abort ... ok
+test git::transaction::tests::test_layer_transaction_records_old_oid ... ok
+test git::transaction::tests::test_recovery_detect_incomplete ... ok
+test git::transaction::tests::test_layer_transaction_multi_layer ... ok
+test git::transaction::tests::test_recovery_resume_requires_prepared_state ... ok
+test git::transaction::tests::test_transaction_empty_commit ... ok
+test git::transaction::tests::test_recovery_resume ... ok
+test git::transaction::tests::test_recovery_rollback ... ok
+test git::transaction::tests::test_transaction_log_atomic_write ... ok
+test git::transaction::tests::test_layer_transaction_single_layer ... ok
+test git::transaction::tests::test_transaction_log_save_load ... ok
+test commands::scope::tests::test_create_scope_with_colon ... ok
+test git::transaction::tests::test_transaction_state_serialization ... ok
+test git::transaction::tests::test_transaction_new ... ok
+test git::transaction::tests::test_transaction_multiple_refs ... ok
+test git::transaction::tests::test_transaction_remove_ref ... ok
+test git::tree::tests::test_empty_tree ... ok
+test git::transaction::tests::test_transaction_without_lock_fails ... ok
+test git::tree::tests::test_deeply_nested_tree ... ok
+test git::tree::tests::test_get_tree_entry_not_found ... ok
+test git::tree::tests::test_list_tree_files ... ok
+test git::transaction::tests::test_transaction_lock_and_set ... ok
+test git::tree::tests::test_list_tree_files_excludes_directories ... ok
+test merge::deep::tests::test_deep_merge_backward_compatible ... ok
+test merge::deep::tests::test_complex_nested_merge ... ok
+test git::tree::tests::test_read_blob_content ... ok
+test merge::deep::tests::test_empty_base_array_takes_overlay ... ok
+test merge::deep::tests::test_empty_base_object_takes_overlay ... ok
+test merge::deep::tests::test_empty_overlay_array_replaces ... ok
+test merge::deep::tests::test_empty_overlay_object_merges ... ok
+test merge::deep::tests::test_keyed_array_deep_merge_items ... ok
+test merge::deep::tests::test_keyed_array_appends_new_items ... ok
+test merge::deep::tests::test_keyed_array_merge_by_name ... ok
+test merge::deep::tests::test_keyed_array_merge_by_id ... ok
+test merge::deep::tests::test_merge_config_custom_keys ... ok
+test merge::deep::tests::test_keyed_array_preserves_order ... ok
+test merge::deep::tests::test_keyed_array_with_custom_key_fields ... ok
+test merge::deep::tests::test_merge_config_default ... ok
+test merge::deep::tests::test_merge_config_default_trait ... ok
+test merge::deep::tests::test_mixed_array_replacement ... ok
+test merge::deep::tests::test_multiple_null_deletions ... ok
+test merge::deep::tests::test_mixed_types_in_array_replacement ... ok
+test merge::deep::tests::test_null_deletes_entire_nested_object ... ok
+test merge::deep::tests::test_null_deletes_deeply_nested_key ... ok
+test merge::deep::tests::test_null_deletes_top_level_key ... ok
+test merge::deep::tests::test_null_deletes_nested_key ... ok
+test merge::deep::tests::test_object_merge_adds_new_keys ... ok
+test git::tree::tests::test_read_file_from_tree ... ok
+test merge::deep::tests::test_object_merge_overlay_wins_on_conflict ... ok
+test merge::deep::tests::test_overlay_null_at_root_returns_null ... ok
+test merge::deep::tests::test_object_merge_recursive ... ok
+test merge::deep::tests::test_scalar_bool_override ... ok
+test merge::deep::tests::test_scalar_integer_override ... ok
+test merge::deep::tests::test_scalar_string_override ... ok
+test merge::deep::tests::test_type_conflict_array_to_scalar ... ok
+test merge::deep::tests::test_type_conflict_object_to_scalar ... ok
+test merge::deep::tests::test_type_conflict_scalar_to_object ... ok
+test merge::deep::tests::test_unkeyed_array_replacement_primitives ... ok
+test merge::deep::tests::test_unkeyed_array_replacement_strings ... ok
+test git::tree::tests::test_walk_tree_abort ... ok
+test merge::jinmerge::tests::test_conflict_count_empty ... ok
+test merge::jinmerge::tests::test_conflict_count ... ok
+test merge::jinmerge::tests::test_empty_layer_content ... ok
+test merge::jinmerge::tests::test_from_text_merge_basic ... ok
+test git::tree::tests::test_get_tree_entry ... ok
+test merge::jinmerge::tests::test_from_text_merge_multiline ... ok
+test merge::jinmerge::tests::test_is_jinmerge_file_by_extension ... ok
+test merge::jinmerge::tests::test_is_jinmerge_file_nonexistent ... ok
+test merge::jinmerge::tests::test_line_numbers_are_1_indexed ... ok
+test git::tree::tests::test_walk_tree_pre_order ... ok
+test git::tree::tests::test_walk_tree_post_order ... ok
+test merge::jinmerge::tests::test_marker_format_matches_git ... ok
+test merge::jinmerge::tests::test_marker_lengths ... ok
+test merge::jinmerge::tests::test_merge_path_for_file_basic ... ok
+test merge::jinmerge::tests::test_is_jinmerge_file_by_header ... ok
+test merge::jinmerge::tests::test_merge_path_for_file_replaces_existing_extension ... ok
+test merge::jinmerge::tests::test_merge_path_for_file_with_path ... ok
+test merge::jinmerge::tests::test_full_workflow ... ok
+test merge::jinmerge::tests::test_parse_empty_layer_content ... ok
+test merge::jinmerge::tests::test_parse_from_file_missing_end_marker ... ok
+test merge::jinmerge::tests::test_parse_from_file_basic ... ok
+test merge::jinmerge::tests::test_parse_from_file_multiple_conflicts ... ok
+test merge::jinmerge::tests::test_parse_preserves_line_numbers ... ok
+test merge::jinmerge::tests::test_to_jinmerge_format_adds_newline_if_missing ... ok
+test merge::jinmerge::tests::test_parse_from_file_missing_separator ... ok
+test merge::jinmerge::tests::test_parse_from_file_multiline_content ... ok
+test merge::jinmerge::tests::test_to_jinmerge_format_preserves_trailing_newline ... ok
+test merge::jinmerge::tests::test_to_jinmerge_format_single_conflict ... ok
+test merge::jinmerge::tests::test_write_to_file_atomic ... ok
+test merge::layer::tests::test_applicable_layers_no_context ... ok
+test merge::jinmerge::tests::test_roundtrip_write_then_parse ... ok
+test merge::layer::tests::test_applicable_layers_scope_without_mode ... ok
+test merge::jinmerge::tests::test_write_to_file_creates_parent_dir ... ok
+test merge::layer::tests::test_applicable_layers_with_mode ... ok
+test merge::layer::tests::test_applicable_layers_with_mode_and_scope ... ok
+test merge::layer::tests::test_detect_format_ini ... ok
+test merge::layer::tests::test_detect_format_json ... ok
+test commands::scope::tests::test_create_untethered_scope ... ok
+test merge::jinmerge::tests::test_write_to_file_creates_valid_jinmerge ... ok
+test merge::layer::tests::test_detect_format_text ... ok
+test merge::layer::tests::test_detect_format_toml ... ok
+test merge::layer::tests::test_detect_format_yaml ... ok
+test merge::layer::tests::test_file_format_clone ... ok
+test merge::layer::tests::test_file_format_equality ... ok
+test merge::layer::tests::test_find_layers_empty_layer_list ... ok
+test merge::layer::tests::test_find_layers_nonexistent_file_path ... ok
+test merge::layer::tests::test_find_layers_single_layer_containing_file ... ok
+test merge::layer::tests::test_find_layers_multiple_layers_containing_file ... ok
+test merge::layer::tests::test_find_layers_mode_scope_with_context ... ok
+test merge::layer::tests::test_find_layers_nonexistent_layer_refs_skipped ... ok
+test merge::layer::tests::test_find_layers_precedence_order_maintained ... ok
+test commands::scope::tests::test_delete_active_scope ... ok
+test merge::layer::tests::test_has_different_content_different_structured ... ok
+test merge::layer::tests::test_find_layers_file_not_in_any_layer ... ok
+test merge::layer::tests::test_has_different_content_different_text ... ok
+test merge::layer::tests::test_find_layers_nested_directory_files ... ok
+test merge::layer::tests::test_has_different_content_empty_layer_list ... ok
+test merge::layer::tests::test_has_different_content_four_layers_all_same ... ok
+test merge::layer::tests::test_has_different_content_five_layers_text_file ... ok
+test merge::layer::tests::test_has_different_content_five_layers_middle_differs ... ok
+test merge::layer::tests::test_has_different_content_eight_layers_all_different ... ok
+test merge::layer::tests::test_has_different_content_ini_format ... ok
+test merge::layer::tests::test_has_different_content_same_structured ... ok
+test merge::layer::tests::test_has_different_content_same_text ... ok
+test merge::layer::tests::test_has_different_content_four_layers_one_different ... ok
+test merge::layer::tests::test_has_different_content_single_layer ... ok
+test merge::layer::tests::test_layer_precedence_order ... ok
+test merge::layer::tests::test_layer_precedence_values ... ok
+test merge::layer::tests::test_has_different_content_semantic_json_whitespace ... ok
+test commands::scope::tests::test_delete_mode_bound_scope ... ok
+test merge::layer::tests::test_has_different_content_nine_layers_complex_pattern ... ok
+test merge::layer::tests::test_has_different_content_seven_layers_last_differs ... ok
+test merge::layer::tests::test_has_different_content_three_layers_all_same ... ok
+test merge::layer::tests::test_merge_result_default ... ok
+test merge::layer::tests::test_merge_result_is_clean_with_conflicts ... ok
+test merge::layer::tests::test_merge_result_new ... ok
+test merge::layer::tests::test_parse_content_ini ... ok
+test merge::layer::tests::test_parse_content_json ... ok
+test merge::layer::tests::test_parse_content_json_invalid ... ok
+test merge::layer::tests::test_has_different_content_toml_format ... ok
+test merge::layer::tests::test_parse_content_text ... ok
+test merge::layer::tests::test_has_different_content_yaml_format ... ok
+test merge::layer::tests::test_parse_content_yaml ... ok
+test merge::layer::tests::test_parse_content_yaml_with_null ... ok
+test merge::text::tests::test_config_default ... ok
+test merge::text::tests::test_config_new ... ok
+test merge::text::tests::test_config_with_diff3 ... ok
+test merge::text::tests::test_config_with_labels ... ok
+test merge::layer::tests::test_parse_content_toml ... ok
+test merge::layer::tests::test_has_different_content_three_layers_one_different ... ok
+test merge::text::tests::test_conflict_region_equality ... ok
+test merge::layer::tests::test_has_different_content_six_layers_alternating ... ok
+test merge::text::tests::test_count_conflict_regions ... ok
+test merge::layer::tests::test_has_different_content_text_exact_match_required ... ok
+test merge::text::tests::test_has_conflict_markers_false_for_normal_content ... ok
+test merge::text::tests::test_has_conflict_markers_false_for_partial_markers ... ok
+test merge::text::tests::test_has_conflict_markers_true_for_conflicts ... ok
+test merge::text::tests::test_needs_label_rewrite ... ok
+test merge::text::tests::test_merge_result_clean_has_no_conflicts ... ok
+test merge::text::tests::test_parse_conflicts_empty_for_no_conflicts ... ok
+test merge::text::tests::test_merge_and_parse_roundtrip ... ok
+test merge::text::tests::test_parse_conflicts_incomplete_markers_no_end ... ok
+test merge::text::tests::test_parse_conflicts_empty_theirs ... ok
+test merge::text::tests::test_parse_conflicts_empty_ours ... ok
+test merge::text::tests::test_parse_conflicts_incomplete_markers_no_separator ... ok
+test merge::text::tests::test_parse_conflicts_line_numbers ... ok
+test merge::text::tests::test_parse_conflicts_malformed_markers_wrong_order ... ok
+test merge::layer::tests::test_merge_layers_partial_merge_some_conflicts ... ok
+test merge::text::tests::test_parse_conflicts_multiline_content ... ok
+test merge::text::tests::test_parse_conflicts_multiple_regions ... ok
+test merge::text::tests::test_parse_conflicts_single_region ... ok
+test merge::layer::tests::test_merge_layers_same_content_optimized ... ok
+test merge::text::tests::test_rewrite_conflict_labels ... ok
+test merge::text::tests::test_text_merge_additions_at_different_locations ... ok
+test merge::text::tests::test_text_merge_all_empty ... ok
+test merge::text::tests::test_text_merge_both_add_same_end ... ok
+test merge::text::tests::test_text_merge_conflict ... ok
+test merge::text::tests::test_text_merge_empty_base_both_add_different ... ok
+test merge::text::tests::test_text_merge_conflict_same_line_different_changes ... ok
+test merge::text::tests::test_text_merge_empty_base_both_add_identical ... ok
+test merge::text::tests::test_text_merge_empty_base_ours_adds ... ok
+test merge::text::tests::test_text_merge_empty_base_theirs_adds ... ok
+test merge::text::tests::test_text_merge_identical ... ok
+test merge::text::tests::test_text_merge_multiple_conflicts ... ok
+test merge::text::tests::test_text_merge_no_trailing_newline ... ok
+test merge::text::tests::test_text_merge_non_overlapping_changes ... ok
+test merge::text::tests::test_text_merge_ours_only ... ok
+test merge::layer::tests::test_merge_layers_two_layers_same_content_no_conflict ... ok
+test merge::text::tests::test_text_merge_preserves_trailing_newline ... ok
+test merge::text::tests::test_text_merge_result_equality ... ok
+test commands::scope::tests::test_delete_nonexistent ... ok
+test merge::text::tests::test_text_merge_theirs_only ... ok
+test merge::text::tests::test_text_merge_unicode_content ... ok
+test merge::layer::tests::test_merge_layers_same_content_text_file_optimized ... ok
+test merge::text::tests::test_text_merge_with_tabs_and_spaces ... ok
+test merge::text::tests::test_text_merge_large_file_with_changes ... ok
+test merge::text::tests::test_text_merge_with_custom_labels ... ok
+test merge::value::tests::test_as_bool ... ok
+test merge::value::tests::test_as_numeric ... ok
+test merge::value::tests::test_contains_null_in_array ... ok
+test merge::value::tests::test_contains_null ... ok
+test merge::value::tests::test_empty_array ... ok
+test merge::value::tests::test_empty_object ... ok
+test merge::value::tests::test_from_json_helper ... ok
+test merge::value::tests::test_from_ini_helper ... ok
+test merge::value::tests::test_from_json_invalid ... ok
+test merge::value::tests::test_from_toml_invalid ... ok
+test merge::value::tests::test_from_toml_helper ... ok
+test merge::value::tests::test_file_extension_detection ... ok
+test merge::value::tests::test_from_yaml_invalid ... ok
+test merge::value::tests::test_from_yaml_helper ... ok
+test merge::value::tests::test_ini_array_error ... ok
+test merge::value::tests::test_ini_deep_nesting_error ... ok
+test merge::value::tests::test_cross_format_data_preservation ... ok
+test merge::value::tests::test_ini_general_section ... ok
+test merge::value::tests::test_ini_null_error ... ok
+test merge::value::tests::test_ini_number_conversion ... ok
+test merge::value::tests::test_ini_root_level_scalars ... ok
+test merge::value::tests::test_ini_section_to_nested_object ... ok
+test merge::value::tests::test_integer_vs_float_preservation ... ok
+test merge::value::tests::test_ini_roundtrip_basic ... ok
+test merge::value::tests::test_is_scalar ... ok
+test merge::layer::tests::test_merge_layers_single_layer_no_conflict ... ok
+test merge::value::tests::test_json_roundtrip ... ok
+test merge::value::tests::test_json_to_ini_simple ... ok
+test merge::value::tests::test_merge_value_null ... ok
+test merge::value::tests::test_merge_value_object ... ok
+test merge::value::tests::test_special_characters_in_strings ... ok
+test merge::value::tests::test_to_ini_string ... ok
+test merge::value::tests::test_to_json_string ... ok
+test merge::value::tests::test_to_json_string_compact ... ok
+test merge::value::tests::test_to_toml_string ... ok
+test merge::value::tests::test_toml_conversion_tryfrom ... ok
+test merge::value::tests::test_to_yaml_string ... ok
+test merge::value::tests::test_json_to_yaml ... ok
+test merge::value::tests::test_toml_datetime_to_string ... ok
+test merge::value::tests::test_toml_nested_null_error ... ok
+test merge::value::tests::test_toml_null_error ... ok
+test merge::value::tests::test_yaml_conversion_from_value ... ok
+test merge::value::tests::test_toml_nested_tables ... ok
+test merge::value::tests::test_unsupported_extension ... ok
+test merge::value::tests::test_yaml_null_handling ... ok
+test merge::value::tests::test_yaml_nested_objects ... ok
+test staging::entry::tests::test_staged_entry_delete ... ok
+test merge::layer::tests::test_merge_layers_two_layers_different_content_conflict ... ok
+test staging::entry::tests::test_staged_entry_new ... ok
+test merge::value::tests::test_yml_extension ... ok
+test merge::value::tests::test_yaml_to_toml_no_null ... ok
+test merge::value::tests::test_toml_roundtrip_basic ... ok
+test staging::gitignore::tests::test_build_gitignore_empty_managed ... ok
+test staging::gitignore::tests::test_build_gitignore_with_all_parts ... ok
+test staging::gitignore::tests::test_ensure_in_managed_block_creates_gitignore ... ok
+test staging::gitignore::tests::test_normalize_path ... ok
+test staging::gitignore::tests::test_ensure_in_managed_block_sorts_entries ... ok
+test merge::value::tests::test_yaml_roundtrip_basic ... ok
+test staging::gitignore::tests::test_parse_managed_block_empty ... ok
+test staging::gitignore::tests::test_ensure_in_managed_block_deduplicates ... ok
+test staging::gitignore::tests::test_parse_managed_block_with_content ... ok
+test staging::gitignore::tests::test_ensure_in_managed_block_preserves_existing ... ok
+test staging::index::tests::test_affected_layers ... ok
+test staging::index::tests::test_staging_index_add_remove ... ok
+test staging::index::tests::test_staging_index_entries_for_layer ... ok
+test staging::index::tests::test_staging_index_new ... ok
+test staging::gitignore::tests::test_remove_from_managed_block ... ok
+test staging::metadata::tests::test_workspace_metadata_add_remove_file ... ok
+test staging::metadata::tests::test_workspace_metadata_default ... ok
+test staging::metadata::tests::test_workspace_metadata_new ... ok
+test staging::metadata::tests::test_workspace_metadata_serialization ... ok
+test staging::router::tests::test_route_default ... ok
+test staging::router::tests::test_route_global ... ok
+test staging::router::tests::test_route_local ... ok
+test commands::scope::tests::test_delete_untethered_scope ... ok
+test staging::router::tests::test_route_mode ... ok
+test staging::router::tests::test_route_mode_project ... ok
+test staging::router::tests::test_route_mode_scope ... ok
+test staging::router::tests::test_route_mode_scope_project ... ok
+test staging::router::tests::test_route_mode_without_active_mode_fails ... ok
+test staging::router::tests::test_route_scope_untethered ... ok
+test staging::router::tests::test_validate_global_conflict ... ok
+test staging::router::tests::test_validate_local_alone_passes ... ok
+test staging::router::tests::test_validate_local_conflict_with_global ... ok
+test staging::router::tests::test_validate_local_conflict_with_mode ... ok
+test staging::router::tests::test_validate_local_conflict_with_project ... ok
+test staging::router::tests::test_validate_local_conflict_with_scope ... ok
+test staging::router::tests::test_validate_project_without_mode ... ok
+test staging::workspace::tests::test_describe_context_empty ... ok
+test staging::workspace::tests::test_describe_context_full ... ok
+test staging::workspace::tests::test_describe_context_mode_and_scope ... ok
+test staging::workspace::tests::test_describe_context_mode_only ... ok
+test merge::text::tests::test_text_merge_large_file ... ok
+test commands::scope::tests::test_list_empty ... ok
+test staging::workspace::tests::test_get_file_mode_executable ... ok
+test staging::workspace::tests::test_get_file_mode_regular ... ok
+test staging::workspace::tests::test_detect_invalid_context_no_mode_or_scope ... ok
+test staging::workspace::tests::test_is_git_tracked_no_repo ... ok
+test staging::workspace::tests::test_is_symlink_false_for_regular_file ... ok
+test staging::workspace::tests::test_detect_missing_commits_layer_missing ... ok
+test staging::workspace::tests::test_is_symlink_true_for_symlink ... ok
+test staging::workspace::tests::test_read_file_not_found ... ok
+test staging::workspace::tests::test_read_file_success ... ok
+test staging::workspace::tests::test_walk_directory ... ok
+test staging::workspace::tests::test_walk_empty_directory ... ok
+test staging::workspace::tests::test_detect_missing_commits_all_exist ... ok
+test staging::workspace::tests::test_detect_invalid_context_scope_missing ... ok
+test staging::workspace::tests::test_detect_file_mismatch_no_files ... ok
+test staging::workspace::tests::test_detect_invalid_context_mode_missing ... ok
+test staging::workspace::tests::test_detect_missing_commits_no_layers ... ok
+test staging::workspace::tests::test_detect_invalid_context_mode_exists ... ok
+test commands::scope::tests::test_list_with_scopes ... ok
+test commands::scope::tests::test_show_no_scope ... ok
+test commands::scope::tests::test_show_with_scope ... ok
+test commands::scope::tests::test_unset ... ok
+test commands::scope::tests::test_unset_no_scope ... ok
+test staging::metadata::tests::test_workspace_metadata_update_timestamp ... ok
+test commands::scope::tests::test_use_scope ... ok
+test commands::scope::tests::test_use_scope_nonexistent ... ok
+test commands::status::tests::test_check_for_conflicts_no_state ... ok
+test commands::status::tests::test_check_for_conflicts_with_state ... ok
+test staging::metadata::tests::test_workspace_metadata_load_not_found ... ok
+test staging::metadata::tests::test_workspace_metadata_save_load ... ok
+test staging::workspace::tests::test_detect_file_mismatch_missing_file ... ok
+test staging::workspace::tests::test_detect_file_mismatch_modified_file ... ok
+test staging::workspace::tests::test_detect_file_mismatch_no_mismatch ... ok
+test staging::workspace::tests::test_validate_workspace_attached_fresh_workspace ... ok
+
+test result: ok. 598 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.12s
+
+[0;32m✓ Unit tests passed[0m
+[0;34m========================================[0m
+[0;34mPhase 6: Integration Tests[0m
+[0;34m========================================[0m
+warning: function `create_test_jinmap` is never used
+   --> src/core/jinmap.rs:243:8
+    |
+243 |     fn create_test_jinmap() -> (TempDir, JinMap) {
+    |        ^^^^^^^^^^^^^^^^^^
+    |
+    = note: `#[warn(dead_code)]` (part of `#[warn(unused)]`) on by default
+
+warning: `jin` (lib test) generated 1 warning
+warning: unused import: `fixtures::jin`
+  --> tests/common/mod.rs:10:9
+   |
+10 | pub use fixtures::jin;
+   |         ^^^^^^^^^^^^^
+   |
+   = note: `#[warn(unused_imports)]` (part of `#[warn(unused)]`) on by default
+
+warning: function `assert_layer_ref_exists` is never used
+   --> tests/common/assertions.rs:139:8
+    |
+139 | pub fn assert_layer_ref_exists(ref_path: &str, jin_repo_path: Option<&std::path::Path>) {
+    |        ^^^^^^^^^^^^^^^^^^^^^^^
+    |
+    = note: `#[warn(dead_code)]` (part of `#[warn(unused)]`) on by default
+
+warning: function `assert_context_mode` is never used
+   --> tests/common/assertions.rs:180:8
+    |
+180 | pub fn assert_context_mode(project_path: &Path, expected_mode: &str) {
+    |        ^^^^^^^^^^^^^^^^^^^
+
+warning: function `assert_jin_initialized` is never used
+   --> tests/common/assertions.rs:209:8
+    |
+209 | pub fn assert_jin_initialized(project_path: &Path) {
+    |        ^^^^^^^^^^^^^^^^^^^^^^
+
+warning: function `setup_jin_with_remote` is never used
+   --> tests/common/fixtures.rs:154:8
+    |
+154 | pub fn setup_jin_with_remote() -> Result<RemoteFixture, Box<dyn std::error::Error>> {
+    |        ^^^^^^^^^^^^^^^^^^^^^
+
+warning: function `create_scope` is never used
+   --> tests/common/fixtures.rs:224:8
+    |
+224 | pub fn create_scope(
+    |        ^^^^^^^^^^^^
+
+warning: function `unique_test_id` is never used
+   --> tests/common/fixtures.rs:265:8
+    |
+265 | pub fn unique_test_id() -> String {
+    |        ^^^^^^^^^^^^^^
+
+warning: field `temp_dir` is never read
+   --> tests/common/git_helpers.rs:115:5
+    |
+114 | pub struct GitTestEnv {
+    |            ---------- field in this struct
+115 |     temp_dir: tempfile::TempDir,
+    |     ^^^^^^^^
+
+warning: unused variable: `jin_dir`
+   --> tests/pull_merge.rs:261:9
+    |
+261 |     let jin_dir = remote_fixture.jin_dir.as_ref().unwrap();
+    |         ^^^^^^^ help: if this is intentional, prefix it with an underscore: `_jin_dir`
+    |
+    = note: `#[warn(unused_variables)]` (part of `#[warn(unused)]`) on by default
+
+warning: unused variable: `jin_dir`
+   --> tests/pull_merge.rs:421:9
+    |
+421 |     let jin_dir = remote_fixture.jin_dir.as_ref().unwrap();
+    |         ^^^^^^^ help: if this is intentional, prefix it with an underscore: `_jin_dir`
+
+warning: function `assert_workspace_file` is never used
+  --> tests/common/assertions.rs:18:8
+   |
+18 | pub fn assert_workspace_file(project_path: &Path, file: &str, expected_content: &str) {
+   |        ^^^^^^^^^^^^^^^^^^^^^
+   |
+   = note: `#[warn(dead_code)]` (part of `#[warn(unused)]`) on by default
+
+warning: function `assert_workspace_file_not_exists` is never used
+  --> tests/common/assertions.rs:63:8
+   |
+63 | pub fn assert_workspace_file_not_exists(project_path: &Path, file: &str) {
+   |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: function `assert_staging_contains` is never used
+  --> tests/common/assertions.rs:81:8
+   |
+81 | pub fn assert_staging_contains(project_path: &Path, file: &str) {
+   |        ^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: function `assert_staging_not_contains` is never used
+   --> tests/common/assertions.rs:108:8
+    |
+108 | pub fn assert_staging_not_contains(project_path: &Path, file: &str) {
+    |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: function `assert_layer_ref_exists` is never used
+   --> tests/common/assertions.rs:139:8
+    |
+139 | pub fn assert_layer_ref_exists(ref_path: &str, jin_repo_path: Option<&std::path::Path>) {
+    |        ^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: method `set_jin_dir` is never used
+  --> tests/common/fixtures.rs:46:12
+   |
+25 | impl TestFixture {
+   | ---------------- method in this implementation
+...
+46 |     pub fn set_jin_dir(&self) {
+   |            ^^^^^^^^^^^
+
+warning: function `setup_test_repo` is never used
+   --> tests/common/fixtures.rs:137:8
+    |
+137 | pub fn setup_test_repo() -> Result<TestFixture, Box<dyn std::error::Error>> {
+    |        ^^^^^^^^^^^^^^^
+
+warning: function `create_mode` is never used
+   --> tests/common/fixtures.rs:183:8
+    |
+183 | pub fn create_mode(
+    |        ^^^^^^^^^^^
+
+warning: function `jin_init` is never used
+   --> tests/common/fixtures.rs:118:8
+    |
+118 | pub fn jin_init(path: &Path, jin_dir: Option<&PathBuf>) -> Result<(), Box<dyn std::error::Error>> {
+    |        ^^^^^^^^
+
+warning: function `jin` is never used
+   --> tests/common/fixtures.rs:167:8
+    |
+167 | pub fn jin() -> Command {
+    |        ^^^
+
+warning: unused variable: `resolved_val`
+   --> tests/resolve_workflow.rs:464:22
+    |
+464 |     for (name, _, _, resolved_val) in &test_files {
+    |                      ^^^^^^^^^^^^ help: if this is intentional, prefix it with an underscore: `_resolved_val`
+    |
+    = note: `#[warn(unused_variables)]` (part of `#[warn(unused)]`) on by default
+
+warning: function `assert_workspace_file_not_exists` is never used
+  --> tests/common/assertions.rs:63:8
+   |
+63 | pub fn assert_workspace_file_not_exists(project_path: &Path, file: &str) {
+   |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   |
+   = note: `#[warn(dead_code)]` (part of `#[warn(unused)]`) on by default
+
+warning: unused import: `common::assertions::*`
+  --> tests/cli_add_local.rs:10:5
+   |
+10 | use common::assertions::*;
+   |     ^^^^^^^^^^^^^^^^^^^^^
+
+warning: `jin` (test "cli_mv") generated 8 warnings (run `cargo fix --test "cli_mv" -p jin` to apply 1 suggestion)
+warning: `jin` (test "pull_merge") generated 16 warnings (6 duplicates) (run `cargo fix --test "pull_merge" -p jin` to apply 2 suggestions)
+warning: `jin` (test "conflict_workflow") generated 13 warnings (13 duplicates)
+warning: `jin` (test "export_committed") generated 16 warnings (14 duplicates)
+warning: `jin` (test "resolve_workflow") generated 14 warnings (13 duplicates) (run `cargo fix --test "resolve_workflow" -p jin` to apply 1 suggestion)
+warning: `jin` (test "core_workflow") generated 6 warnings (5 duplicates)
+warning: `jin` (test "cli_apply_conflict") generated 13 warnings (13 duplicates)
+warning: `jin` (test "atomic_operations") generated 10 warnings (10 duplicates)
+warning: `jin` (test "destructive_validation") generated 16 warnings (16 duplicates)
+warning: `jin` (test "cli_list") generated 15 warnings (15 duplicates)
+warning: `jin` (test "sync_workflow") generated 10 warnings (10 duplicates)
+warning: `jin` (test "mode_scope_workflow") generated 9 warnings (9 duplicates)
+warning: `jin` (test "cli_resolve") generated 13 warnings (13 duplicates)
+warning: `jin` (test "error_scenarios") generated 12 warnings (12 duplicates)
+warning: `jin` (test "workspace_validation") generated 16 warnings (16 duplicates)
+warning: `jin` (test "repair_check") generated 16 warnings (16 duplicates)
+warning: `jin` (test "cli_add_local") generated 14 warnings (13 duplicates) (run `cargo fix --test "cli_add_local" -p jin` to apply 1 suggestion)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.05s
+     Running unittests src/lib.rs (target/debug/deps/jin-8f5c46eea4d762d5)
+
+running 598 tests
+test audit::entry::tests::test_audit_context_skips_none ... ok
+test audit::entry::tests::test_audit_context_serialization ... ok
+test audit::entry::tests::test_audit_entry_serialization_skips_none ... ok
+test audit::entry::tests::test_audit_entry_from_commit_no_context ... ok
+test audit::entry::tests::test_audit_entry_serialization ... ok
+test audit::logger::tests::test_audit_entry_from_commit_helper ... ok
+test audit::entry::tests::test_audit_entry_deserialization ... ok
+test audit::entry::tests::test_audit_entry_from_commit ... ok
+test audit::logger::tests::test_audit_logger_audit_dir_accessor ... ok
+test audit::logger::tests::test_audit_logger_from_project ... ok
+test audit::logger::tests::test_audit_logger_today_path_format ... ok
+test audit::logger::tests::test_audit_logger_log_entry_creates_file ... ok
+test commands::add::tests::test_execute_no_files ... ok
+test audit::logger::tests::test_audit_logger_new_creates_directory ... ok
+test commands::add::tests::test_execute_global_with_mode ... ok
+test commands::add::tests::test_execute_project_without_mode ... ok
+test commands::add::tests::test_format_layer_name_with_context ... ok
+test commands::add::tests::test_validate_file_not_found ... ok
+test audit::logger::tests::test_audit_logger_log_entry_json_format ... ok
+test commands::add::tests::test_validate_file_is_directory ... ok
+test audit::logger::tests::test_audit_logger_append_multiple_entries ... ok
+test commands::add::tests::test_validate_file_symlink ... ok
+test commands::apply::tests::test_serialize_merged_content_text ... ok
+test commands::commit_cmd::tests::test_execute_no_message ... ok
+test commands::apply::tests::test_check_workspace_dirty_no_metadata ... ok
+test commands::commit_cmd::tests::test_execute_with_dry_run ... ok
+test commands::apply::tests::test_execute_not_initialized ... ok
+test commands::apply::tests::test_serialize_merged_content_json ... ok
+test commands::add::tests::test_stage_file_creates_blob ... ok
+test commands::add::tests::test_validate_file_success ... ok
+test commands::diff::tests::test_execute_not_initialized ... ok
+test commands::config::tests::test_execute_get ... ok
+test commands::diff::tests::test_parse_layer_name ... ok
+test commands::config::tests::test_execute_set ... ok
+test commands::config::tests::test_get_config_value_helper ... ok
+test commands::config::tests::test_execute_list ... ok
+test commands::export::tests::test_execute_no_files ... ok
+test commands::config::tests::test_get_jin_dir ... ok
+test commands::export::tests::test_validate_jin_tracked_file_not_found ... ok
+test commands::config::tests::test_get_jin_dir_display_with_env_var ... ok
+test commands::config::tests::test_get_remote_url ... ok
+test commands::export::tests::test_validate_jin_tracked_not_in_staging ... ok
+test commands::fetch::tests::test_categorize_layer ... ok
+test commands::import_cmd::tests::test_execute_no_files ... ok
+test commands::import_cmd::tests::test_format_layer_name ... ok
+test commands::import_cmd::tests::test_validate_import_file_is_directory ... ok
+test commands::import_cmd::tests::test_validate_import_file_not_found ... ok
+test commands::import_cmd::tests::test_validate_import_file_symlink ... ok
+test commands::export::tests::test_validate_jin_tracked_success ... ok
+test commands::config::tests::test_get_remote_url_not_set ... ok
+test commands::config::tests::test_list_empty_config ... ok
+test commands::layers::tests::test_count_files_empty_layer ... ok
+test commands::config::tests::test_get_unknown_key ... ok
+test commands::config::tests::test_list_with_values ... ok
+test commands::config::tests::test_set_jin_dir_fails ... ok
+test commands::config::tests::test_set_remote_fetch_on_init_invalid ... ok
+test commands::config::tests::test_set_overwrites_existing_value ... ok
+test commands::config::tests::test_set_remote_fetch_on_init_false ... ok
+test commands::config::tests::test_set_remote_fetch_on_init_true ... ok
+test commands::list::tests::test_execute_not_initialized ... ok
+test commands::list::tests::test_parse_mode_ref ... ok
+test commands::list::tests::test_parse_mode_ref_ignores_non_matching_patterns ... ok
+test commands::list::tests::test_parse_mode_ref_with_scope ... ok
+test commands::list::tests::test_parse_ref_path ... ok
+test commands::list::tests::test_parse_ref_path_ignore_global ... ok
+test commands::list::tests::test_parse_ref_path_standalone_project ... ok
+test commands::list::tests::test_parse_ref_path_with_project ... ok
+test commands::list::tests::test_parse_ref_path_with_scope ... ok
+test commands::config::tests::test_set_remote_url ... ok
+test commands::log::tests::test_execute_not_initialized ... ok
+test commands::log::tests::test_parse_layer_name ... ok
+test commands::log::tests::test_count_files_empty_commit ... ok
+test commands::config::tests::test_set_user_email ... ok
+test commands::config::tests::test_set_unknown_key ... ok
+test commands::context::tests::test_execute_not_initialized ... ok
+test commands::context::tests::test_execute_default_context ... ok
+test commands::link::tests::test_validate_https_url ... ok
+test commands::config::tests::test_set_user_name ... ok
+test commands::link::tests::test_validate_url_error_message ... ok
+test commands::context::tests::test_execute_with_mode_and_scope ... ok
+test commands::diff::tests::test_execute_staged_empty ... ok
+test commands::link::tests::test_validate_ssh_colon_url ... ok
+test commands::link::tests::test_validate_git_protocol_url ... ok
+test commands::export::tests::test_add_to_git_no_git_repo ... ok
+test commands::mode::tests::test_validate_mode_name_empty ... ok
+test commands::mode::tests::test_validate_mode_name_invalid_chars ... ok
+test commands::mode::tests::test_validate_mode_name_reserved ... ok
+test commands::mode::tests::test_validate_mode_name_valid ... ok
+test commands::link::tests::test_validate_ssh_scheme_url ... ok
+test commands::link::tests::test_validate_file_url ... ok
+test commands::mv::tests::test_execute_no_files ... ok
+test commands::mv::tests::test_execute_not_initialized ... ok
+test commands::mv::tests::test_execute_odd_number_of_files ... ok
+test commands::export::tests::test_add_to_git_success ... ok
+test commands::mv::tests::test_format_layer_name ... ok
+test commands::link::tests::test_validate_invalid_url ... ok
+test commands::export::tests::test_execute_file_not_jin_tracked ... ok
+test commands::export::tests::test_validate_jin_tracked_committed_file ... ok
+test commands::pull::tests::test_format_ref_path ... ok
+test commands::pull::tests::test_parse_ref_path_global ... ok
+test commands::pull::tests::test_parse_ref_path_invalid ... ok
+test commands::pull::tests::test_parse_ref_path_mode ... ok
+test commands::pull::tests::test_parse_ref_path_mode_project ... ok
+test commands::pull::tests::test_parse_ref_path_mode_scope ... ok
+test commands::push::tests::test_push_args_force ... ok
+test commands::export::tests::test_validate_jin_tracked_not_in_jinmap ... ok
+test commands::layers::tests::test_execute_default_context ... ok
+test commands::layers::tests::test_execute_not_initialized ... ok
+test commands::layers::tests::test_execute_with_mode_and_scope ... ok
+test commands::mode::tests::test_create_mode ... ok
+test commands::mode::tests::test_create_mode_duplicate ... ok
+test commands::repair::tests::test_create_default_jinmap ... ok
+test commands::mode::tests::test_delete_active_mode ... ok
+test commands::mode::tests::test_delete_mode ... ok
+test commands::mode::tests::test_delete_nonexistent ... ok
+test commands::mode::tests::test_list_empty ... ok
+test commands::reset::tests::test_determine_target_layer_default ... ok
+test commands::reset::tests::test_determine_target_layer_global ... ok
+test commands::reset::tests::test_determine_target_layer_mode ... ok
+test commands::reset::tests::test_determine_target_layer_mode_project ... ok
+test commands::reset::tests::test_determine_target_layer_mode_scope ... ok
+test commands::reset::tests::test_determine_target_layer_project_without_mode ... ok
+test commands::reset::tests::test_execute_not_initialized ... ok
+test commands::reset::tests::test_layer_name ... ok
+test commands::mode::tests::test_list_with_modes ... ok
+test commands::reset::tests::test_reset_staging_empty ... ok
+test commands::resolve::tests::test_apply_resolved_file_creates_parent_dir ... ok
+test commands::resolve::tests::test_validate_no_conflict_markers_empty ... ok
+test commands::resolve::tests::test_validate_no_conflict_markers_resolved ... ok
+test commands::resolve::tests::test_validate_no_conflict_markers_with_markers ... ok
+test commands::mode::tests::test_show_no_mode ... ok
+test commands::mode::tests::test_show_with_mode ... ok
+test commands::rm::tests::test_execute_no_files ... ok
+test commands::rm::tests::test_execute_not_initialized ... ok
+test commands::mode::tests::test_unset ... ok
+test commands::rm::tests::test_format_layer_name ... ok
+test commands::mode::tests::test_unset_no_mode ... ok
+test commands::mode::tests::test_use_mode ... ok
+test commands::mode::tests::test_use_mode_nonexistent ... ok
+test commands::mv::tests::test_execute_dry_run ... ok
+test commands::mv::tests::test_execute_global_with_mode ... ok
+test commands::mv::tests::test_execute_project_without_mode ... ok
+test commands::mv::tests::test_move_file_destination_exists ... ok
+test commands::mv::tests::test_move_file_not_staged ... ok
+test commands::mv::tests::test_move_file_success ... ok
+test commands::repair::tests::test_check_jinmap_invalid_yaml ... ok
+test commands::repair::tests::test_check_jinmap_valid_yaml ... ok
+test commands::repair::tests::test_check_staging_index_corrupted ... ok
+test commands::repair::tests::test_check_staging_index_missing ... ok
+test commands::scope::tests::test_list_empty ... ok
+test commands::repair::tests::test_create_default_context ... ok
+test commands::repair::tests::test_execute_dry_run ... ok
+test commands::repair::tests::test_execute_no_issues ... ok
+test commands::repair::tests::test_rebuild_staging_index ... ok
+test commands::repair::tests::test_rebuild_workspace_metadata ... ok
+test commands::reset::tests::test_reset_hard_with_force ... ok
+test commands::scope::tests::test_validate_scope_name_empty ... ok
+test commands::scope::tests::test_validate_scope_name_invalid_chars ... ok
+test commands::scope::tests::test_validate_scope_name_reserved ... ok
+test commands::scope::tests::test_validate_scope_name_valid ... ok
+test commands::rm::tests::test_execute_dry_run ... ok
+test commands::rm::tests::test_execute_global_with_mode ... ok
+test commands::status::tests::test_check_workspace_state_clean_no_metadata ... ok
+test commands::status::tests::test_execute_not_initialized ... ok
+test commands::sync::tests::test_sync_execute_signature ... ok
+test commit::pipeline::tests::test_abort ... ok
+test commit::pipeline::tests::test_build_layer_tree_all_deletions ... ok
+test commands::rm::tests::test_execute_project_without_mode ... ok
+test commit::pipeline::tests::test_build_layer_tree_deletes_from_parent ... ok
+test commands::rm::tests::test_unstage_file_not_in_staging ... ok
+test commit::pipeline::tests::test_build_layer_tree_merges_with_parent ... ok
+test commands::rm::tests::test_unstage_file_success ... ok
+test commit::pipeline::tests::test_build_layer_tree_multiple_files ... ok
+test commit::pipeline::tests::test_build_layer_tree_nested_paths ... ok
+test commit::pipeline::tests::test_commit_config_dry_run ... ok
+test commit::pipeline::tests::test_build_layer_tree_single_file ... ok
+test commit::pipeline::tests::test_commit_config_new ... ok
+test commit::pipeline::tests::test_commit_pipeline_empty ... ok
+test commit::pipeline::tests::test_commit_pipeline_with_entries_dry_run ... ok
+test commands::rm::tests::test_unstage_file_with_force ... ok
+test commit::pipeline::tests::test_dry_run_mode ... ok
+test commit::pipeline::tests::test_build_layer_tree_updates_parent_entry ... ok
+test commit::pipeline::tests::test_build_layer_tree_with_deletions ... ok
+test commit::pipeline::tests::test_get_parent_commits_no_ref ... ok
+test commit::pipeline::tests::test_invalid_content_hash ... ok
+test core::config::tests::test_config_serialization ... ok
+test commit::pipeline::tests::test_create_layer_commit_initial ... ok
+test core::config::tests::test_default_config ... ok
+test core::config::tests::test_default_context ... ok
+test core::config::tests::test_require_mode_error ... ok
+test core::config::tests::test_require_mode_success ... ok
+test core::error::tests::test_config_error ... ok
+test core::config::tests::test_context_serialization ... ok
+test commit::pipeline::tests::test_get_parent_commits_with_existing_ref ... ok
+test core::error::tests::test_detached_workspace_error ... ok
+test core::error::tests::test_detached_workspace_error_no_commit ... ok
+test core::error::tests::test_error_display ... ok
+test core::error::tests::test_git_tracked_error ... ok
+test core::error::tests::test_merge_conflict_error ... ok
+test core::error::tests::test_no_active_context_error ... ok
+test core::error::tests::test_parse_error ... ok
+test core::error::tests::test_staging_failed_error ... ok
+test core::error::tests::test_detached_workspace_error_deleted_mode ... ok
+test core::error::tests::test_symlink_error ... ok
+test core::jinmap::tests::test_jinmap_add_empty_mapping_removes_entry ... ok
+test core::jinmap::tests::test_jinmap_add_layer_mapping ... ok
+test core::jinmap::tests::test_jinmap_contains_file ... ok
+test core::jinmap::tests::test_jinmap_default ... ok
+test core::jinmap::tests::test_jinmap_get_layer_files ... ok
+test core::jinmap::tests::test_jinmap_layer_refs ... ok
+test core::jinmap::tests::test_jinmap_meta_timestamp_updated ... ok
+test core::jinmap::tests::test_jinmap_load_creates_default ... ok
+test commit::pipeline::tests::test_create_layer_commit_with_parent ... ok
+test core::jinmap::tests::test_jinmap_total_file_count ... ok
+test core::layer::tests::test_all_layers_count ... ok
+test core::jinmap::tests::test_jinmap_serialize_deserialize ... ok
+test core::layer::tests::test_display ... ok
+test core::jinmap::tests::test_jinmap_yaml_format ... ok
+test core::layer::tests::test_precedence_ordering ... ok
+test core::layer::tests::test_precedence_values ... ok
+test core::layer::tests::test_ref_paths ... ok
+test core::jinmap::tests::test_jinmap_save_load_roundtrip ... ok
+test core::layer::tests::test_requires_mode ... ok
+test core::layer::tests::test_requires_scope ... ok
+test core::layer::tests::test_storage_paths ... ok
+test commands::scope::tests::test_create_mode_bound_scope ... ok
+test git::merge::tests::test_detect_merge_type_equal ... ok
+test core::jinmap::tests::test_jinmap_update_from_commits ... ok
+test git::merge::tests::test_detect_merge_type_local_ahead ... ok
+test git::merge::tests::test_detect_merge_type_with_base_divergent ... ok
+test git::merge::tests::test_merge_type_derive_traits ... ok
+test git::merge::tests::test_detect_merge_type_divergent ... ok
+test git::merge::tests::test_detect_merge_type_fast_forward ... ok
+test commands::scope::tests::test_create_scope_duplicate ... ok
+test git::merge::tests::test_detect_merge_type_with_base_equal ... ok
+test git::merge::tests::test_detect_merge_type_with_base_fast_forward ... ok
+test git::objects::tests::test_create_blob ... ok
+test git::objects::tests::test_create_commit_initial ... ok
+test git::objects::tests::test_entry_mode ... ok
+test git::objects::tests::test_tree_entry_constructors ... ok
+test git::objects::tests::test_create_tree_nested ... ok
+test git::merge::tests::test_detect_merge_type_with_base_local_ahead ... ok
+test commands::scope::tests::test_create_scope_nonexistent_mode ... ok
+test git::objects::tests::test_create_commit_with_parent ... ok
+test git::objects::tests::test_create_tree_simple ... ok
+test git::objects::tests::test_find_objects ... ok
+test git::objects::tests::test_deeply_nested_paths ... ok
+test git::refs::tests::test_ref_ops_trait_exists ... ok
+test git::refs::tests::test_compare_refs_ahead ... ok
+test git::refs::tests::test_delete_ref ... ok
+test git::remote::tests::test_auth_counter ... ok
+test git::refs::tests::test_invalid_ref_name ... ok
+test git::remote::tests::test_build_fetch_options ... ok
+test git::remote::tests::test_build_push_options ... ok
+test git::remote::tests::test_setup_callbacks ... ok
+test git::refs::tests::test_compare_refs_diverged ... ok
+test git::refs::tests::test_ref_exists ... ok
+test git::refs::tests::test_compare_refs_equal ... ok
+test git::repo::tests::test_open_nonexistent_fails ... ok
+test git::refs::tests::test_list_refs_glob ... ok
+test git::refs::tests::test_resolve_ref ... ok
+test git::refs::tests::test_set_and_find_ref ... ok
+test git::repo::tests::test_create_jin_repo ... ok
+test git::repo::tests::test_debug_impl ... ok
+test git::repo::tests::test_has_jin_refs_empty ... ok
+test commands::scope::tests::test_create_scope_with_colon ... ok
+test git::repo::tests::test_open_existing_repo ... ok
+test git::repo::tests::test_open_or_create_existing ... ok
+test git::repo::tests::test_repo_is_bare ... ok
+test git::transaction::tests::test_auto_recover ... ok
+test git::transaction::tests::test_concurrent_transaction_blocked ... ok
+test git::transaction::tests::test_layer_update_creation ... ok
+test git::repo::tests::test_open_or_create_new ... ok
+test git::transaction::tests::test_layer_transaction_empty ... ok
+test git::transaction::tests::test_layer_transaction_abort ... ok
+test git::transaction::tests::test_incomplete_transaction_inspection ... ok
+test git::transaction::tests::test_recovery_resume_requires_prepared_state ... ok
+test git::transaction::tests::test_layer_transaction_single_layer ... ok
+test git::transaction::tests::test_layer_transaction_multi_layer ... ok
+test git::transaction::tests::test_recovery_resume ... ok
+test git::transaction::tests::test_transaction_empty_commit ... ok
+test git::transaction::tests::test_recovery_detect_incomplete ... ok
+test git::transaction::tests::test_transaction_state_serialization ... ok
+test git::transaction::tests::test_layer_transaction_records_old_oid ... ok
+test git::transaction::tests::test_transaction_log_save_load ... ok
+test commands::scope::tests::test_create_untethered_scope ... ok
+test git::transaction::tests::test_transaction_log_atomic_write ... ok
+test git::transaction::tests::test_transaction_multiple_refs ... ok
+test git::transaction::tests::test_transaction_new ... ok
+test git::transaction::tests::test_transaction_remove_ref ... ok
+test git::transaction::tests::test_transaction_lock_and_set ... ok
+test git::tree::tests::test_empty_tree ... ok
+test git::transaction::tests::test_recovery_rollback ... ok
+test git::transaction::tests::test_transaction_without_lock_fails ... ok
+test git::tree::tests::test_read_blob_content ... ok
+test git::tree::tests::test_list_tree_files ... ok
+test git::tree::tests::test_get_tree_entry_not_found ... ok
+test merge::deep::tests::test_empty_base_array_takes_overlay ... ok
+test merge::deep::tests::test_deep_merge_backward_compatible ... ok
+test merge::deep::tests::test_empty_base_object_takes_overlay ... ok
+test merge::deep::tests::test_empty_overlay_array_replaces ... ok
+test merge::deep::tests::test_complex_nested_merge ... ok
+test merge::deep::tests::test_empty_overlay_object_merges ... ok
+test merge::deep::tests::test_keyed_array_appends_new_items ... ok
+test merge::deep::tests::test_keyed_array_deep_merge_items ... ok
+test merge::deep::tests::test_keyed_array_merge_by_id ... ok
+test merge::deep::tests::test_keyed_array_merge_by_name ... ok
+test merge::deep::tests::test_keyed_array_preserves_order ... ok
+test merge::deep::tests::test_keyed_array_with_custom_key_fields ... ok
+test merge::deep::tests::test_merge_config_custom_keys ... ok
+test merge::deep::tests::test_merge_config_default ... ok
+test merge::deep::tests::test_merge_config_default_trait ... ok
+test merge::deep::tests::test_mixed_array_replacement ... ok
+test merge::deep::tests::test_mixed_types_in_array_replacement ... ok
+test merge::deep::tests::test_multiple_null_deletions ... ok
+test git::tree::tests::test_deeply_nested_tree ... ok
+test git::tree::tests::test_list_tree_files_excludes_directories ... ok
+test merge::deep::tests::test_null_deletes_deeply_nested_key ... ok
+test merge::deep::tests::test_null_deletes_entire_nested_object ... ok
+test merge::deep::tests::test_null_deletes_nested_key ... ok
+test git::tree::tests::test_walk_tree_abort ... ok
+test merge::deep::tests::test_null_deletes_top_level_key ... ok
+test merge::deep::tests::test_object_merge_overlay_wins_on_conflict ... ok
+test git::tree::tests::test_get_tree_entry ... ok
+test commands::scope::tests::test_delete_active_scope ... ok
+test merge::deep::tests::test_object_merge_adds_new_keys ... ok
+test merge::deep::tests::test_overlay_null_at_root_returns_null ... ok
+test merge::deep::tests::test_object_merge_recursive ... ok
+test merge::deep::tests::test_scalar_bool_override ... ok
+test merge::deep::tests::test_scalar_integer_override ... ok
+test merge::deep::tests::test_scalar_string_override ... ok
+test merge::deep::tests::test_type_conflict_object_to_scalar ... ok
+test merge::deep::tests::test_type_conflict_array_to_scalar ... ok
+test merge::deep::tests::test_type_conflict_scalar_to_object ... ok
+test merge::deep::tests::test_unkeyed_array_replacement_primitives ... ok
+test merge::deep::tests::test_unkeyed_array_replacement_strings ... ok
+test merge::jinmerge::tests::test_conflict_count_empty ... ok
+test merge::jinmerge::tests::test_conflict_count ... ok
+test merge::jinmerge::tests::test_empty_layer_content ... ok
+test merge::jinmerge::tests::test_from_text_merge_basic ... ok
+test merge::jinmerge::tests::test_from_text_merge_multiline ... ok
+test merge::jinmerge::tests::test_is_jinmerge_file_nonexistent ... ok
+test merge::jinmerge::tests::test_full_workflow ... ok
+test merge::jinmerge::tests::test_line_numbers_are_1_indexed ... ok
+test merge::jinmerge::tests::test_marker_format_matches_git ... ok
+test merge::jinmerge::tests::test_is_jinmerge_file_by_extension ... ok
+test merge::jinmerge::tests::test_marker_lengths ... ok
+test merge::jinmerge::tests::test_is_jinmerge_file_by_header ... ok
+test merge::jinmerge::tests::test_merge_path_for_file_basic ... ok
+test git::tree::tests::test_read_file_from_tree ... ok
+test merge::jinmerge::tests::test_merge_path_for_file_replaces_existing_extension ... ok
+test merge::jinmerge::tests::test_merge_path_for_file_with_path ... ok
+test git::tree::tests::test_walk_tree_pre_order ... ok
+test merge::jinmerge::tests::test_parse_empty_layer_content ... ok
+test merge::jinmerge::tests::test_parse_from_file_missing_end_marker ... ok
+test merge::jinmerge::tests::test_parse_from_file_basic ... ok
+test merge::jinmerge::tests::test_parse_from_file_missing_separator ... ok
+test merge::jinmerge::tests::test_parse_from_file_multiline_content ... ok
+test merge::jinmerge::tests::test_parse_from_file_multiple_conflicts ... ok
+test merge::jinmerge::tests::test_parse_preserves_line_numbers ... ok
+test merge::jinmerge::tests::test_to_jinmerge_format_adds_newline_if_missing ... ok
+test merge::jinmerge::tests::test_to_jinmerge_format_preserves_trailing_newline ... ok
+test merge::jinmerge::tests::test_roundtrip_write_then_parse ... ok
+test merge::jinmerge::tests::test_to_jinmerge_format_single_conflict ... ok
+test merge::jinmerge::tests::test_write_to_file_atomic ... ok
+test merge::jinmerge::tests::test_write_to_file_creates_parent_dir ... ok
+test merge::layer::tests::test_applicable_layers_no_context ... ok
+test merge::layer::tests::test_applicable_layers_scope_without_mode ... ok
+test merge::layer::tests::test_applicable_layers_with_mode ... ok
+test merge::layer::tests::test_applicable_layers_with_mode_and_scope ... ok
+test merge::layer::tests::test_detect_format_ini ... ok
+test merge::jinmerge::tests::test_write_to_file_creates_valid_jinmerge ... ok
+test merge::layer::tests::test_detect_format_text ... ok
+test merge::layer::tests::test_detect_format_json ... ok
+test git::tree::tests::test_walk_tree_post_order ... ok
+test merge::layer::tests::test_detect_format_toml ... ok
+test merge::layer::tests::test_detect_format_yaml ... ok
+test merge::layer::tests::test_file_format_clone ... ok
+test merge::layer::tests::test_file_format_equality ... ok
+test merge::layer::tests::test_find_layers_nonexistent_file_path ... ok
+test merge::layer::tests::test_find_layers_empty_layer_list ... ok
+test merge::layer::tests::test_find_layers_single_layer_containing_file ... ok
+test merge::layer::tests::test_find_layers_mode_scope_with_context ... ok
+test merge::layer::tests::test_find_layers_nonexistent_layer_refs_skipped ... ok
+test merge::layer::tests::test_find_layers_nested_directory_files ... ok
+test merge::layer::tests::test_has_different_content_empty_layer_list ... ok
+test merge::layer::tests::test_find_layers_precedence_order_maintained ... ok
+test merge::layer::tests::test_has_different_content_different_text ... ok
+test merge::layer::tests::test_find_layers_file_not_in_any_layer ... ok
+test merge::layer::tests::test_has_different_content_different_structured ... ok
+test merge::layer::tests::test_find_layers_multiple_layers_containing_file ... ok
+test commands::scope::tests::test_delete_mode_bound_scope ... ok
+test merge::layer::tests::test_has_different_content_four_layers_one_different ... ok
+test merge::layer::tests::test_has_different_content_single_layer ... ok
+test merge::layer::tests::test_has_different_content_same_text ... ok
+test merge::layer::tests::test_has_different_content_same_structured ... ok
+test merge::layer::tests::test_has_different_content_four_layers_all_same ... ok
+test merge::layer::tests::test_has_different_content_five_layers_text_file ... ok
+test merge::layer::tests::test_has_different_content_semantic_json_whitespace ... ok
+test merge::layer::tests::test_layer_precedence_order ... ok
+test merge::layer::tests::test_layer_precedence_values ... ok
+test merge::layer::tests::test_has_different_content_ini_format ... ok
+test commands::scope::tests::test_delete_nonexistent ... ok
+test merge::layer::tests::test_has_different_content_nine_layers_complex_pattern ... ok
+test merge::layer::tests::test_has_different_content_eight_layers_all_different ... ok
+test merge::layer::tests::test_has_different_content_five_layers_middle_differs ... ok
+test merge::layer::tests::test_has_different_content_text_exact_match_required ... ok
+test merge::layer::tests::test_merge_result_default ... ok
+test merge::layer::tests::test_merge_result_is_clean_with_conflicts ... ok
+test merge::layer::tests::test_merge_result_new ... ok
+test merge::layer::tests::test_parse_content_ini ... ok
+test merge::layer::tests::test_parse_content_json ... ok
+test merge::layer::tests::test_has_different_content_three_layers_all_same ... ok
+test merge::layer::tests::test_has_different_content_seven_layers_last_differs ... ok
+test merge::layer::tests::test_parse_content_text ... ok
+test merge::layer::tests::test_parse_content_json_invalid ... ok
+test merge::layer::tests::test_has_different_content_toml_format ... ok
+test merge::layer::tests::test_parse_content_yaml ... ok
+test merge::text::tests::test_config_default ... ok
+test merge::layer::tests::test_parse_content_yaml_with_null ... ok
+test merge::layer::tests::test_parse_content_toml ... ok
+test merge::text::tests::test_config_new ... ok
+test merge::layer::tests::test_has_different_content_yaml_format ... ok
+test merge::text::tests::test_config_with_diff3 ... ok
+test merge::text::tests::test_config_with_labels ... ok
+test merge::text::tests::test_conflict_region_equality ... ok
+test merge::text::tests::test_has_conflict_markers_false_for_normal_content ... ok
+test merge::text::tests::test_count_conflict_regions ... ok
+test merge::text::tests::test_has_conflict_markers_false_for_partial_markers ... ok
+test merge::text::tests::test_has_conflict_markers_true_for_conflicts ... ok
+test merge::text::tests::test_needs_label_rewrite ... ok
+test merge::text::tests::test_merge_result_clean_has_no_conflicts ... ok
+test merge::text::tests::test_merge_and_parse_roundtrip ... ok
+test merge::layer::tests::test_merge_layers_same_content_text_file_optimized ... ok
+test merge::text::tests::test_parse_conflicts_empty_for_no_conflicts ... ok
+test merge::text::tests::test_parse_conflicts_empty_ours ... ok
+test merge::text::tests::test_parse_conflicts_empty_theirs ... ok
+test merge::text::tests::test_parse_conflicts_incomplete_markers_no_end ... ok
+test merge::text::tests::test_parse_conflicts_incomplete_markers_no_separator ... ok
+test merge::text::tests::test_parse_conflicts_line_numbers ... ok
+test merge::text::tests::test_parse_conflicts_malformed_markers_wrong_order ... ok
+test merge::text::tests::test_parse_conflicts_multiline_content ... ok
+test merge::text::tests::test_parse_conflicts_multiple_regions ... ok
+test merge::text::tests::test_rewrite_conflict_labels ... ok
+test merge::layer::tests::test_has_different_content_three_layers_one_different ... ok
+test merge::text::tests::test_text_merge_all_empty ... ok
+test merge::text::tests::test_text_merge_additions_at_different_locations ... ok
+test merge::text::tests::test_text_merge_both_add_same_end ... ok
+test merge::text::tests::test_text_merge_conflict ... ok
+test merge::text::tests::test_text_merge_empty_base_both_add_different ... ok
+test merge::text::tests::test_text_merge_conflict_same_line_different_changes ... ok
+test merge::layer::tests::test_merge_layers_same_content_optimized ... ok
+test merge::layer::tests::test_merge_layers_single_layer_no_conflict ... ok
+test merge::text::tests::test_text_merge_empty_base_both_add_identical ... ok
+test merge::text::tests::test_parse_conflicts_single_region ... ok
+test merge::text::tests::test_text_merge_empty_base_ours_adds ... ok
+test merge::text::tests::test_text_merge_empty_base_theirs_adds ... ok
+test merge::text::tests::test_text_merge_identical ... ok
+test merge::text::tests::test_text_merge_no_trailing_newline ... ok
+test merge::text::tests::test_text_merge_multiple_conflicts ... ok
+test merge::text::tests::test_text_merge_ours_only ... ok
+test merge::text::tests::test_text_merge_non_overlapping_changes ... ok
+test merge::layer::tests::test_merge_layers_two_layers_same_content_no_conflict ... ok
+test merge::text::tests::test_text_merge_result_equality ... ok
+test merge::text::tests::test_text_merge_preserves_trailing_newline ... ok
+test merge::text::tests::test_text_merge_theirs_only ... ok
+test merge::layer::tests::test_merge_layers_two_layers_different_content_conflict ... ok
+test merge::text::tests::test_text_merge_large_file_with_changes ... ok
+test merge::text::tests::test_text_merge_with_custom_labels ... ok
+test merge::value::tests::test_as_bool ... ok
+test merge::text::tests::test_text_merge_with_tabs_and_spaces ... ok
+test merge::value::tests::test_as_numeric ... ok
+test merge::value::tests::test_contains_null ... ok
+test merge::value::tests::test_contains_null_in_array ... ok
+test merge::value::tests::test_empty_array ... ok
+test merge::value::tests::test_empty_object ... ok
+test merge::value::tests::test_from_json_helper ... ok
+test merge::value::tests::test_from_ini_helper ... ok
+test merge::value::tests::test_from_json_invalid ... ok
+test merge::value::tests::test_from_toml_invalid ... ok
+test merge::value::tests::test_from_yaml_helper ... ok
+test merge::value::tests::test_from_toml_helper ... ok
+test merge::value::tests::test_from_yaml_invalid ... ok
+test merge::value::tests::test_ini_deep_nesting_error ... ok
+test merge::value::tests::test_file_extension_detection ... ok
+test merge::value::tests::test_ini_null_error ... ok
+test merge::value::tests::test_ini_number_conversion ... ok
+test merge::value::tests::test_ini_array_error ... ok
+test merge::value::tests::test_ini_roundtrip_basic ... ok
+test merge::layer::tests::test_has_different_content_six_layers_alternating ... ok
+test merge::layer::tests::test_merge_layers_partial_merge_some_conflicts ... ok
+test merge::value::tests::test_cross_format_data_preservation ... ok
+test merge::value::tests::test_is_scalar ... ok
+test merge::value::tests::test_ini_section_to_nested_object ... ok
+test merge::value::tests::test_json_roundtrip ... ok
+test merge::value::tests::test_ini_root_level_scalars ... ok
+test merge::text::tests::test_text_merge_unicode_content ... ok
+test merge::value::tests::test_json_to_ini_simple ... ok
+test commands::scope::tests::test_delete_untethered_scope ... ok
+test merge::value::tests::test_merge_value_null ... ok
+test merge::value::tests::test_ini_general_section ... ok
+test commands::repair::tests::test_check_workspace_metadata_missing ... ok
+test merge::value::tests::test_integer_vs_float_preservation ... ok
+test merge::value::tests::test_json_to_yaml ... ok
+test merge::value::tests::test_merge_value_object ... ok
+test merge::value::tests::test_special_characters_in_strings ... ok
+test merge::value::tests::test_to_ini_string ... ok
+test merge::value::tests::test_to_json_string ... ok
+test merge::value::tests::test_to_json_string_compact ... ok
+test merge::value::tests::test_toml_conversion_tryfrom ... ok
+test merge::value::tests::test_to_yaml_string ... ok
+test merge::value::tests::test_to_toml_string ... ok
+test merge::value::tests::test_toml_nested_null_error ... ok
+test merge::value::tests::test_toml_datetime_to_string ... ok
+test merge::value::tests::test_toml_nested_tables ... ok
+test merge::value::tests::test_toml_null_error ... ok
+test merge::value::tests::test_yaml_conversion_from_value ... ok
+test merge::value::tests::test_unsupported_extension ... ok
+test staging::entry::tests::test_staged_entry_delete ... ok
+test merge::value::tests::test_yaml_null_handling ... ok
+test staging::entry::tests::test_staged_entry_new ... ok
+test merge::value::tests::test_yaml_nested_objects ... ok
+test merge::value::tests::test_yaml_to_toml_no_null ... ok
+test staging::gitignore::tests::test_build_gitignore_empty_managed ... ok
+test staging::gitignore::tests::test_build_gitignore_with_all_parts ... ok
+test merge::value::tests::test_yml_extension ... ok
+test staging::gitignore::tests::test_normalize_path ... ok
+test merge::value::tests::test_yaml_roundtrip_basic ... ok
+test staging::gitignore::tests::test_ensure_in_managed_block_creates_gitignore ... ok
+test staging::gitignore::tests::test_parse_managed_block_empty ... ok
+test staging::gitignore::tests::test_ensure_in_managed_block_deduplicates ... ok
+test staging::gitignore::tests::test_ensure_in_managed_block_sorts_entries ... ok
+test staging::gitignore::tests::test_parse_managed_block_with_content ... ok
+test staging::gitignore::tests::test_ensure_in_managed_block_preserves_existing ... ok
+test staging::index::tests::test_staging_index_add_remove ... ok
+test staging::index::tests::test_staging_index_new ... ok
+test staging::index::tests::test_staging_index_entries_for_layer ... ok
+test staging::gitignore::tests::test_remove_from_managed_block ... ok
+test staging::metadata::tests::test_workspace_metadata_default ... ok
+test staging::metadata::tests::test_workspace_metadata_new ... ok
+test staging::metadata::tests::test_workspace_metadata_add_remove_file ... ok
+test staging::metadata::tests::test_workspace_metadata_serialization ... ok
+test staging::router::tests::test_route_default ... ok
+test staging::router::tests::test_route_global ... ok
+test staging::router::tests::test_route_local ... ok
+test staging::index::tests::test_affected_layers ... ok
+test staging::router::tests::test_route_mode_project ... ok
+test staging::router::tests::test_route_mode ... ok
+test staging::router::tests::test_route_mode_scope ... ok
+test staging::router::tests::test_route_mode_scope_project ... ok
+test staging::router::tests::test_route_mode_without_active_mode_fails ... ok
+test staging::router::tests::test_route_scope_untethered ... ok
+test staging::router::tests::test_validate_global_conflict ... ok
+test staging::router::tests::test_validate_local_alone_passes ... ok
+test staging::router::tests::test_validate_local_conflict_with_global ... ok
+test staging::router::tests::test_validate_local_conflict_with_mode ... ok
+test staging::router::tests::test_validate_local_conflict_with_project ... ok
+test staging::router::tests::test_validate_local_conflict_with_scope ... ok
+test staging::router::tests::test_validate_project_without_mode ... ok
+test merge::value::tests::test_toml_roundtrip_basic ... ok
+test staging::workspace::tests::test_describe_context_empty ... ok
+test staging::workspace::tests::test_describe_context_full ... ok
+test staging::workspace::tests::test_describe_context_mode_and_scope ... ok
+test staging::workspace::tests::test_describe_context_mode_only ... ok
+test staging::workspace::tests::test_detect_invalid_context_no_mode_or_scope ... ok
+test staging::workspace::tests::test_get_file_mode_executable ... ok
+test staging::workspace::tests::test_detect_missing_commits_layer_missing ... ok
+test staging::workspace::tests::test_get_file_mode_regular ... ok
+test staging::workspace::tests::test_is_git_tracked_no_repo ... ok
+test staging::workspace::tests::test_is_symlink_false_for_regular_file ... ok
+test staging::workspace::tests::test_read_file_not_found ... ok
+test staging::workspace::tests::test_is_symlink_true_for_symlink ... ok
+test staging::workspace::tests::test_read_file_success ... ok
+test staging::workspace::tests::test_detect_invalid_context_mode_exists ... ok
+test staging::workspace::tests::test_walk_directory ... ok
+test staging::workspace::tests::test_walk_empty_directory ... ok
+test staging::workspace::tests::test_detect_missing_commits_all_exist ... ok
+test staging::workspace::tests::test_detect_invalid_context_scope_missing ... ok
+test staging::workspace::tests::test_detect_file_mismatch_no_files ... ok
+test staging::workspace::tests::test_detect_invalid_context_mode_missing ... ok
+test staging::workspace::tests::test_detect_missing_commits_no_layers ... ok
+test commands::scope::tests::test_list_with_scopes ... ok
+test merge::text::tests::test_text_merge_large_file ... ok
+test commands::scope::tests::test_show_no_scope ... ok
+test commands::scope::tests::test_show_with_scope ... ok
+test commands::scope::tests::test_unset ... ok
+test commands::scope::tests::test_unset_no_scope ... ok
+test staging::metadata::tests::test_workspace_metadata_update_timestamp ... ok
+test commands::scope::tests::test_use_scope ... ok
+test commands::scope::tests::test_use_scope_nonexistent ... ok
+test commands::status::tests::test_check_for_conflicts_no_state ... ok
+test commands::status::tests::test_check_for_conflicts_with_state ... ok
+test staging::metadata::tests::test_workspace_metadata_load_not_found ... ok
+test staging::metadata::tests::test_workspace_metadata_save_load ... ok
+test staging::workspace::tests::test_detect_file_mismatch_modified_file ... ok
+test staging::workspace::tests::test_detect_file_mismatch_missing_file ... ok
+test staging::workspace::tests::test_detect_file_mismatch_no_mismatch ... ok
+test staging::workspace::tests::test_validate_workspace_attached_fresh_workspace ... ok
+
+test result: ok. 598 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.23s
+
+     Running unittests src/main.rs (target/debug/deps/jin-d66be9b6e1e0636e)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/atomic_operations.rs (target/debug/deps/atomic_operations-721d2af339086961)
+
+running 18 tests
+test common::assertions::tests::test_assert_workspace_file_exists ... ok
+test common::fixtures::tests::test_fixture_creates_directory ... ok
+test common::fixtures::tests::test_remote_fixture_creates_directories ... ok
+test common::assertions::tests::test_assert_workspace_file_exists_fails - should panic ... ok
+test common::git_helpers::tests::test_cleanup_git_locks_nonexistent_repo ... ok
+test common::git_helpers::tests::test_git_test_env_cleanup_on_drop ... ok
+test common::git_helpers::tests::test_git_test_env_creates_directory ... ok
+test common::git_helpers::tests::test_cleanup_git_locks_no_locks ... ok
+test test_add_idempotent ... ok
+test test_failed_commit_rolls_back ... ok
+test test_commit_doesnt_modify_workspace ... ok
+test test_reset_atomic ... ok
+test test_state_consistent_after_failure ... ok
+test test_jin_directory_integrity ... ok
+test test_operations_isolated ... ok
+test test_commit_is_atomic ... ok
+test test_multi_layer_commit_atomic ... ok
+test test_apply_atomic_workspace_update ... ok
+
+test result: ok. 18 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.02s
+
+     Running tests/cli_add_local.rs (target/debug/deps/cli_add_local-f1074c214c1f87dd)
+
+running 12 tests
+test common::assertions::tests::test_assert_workspace_file_exists ... ok
+test common::git_helpers::tests::test_cleanup_git_locks_nonexistent_repo ... ok
+test common::git_helpers::tests::test_git_test_env_cleanup_on_drop ... ok
+test common::fixtures::tests::test_fixture_creates_directory ... ok
+test common::fixtures::tests::test_remote_fixture_creates_directories ... ok
+test common::assertions::tests::test_assert_workspace_file_exists_fails - should panic ... ok
+test common::git_helpers::tests::test_git_test_env_creates_directory ... ok
+test common::git_helpers::tests::test_cleanup_git_locks_no_locks ... ok
+test test_add_local_rejects_global_flag ... ok
+test test_add_local_routes_to_layer_8 ... ok
+test test_add_local_rejects_mode_flag ... ok
+test test_add_local_commit_apply_workflow ... ok
+
+test result: ok. 12 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+     Running tests/cli_apply_conflict.rs (target/debug/deps/cli_apply_conflict-67861b46a95cee10)
+
+running 17 tests
+test common::assertions::tests::test_assert_workspace_file_exists ... ok
+test common::fixtures::tests::test_fixture_creates_directory ... ok
+test common::assertions::tests::test_assert_workspace_file_exists_fails - should panic ... ok
+test common::fixtures::tests::test_remote_fixture_creates_directories ... ok
+test common::git_helpers::tests::test_git_test_env_creates_directory ... ok
+test common::git_helpers::tests::test_cleanup_git_locks_nonexistent_repo ... ok
+test common::git_helpers::tests::test_git_test_env_cleanup_on_drop ... ok
+test common::git_helpers::tests::test_cleanup_git_locks_no_locks ... ok
+test test_apply_no_conflicts_works_normally ... ok
+test test_apply_dry_run_with_conflicts_shows_preview ... ok
+test test_text_file_conflicts_create_jinmerge ... ok
+test test_apply_with_conflicts_creates_paused_state ... ok
+test test_apply_with_identical_content_different_formatting ... ok
+test test_apply_with_conflicts_applies_non_conflicting_files ... ok
+test test_apply_with_identical_content_no_conflict ... ok
+test test_apply_with_conflicts_creates_jinmerge_files ... ok
+test test_apply_with_multiple_conflicts ... ok
+
+test result: ok. 17 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.03s
+
+     Running tests/cli_basic.rs (target/debug/deps/cli_basic-8cd210250c2491e7)
+
+running 56 tests
+test test_apply_subcommand ... ok
+test test_completion_help ... ok
+test test_apply_dry_run ... ok
+test test_add_with_mode_flag ... ok
+test test_completion_invalid_shell ... ok
+test test_add_help ... ok
+test test_completion_no_shell ... ok
+test test_context_subcommand ... ok
+test test_add_with_scope_flag ... ok
+test test_commit_subcommand ... FAILED
+test test_import_subcommand ... FAILED
+test test_diff_subcommand ... FAILED
+test test_completion_powershell ... ok
+test test_export_subcommand ... ok
+test test_add_subcommand ... ok
+test test_completion_bash ... ok
+test test_help ... ok
+test test_fetch_subcommand ... FAILED
+test test_completion_zsh ... ok
+test test_log_subcommand ... ok
+test test_link_invalid_url_empty ... ok
+test test_invalid_subcommand ... ok
+test test_link_help ... ok
+test test_mode_unset_subcommand ... ok
+test test_list_subcommand ... ok
+test test_pull_subcommand ... FAILED
+test test_mode_show_subcommand ... ok
+test test_mode_list_subcommand ... ok
+test test_mode_create_subcommand ... ok
+test test_init_subcommand ... ok
+test test_completion_fish ... ok
+test test_push_subcommand ... ok
+test test_reset_subcommand ... FAILED
+test test_scope_use_subcommand ... ok
+test test_scope_create_subcommand ... ok
+test test_repair_subcommand ... ok
+test test_status_subcommand ... ok
+test test_scope_list_subcommand ... ok
+test test_version ... ok
+test test_link_force_flag ... ok
+test test_status_with_active_mode ... ok
+test test_scope_create_with_mode ... ok
+test test_mode_use_subcommand ... ok
+test test_layers_subcommand ... ok
+test test_sync_subcommand ... FAILED
+test test_status_no_conflicts_normal_display ... ok
+test test_link_invalid_url_relative_path ... ok
+test test_link_valid_ssh_url ... ok
+test test_link_valid_https_url ... ok
+test test_status_with_staged_files ... ok
+test test_link_subcommand ... ok
+test test_link_invalid_url_unsupported_protocol ... ok
+test test_link_invalid_url_format ... ok
+test test_status_dirty_workspace ... ok
+test test_context_subcommand_success ... ok
+test test_status_shows_conflict_state ... ok
+
+failures:
+
+---- test_commit_subcommand stdout ----
+
+thread 'test_commit_subcommand' (3574394) panicked at /home/dustin/.rustup/toolchains/stable-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/ops/function.rs:250:5:
+Unexpected failure.
+code=1
+stderr=```"Error: No staged files to commit. Use \'jin add\' to stage files first.\n"```
+command=`"/home/dustin/projects/jin/target/debug/jin" "commit" "-m" "Test commit"`
+code=1
+stdout=""
+stderr="Error: No staged files to commit. Use \'jin add\' to stage files first.\n"
+
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+---- test_import_subcommand stdout ----
+
+thread 'test_import_subcommand' (3574458) panicked at /home/dustin/.rustup/toolchains/stable-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/ops/function.rs:250:5:
+Unexpected stderr, failed var.contains(Jin not initialized)
+├── var: Error: .vscode/settings.json: File not found: .vscode/settings.json
+│   Error: Staging failed for multiple files: 1 files failed to import
+└── var as str: Error: .vscode/settings.json: File not found: .vscode/settings.json
+    Error: Staging failed for multiple files: 1 files failed to import
+
+command=`"/home/dustin/projects/jin/target/debug/jin" "import" ".vscode/settings.json"`
+code=1
+stdout=""
+stderr=```
+Error: .vscode/settings.json: File not found: .vscode/settings.json
+Error: Staging failed for multiple files: 1 files failed to import
+```
+
+
+
+---- test_diff_subcommand stdout ----
+
+thread 'test_diff_subcommand' (3574441) panicked at /home/dustin/.rustup/toolchains/stable-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/ops/function.rs:250:5:
+Unexpected success
+command=`"/home/dustin/projects/jin/target/debug/jin" "diff"`
+code=0
+stdout=```
+Comparing workspace vs workspace-active
+
+Only in workspace: test.txt
+
+```
+
+stderr=```
+[DEBUG] merge_layers: Starting with 5 layers
+[DEBUG] collect_all_file_paths: Checking 5 layers
+[DEBUG] collect_all_file_paths: Layer GlobalBase, ref_path: refs/jin/layers/global
+[DEBUG] collect_all_file_paths: ref_exists: false
+[DEBUG] collect_all_file_paths: Layer ScopeBase, ref_path: refs/jin/layers/scope/language:javascript
+[DEBUG] collect_all_file_paths: ref_exists: false
+[DEBUG] collect_all_file_paths: Layer ProjectBase, ref_path: refs/jin/layers/project/default
+[DEBUG] collect_all_file_paths: ref_exists: false
+[DEBUG] collect_all_file_paths: Layer UserLocal, ref_path: refs/jin/layers/local
+[DEBUG] collect_all_file_paths: ref_exists: false
+[DEBUG] collect_all_file_paths: Layer WorkspaceActive, ref_path: refs/jin/layers/workspace
+[DEBUG] collect_all_file_paths: ref_exists: false
+[DEBUG] collect_all_file_paths: Total paths collected: 0
+[DEBUG] merge_layers: Collected 0 unique file paths
+[DEBUG] merge_layers: File paths: {}
+[DEBUG] merge_layers: Returning with 0 merged files, 0 conflicts
+```
+
+
+
+---- test_fetch_subcommand stdout ----
+
+thread 'test_fetch_subcommand' (3574450) panicked at /home/dustin/.rustup/toolchains/stable-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/ops/function.rs:250:5:
+Unexpected stderr, failed var.contains(No remote configured)
+├── var: Error: Git error: there is no TLS stream available; class=Ssl (16)
+└── var as str: Error: Git error: there is no TLS stream available; class=Ssl (16)
+
+command=`"/home/dustin/projects/jin/target/debug/jin" "fetch"`
+code=1
+stdout=```
+Fetching from origin (https://github.com/test/jin-config)...
+
+```
+
+stderr="Error: Git error: there is no TLS stream available; class=Ssl (16)\n"
+
+
+---- test_pull_subcommand stdout ----
+
+thread 'test_pull_subcommand' (3574524) panicked at /home/dustin/.rustup/toolchains/stable-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/ops/function.rs:250:5:
+Unexpected stderr, failed (var.contains(not found) || var.contains(Remote))
+├── var as str: Error: Configuration error: No remote configured. Run 'jin link <url>'.
+├── var.contains(not found)
+│   └── var: Error: Configuration error: No remote configured. Run 'jin link <url>'.
+└── var.contains(Remote)
+    └── var: Error: Configuration error: No remote configured. Run 'jin link <url>'.
+
+command=`"/home/dustin/projects/jin/target/debug/jin" "pull"`
+code=1
+stdout="Fetching remote updates...\n"
+stderr="Error: Configuration error: No remote configured. Run \'jin link <url>\'.\n"
+
+
+---- test_reset_subcommand stdout ----
+
+thread 'test_reset_subcommand' (3574536) panicked at /home/dustin/.rustup/toolchains/stable-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/ops/function.rs:250:5:
+Unexpected success
+command=`"/home/dustin/projects/jin/target/debug/jin" "reset"`
+code=0
+stdout="Nothing to reset for layer: project-base\n"
+stderr=""
+
+
+---- test_sync_subcommand stdout ----
+
+thread 'test_sync_subcommand' (3574573) panicked at /home/dustin/.rustup/toolchains/stable-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/ops/function.rs:250:5:
+Unexpected stderr, failed (var.contains(not found) || var.contains(Remote))
+├── var as str: ✗ Fetch failed: Configuration error: No remote configured. Run 'jin link <url>'.
+│   Error: Configuration error: No remote configured. Run 'jin link <url>'.
+├── var.contains(not found)
+│   └── var: ✗ Fetch failed: Configuration error: No remote configured. Run 'jin link <url>'.
+│       Error: Configuration error: No remote configured. Run 'jin link <url>'.
+└── var.contains(Remote)
+    └── var: ✗ Fetch failed: Configuration error: No remote configured. Run 'jin link <url>'.
+        Error: Configuration error: No remote configured. Run 'jin link <url>'.
+
+command=`"/home/dustin/projects/jin/target/debug/jin" "sync"`
+code=1
+stdout=```
+=== Jin Sync: Fetch + Pull + Apply ===
+
+Step 1/3: Fetching remote updates...
+```
+
+stderr=```
+✗ Fetch failed: Configuration error: No remote configured. Run \'jin link <url>\'.
+Error: Configuration error: No remote configured. Run \'jin link <url>\'.
+```
+
+
+
+
+failures:
+    test_commit_subcommand
+    test_diff_subcommand
+    test_fetch_subcommand
+    test_import_subcommand
+    test_pull_subcommand
+    test_reset_subcommand
+    test_sync_subcommand
+
+test result: FAILED. 49 passed; 7 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.03s
+
+error: test failed, to rerun pass `--test cli_basic`
+[0;31m✗ Integration tests failed[0m
+[0;34m========================================[0m
+[0;34mPhase 7: E2E - Basic Workflow (init → mode → add → commit → apply)[0m
+[0;34m========================================[0m
+   Compiling jin v0.1.0 (/home/dustin/projects/jin)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.68s
+     Running `/home/dustin/projects/jin/target/debug/jin init`
+Initialized Jin in .jin
+
+Next steps:
+  1. Create a mode:     jin mode create <name>
+  2. Activate the mode: jin mode use <name>
+  3. Add files:         jin add <file> --mode
+[0;32m✓ E2E: jin init succeeded[0m
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.03s
+     Running `/home/dustin/projects/jin/target/debug/jin mode create e2e_test_mode_3569863`
+Created mode 'e2e_test_mode_3569863'
+Activate with: jin mode use e2e_test_mode_3569863
+[0;32m✓ E2E: jin mode create succeeded[0m
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.03s
+     Running `/home/dustin/projects/jin/target/debug/jin mode use e2e_test_mode_3569863`
+Activated mode 'e2e_test_mode_3569863'
+Stage files with: jin add --mode
+[0;32m✓ E2E: jin mode use succeeded[0m
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.04s
+     Running `/home/dustin/projects/jin/target/debug/jin add config.json --mode`
+Staged 1 file(s) to 'e2e_test_mode_3569863' (mode) layer
+[0;32m✓ E2E: jin add succeeded[0m
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.03s
+     Running `/home/dustin/projects/jin/target/debug/jin commit -m 'E2E test commit'`
+Committed 1 file(s) to 1 layer(s):
+  mode-base: fc98a5f5fa2dbac58fd6c9584f7478ac067885c5
+[0;32m✓ E2E: jin commit succeeded[0m
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.03s
+     Running `/home/dustin/projects/jin/target/debug/jin apply`
+[DEBUG] merge_layers: Starting with 6 layers
+[DEBUG] collect_all_file_paths: Checking 6 layers
+[DEBUG] collect_all_file_paths: Layer GlobalBase, ref_path: refs/jin/layers/global
+[DEBUG] collect_all_file_paths: ref_exists: false
+[DEBUG] collect_all_file_paths: Layer ModeBase, ref_path: refs/jin/layers/mode/e2e_test_mode_3569863/_
+[DEBUG] collect_all_file_paths: ref_exists: true
+[DEBUG] collect_all_file_paths: Resolved commit_oid: fc98a5f5fa2dbac58fd6c9584f7478ac067885c5
+[DEBUG] collect_all_file_paths: Tree file: "config.json"
+[DEBUG] collect_all_file_paths: Layer ModeProject, ref_path: refs/jin/layers/mode/e2e_test_mode_3569863/project/default
+[DEBUG] collect_all_file_paths: ref_exists: false
+[DEBUG] collect_all_file_paths: Layer ProjectBase, ref_path: refs/jin/layers/project/default
+[DEBUG] collect_all_file_paths: ref_exists: false
+[DEBUG] collect_all_file_paths: Layer UserLocal, ref_path: refs/jin/layers/local
+[DEBUG] collect_all_file_paths: ref_exists: false
+[DEBUG] collect_all_file_paths: Layer WorkspaceActive, ref_path: refs/jin/layers/workspace
+[DEBUG] collect_all_file_paths: ref_exists: false
+[DEBUG] collect_all_file_paths: Total paths collected: 1
+[DEBUG] merge_layers: Collected 1 unique file paths
+[DEBUG] merge_layers: File paths: {"config.json"}
+[DEBUG] merge_layers: Processing path: config.json
+[DEBUG] merge_layers: Layers with file: [ModeBase]
+[DEBUG] merge_layers: Merged result (merge_file_across_layers): Ok
+[DEBUG] merge_layers: Returning with 1 merged files, 0 conflicts
+Applied 1 files to workspace
+[0;32m✓ E2E: jin apply succeeded[0m
+[0;32m✓ E2E: File restored after apply[0m
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.04s
+     Running `/home/dustin/projects/jin/target/debug/jin status`
+Jin status:
+
+  Mode:  e2e_test_mode_3569863 (active)
+  Scope: (none)
+  Project: (none)
+
+Workspace state: Clean
+
+No staged changes.
+
+Use 'jin add <file>' to stage files for commit.
+
+Layer summary:
+  jin/mode/e2e_test_mode_3569863/: 1 file
+[0;32m✓ E2E: jin status succeeded[0m
+[0;32m✓ E2E Basic Workflow tests passed[0m
+[0;34m========================================[0m
+[0;34mPhase 8: E2E - Remote Sync Workflow (link → add → commit → push)[0m
+[0;34m========================================[0m
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.03s
+     Running `/home/dustin/projects/jin/target/debug/jin init -q`
+error: unexpected argument '-q' found
+
+Usage: jin init
+
+For more information, try '--help'.

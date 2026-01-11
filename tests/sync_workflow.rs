@@ -1508,7 +1508,10 @@ fn capture_ref_before_fetch(
 ) -> Result<Option<git2::Oid>, Box<dyn std::error::Error>> {
     let jin_repo = git2::Repository::open(jin_dir)?;
     let ref_path = format!("refs/jin/layers/mode/{}/_", mode_name);
-    Ok(jin_repo.find_reference(&ref_path).ok().map(|r| r.target().unwrap()))
+    Ok(jin_repo
+        .find_reference(&ref_path)
+        .ok()
+        .map(|r| r.target().unwrap()))
 }
 
 /// Test pull merges remote changes (P3.M3.T1.S2)
@@ -1679,7 +1682,10 @@ fn test_pull_creates_jinmerge_for_conflicts() -> Result<(), Box<dyn std::error::
         .success();
 
     // Step 2: Make conflicting local change
-    fs::write(remote_fixture.local_path.join("config.txt"), "version=local")?;
+    fs::write(
+        remote_fixture.local_path.join("config.txt"),
+        "version=local",
+    )?;
     jin()
         .args(["add", "config.txt", "--global"])
         .current_dir(&remote_fixture.local_path)
@@ -1804,7 +1810,11 @@ fn test_pull_fast_forward_behaves_correctly() -> Result<(), Box<dyn std::error::
 
     create_mode(&mode_name, Some(jin_dir))?;
     jin()
-        .args(["link", remote_fixture.remote_path.to_str().unwrap(), "--force"])
+        .args([
+            "link",
+            remote_fixture.remote_path.to_str().unwrap(),
+            "--force",
+        ])
         .current_dir(temp_workspace.path())
         .env("JIN_DIR", jin_dir)
         .assert()
@@ -1940,7 +1950,11 @@ fn test_pull_divergent_clean_merge() -> Result<(), Box<dyn std::error::Error>> {
 
     // Setup local repo with base
     jin()
-        .args(["link", remote_fixture.remote_path.to_str().unwrap(), "--force"])
+        .args([
+            "link",
+            remote_fixture.remote_path.to_str().unwrap(),
+            "--force",
+        ])
         .current_dir(&remote_fixture.local_path)
         .env("JIN_DIR", jin_dir)
         .assert()

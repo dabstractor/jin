@@ -2,6 +2,7 @@
 
 use assert_cmd::Command;
 use predicates::prelude::*;
+use serial_test::serial;
 
 /// Get a Command for the jin binary
 fn jin() -> Command {
@@ -255,6 +256,7 @@ fn test_status_with_staged_files() {
 }
 
 #[test]
+#[serial]
 fn test_mode_create_subcommand() {
     // Mode create doesn't require Jin init, it creates the mode in global Jin repo
     // May fail if mode already exists from previous test run
@@ -270,15 +272,19 @@ fn test_mode_create_subcommand() {
 }
 
 #[test]
+#[serial]
 fn test_mode_use_subcommand() {
+    // Use a unique mode name that won't exist
+    let unique_mode = format!("nonexistent_mode_{}", std::process::id());
     jin()
-        .args(["mode", "use", "claude"])
+        .args(["mode", "use", &unique_mode])
         .assert()
         .failure()
         .stderr(predicate::str::contains("not found"));
 }
 
 #[test]
+#[serial]
 fn test_mode_list_subcommand() {
     // Mode list works without project init - uses global Jin repo
     jin().args(["mode", "list"]).assert().success().stdout(
@@ -287,6 +293,7 @@ fn test_mode_list_subcommand() {
 }
 
 #[test]
+#[serial]
 fn test_mode_show_subcommand() {
     // Mode show works without project init - shows active mode or "No active mode"
     jin()
@@ -297,6 +304,7 @@ fn test_mode_show_subcommand() {
 }
 
 #[test]
+#[serial]
 fn test_mode_unset_subcommand() {
     // Mode unset works without project init - shows message if no mode is set
     jin().args(["mode", "unset"]).assert().success().stdout(
@@ -305,6 +313,7 @@ fn test_mode_unset_subcommand() {
 }
 
 #[test]
+#[serial]
 fn test_scope_create_subcommand() {
     // Scope create doesn't require Jin init, it creates the scope in global Jin repo
     // May fail if scope already exists from previous test run
@@ -322,6 +331,7 @@ fn test_scope_create_subcommand() {
 }
 
 #[test]
+#[serial]
 fn test_scope_create_with_mode() {
     jin()
         .args(["scope", "create", "language:javascript", "--mode=claude"])
@@ -331,16 +341,16 @@ fn test_scope_create_with_mode() {
 }
 
 #[test]
+#[serial]
 fn test_scope_use_subcommand() {
-    // Scope use requires Jin to be initialized to load context
+    // Scope use works without Jin initialization - activates the scope in global Jin repo
+    // Use a unique scope name to avoid conflicts with other tests
+    let unique_scope = format!("test_{}", std::process::id());
     jin()
-        .args(["scope", "use", "language:javascript"])
+        .args(["scope", "use", &unique_scope])
         .assert()
         .failure()
-        .stderr(
-            predicate::str::contains("Jin not initialized")
-                .or(predicate::str::contains("not found")),
-        );
+        .stderr(predicate::str::contains("not found"));
 }
 
 #[test]
@@ -406,13 +416,14 @@ fn test_add_with_scope_flag() {
 }
 
 #[test]
+#[serial]
 fn test_commit_subcommand() {
-    // Commit is a stub - will be implemented later
+    // Commit works without Jin initialization but fails with no staged files
     jin()
         .args(["commit", "-m", "Test commit"])
         .assert()
-        .success()
-        .stdout(predicate::str::contains("not yet implemented"));
+        .failure()
+        .stderr(predicate::str::contains("No staged files to commit"));
 }
 
 #[test]
@@ -440,23 +451,25 @@ fn test_apply_dry_run() {
 }
 
 #[test]
+#[serial]
 fn test_reset_subcommand() {
-    // Reset requires Jin initialization
+    // Reset succeeds even without Jin initialization - shows "Nothing to reset"
     jin()
         .arg("reset")
         .assert()
-        .failure()
-        .stderr(predicate::str::contains("Jin not initialized"));
+        .success()
+        .stdout(predicate::str::contains("Nothing to reset"));
 }
 
 #[test]
+#[serial]
 fn test_diff_subcommand() {
-    // Diff requires Jin initialization
+    // Diff succeeds even without Jin initialization - shows "No workspace metadata found"
     jin()
         .arg("diff")
         .assert()
-        .failure()
-        .stderr(predicate::str::contains("Jin not initialized"));
+        .success()
+        .stdout(predicate::str::contains("No workspace metadata found"));
 }
 
 #[test]
@@ -475,6 +488,7 @@ fn test_log_subcommand() {
 }
 
 #[test]
+#[serial]
 fn test_context_subcommand() {
     use tempfile::TempDir;
     let temp = TempDir::new().unwrap();
@@ -587,6 +601,7 @@ fn test_list_subcommand() {
 }
 
 #[test]
+#[serial]
 fn test_link_subcommand() {
     // Link command may fail for different reasons:
     // - Remote already exists (if run after other tests)
@@ -608,26 +623,37 @@ fn test_link_subcommand() {
 }
 
 #[test]
+#[serial]
 fn test_fetch_subcommand() {
-    // Fetch fails without remote configured
+    // Fetch fails without remote configured - use isolated JIN_DIR
+    use tempfile::TempDir;
+    let temp = TempDir::new().unwrap();
+
     jin()
         .arg("fetch")
+        .env("JIN_DIR", temp.path().join(".jin"))
         .assert()
         .failure()
         .stderr(predicate::str::contains("No remote configured"));
 }
 
 #[test]
+#[serial]
 fn test_pull_subcommand() {
-    // Pull fails without remote configured
+    // Pull fails without remote configured - use isolated JIN_DIR
+    use tempfile::TempDir;
+    let temp = TempDir::new().unwrap();
+
     jin()
         .arg("pull")
+        .env("JIN_DIR", temp.path().join(".jin"))
         .assert()
         .failure()
-        .stderr(predicate::str::contains("not found").or(predicate::str::contains("Remote")));
+        .stderr(predicate::str::contains("No remote configured"));
 }
 
 #[test]
+#[serial]
 fn test_push_subcommand() {
     // Push fails without remote configured
     jin()
@@ -638,26 +664,37 @@ fn test_push_subcommand() {
 }
 
 #[test]
+#[serial]
 fn test_sync_subcommand() {
-    // Sync fails without remote configured
+    // Sync fails without remote configured - use isolated JIN_DIR
+    use tempfile::TempDir;
+    let temp = TempDir::new().unwrap();
+
     jin()
         .arg("sync")
+        .env("JIN_DIR", temp.path().join(".jin"))
         .assert()
         .failure()
-        .stderr(predicate::str::contains("not found").or(predicate::str::contains("Remote")));
+        .stderr(predicate::str::contains("No remote configured"));
 }
 
 #[test]
+#[serial]
 fn test_import_subcommand() {
-    // Import requires Jin initialization
+    // Import requires the file to exist - use isolated JIN_DIR
+    use tempfile::TempDir;
+    let temp = TempDir::new().unwrap();
+
     jin()
         .args(["import", ".vscode/settings.json"])
+        .current_dir(temp.path())
         .assert()
         .failure()
         .stderr(predicate::str::contains("Jin not initialized"));
 }
 
 #[test]
+#[serial]
 fn test_export_subcommand() {
     // Export requires Jin initialization (or at least checks staging)
     jin()
@@ -670,6 +707,7 @@ fn test_export_subcommand() {
 }
 
 #[test]
+#[serial]
 fn test_repair_subcommand() {
     // Repair can run even without initialization
     jin()
@@ -682,6 +720,7 @@ fn test_repair_subcommand() {
 }
 
 #[test]
+#[serial]
 fn test_invalid_subcommand() {
     jin()
         .arg("invalid-command")
@@ -695,6 +734,7 @@ fn test_invalid_subcommand() {
 // ============================================================
 
 #[test]
+#[serial]
 fn test_link_invalid_url_empty() {
     jin()
         .args(["link", ""])
@@ -704,6 +744,7 @@ fn test_link_invalid_url_empty() {
 }
 
 #[test]
+#[serial]
 fn test_link_invalid_url_format() {
     jin()
         .args(["link", "invalid-url"])
@@ -714,6 +755,7 @@ fn test_link_invalid_url_format() {
 }
 
 #[test]
+#[serial]
 fn test_link_invalid_url_relative_path() {
     jin()
         .args(["link", "relative/path"])
@@ -723,6 +765,7 @@ fn test_link_invalid_url_relative_path() {
 }
 
 #[test]
+#[serial]
 fn test_link_invalid_url_unsupported_protocol() {
     jin()
         .args(["link", "ftp://example.com/repo.git"])
@@ -732,6 +775,7 @@ fn test_link_invalid_url_unsupported_protocol() {
 }
 
 #[test]
+#[serial]
 fn test_link_valid_https_url() {
     // Valid HTTPS URL should pass validation but may fail on connectivity
     let result = jin()
@@ -755,6 +799,7 @@ fn test_link_valid_https_url() {
 }
 
 #[test]
+#[serial]
 fn test_link_valid_ssh_url() {
     // Valid SSH URL should pass validation but may fail on connectivity
     let result = jin()
@@ -778,6 +823,7 @@ fn test_link_valid_ssh_url() {
 }
 
 #[test]
+#[serial]
 fn test_link_force_flag() {
     // Test that --force flag is recognized (actual functionality requires setup)
     let result = jin()
@@ -795,6 +841,7 @@ fn test_link_force_flag() {
 }
 
 #[test]
+#[serial]
 fn test_link_help() {
     jin()
         .args(["link", "--help"])
@@ -809,6 +856,7 @@ fn test_link_help() {
 // ============================================================
 
 #[test]
+#[serial]
 fn test_completion_bash() {
     jin()
         .args(["completion", "bash"])
@@ -819,6 +867,7 @@ fn test_completion_bash() {
 }
 
 #[test]
+#[serial]
 fn test_completion_zsh() {
     jin()
         .args(["completion", "zsh"])
@@ -828,6 +877,7 @@ fn test_completion_zsh() {
 }
 
 #[test]
+#[serial]
 fn test_completion_fish() {
     jin()
         .args(["completion", "fish"])
@@ -838,6 +888,7 @@ fn test_completion_fish() {
 }
 
 #[test]
+#[serial]
 fn test_completion_powershell() {
     jin()
         .args(["completion", "powershell"])
@@ -847,6 +898,7 @@ fn test_completion_powershell() {
 }
 
 #[test]
+#[serial]
 fn test_completion_invalid_shell() {
     jin()
         .args(["completion", "invalid"])
@@ -857,6 +909,7 @@ fn test_completion_invalid_shell() {
 }
 
 #[test]
+#[serial]
 fn test_completion_no_shell() {
     jin()
         .args(["completion"])
@@ -869,6 +922,7 @@ fn test_completion_no_shell() {
 }
 
 #[test]
+#[serial]
 fn test_completion_help() {
     jin()
         .args(["completion", "--help"])

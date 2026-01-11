@@ -166,13 +166,11 @@ fn capture_remote_refs(jin_repo: &JinRepo) -> Result<std::collections::HashSet<S
                 Err(_) => return Ok(remote_refs),
             };
 
-            for ref_result in all_refs {
-                if let Ok(reference) = ref_result {
-                    if let Some(name) = reference.name() {
-                        // Skip user-local layer
-                        if !name.contains("/local") {
-                            remote_refs.insert(name.to_string());
-                        }
+            for reference in all_refs.flatten() {
+                if let Some(name) = reference.name() {
+                    // Skip user-local layer
+                    if !name.contains("/local") {
+                        remote_refs.insert(name.to_string());
                     }
                 }
             }

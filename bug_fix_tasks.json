@@ -144,7 +144,7 @@
                   "type": "Subtask",
                   "id": "P1.M2.T2.S1",
                   "title": "Create manual SIGPIPE test documentation",
-                  "status": "Planned",
+                  "status": "Complete",
                   "story_points": 1,
                   "dependencies": [],
                   "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: From Issue 6 in PRD - SIGPIPE fix implemented but untested.\n2. INPUT: src/main.rs shows reset_sigpipe() called at line 28.\n3. LOGIC: Create tests/manual/SIGPIPE_TEST.md documenting: Test setup (jin init, add file, commit), Test execution (jin log | head -1), Expected behavior (exit gracefully, no panic), How to verify (check exit code 0 or 141), Platform differences (Unix only, Windows no SIGPIPE).\n4. OUTPUT: File tests/manual/SIGPIPE_TEST.md with complete test procedure.\n5. MOCKING: Manual test - no mocking."

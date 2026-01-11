@@ -27,6 +27,7 @@ Thumbs.db
 *.tmp
 *.bak
 test.json
+tests/manual/
 
 # Environment and secrets
 .env

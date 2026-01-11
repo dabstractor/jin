@@ -388,6 +388,7 @@ mod tests {
             mode: false,
             scope: None,
             project: false,
+            global: false,
         };
         let result = execute(args);
         assert!(result.is_err());

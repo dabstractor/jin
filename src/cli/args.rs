@@ -237,6 +237,10 @@ pub struct ImportArgs {
     /// Add to mode-project layer (Layer 5, requires --mode). For project-base layer (Layer 7), use: jin import <file> without flags
     #[arg(long)]
     pub project: bool,
+
+    /// Target global layer
+    #[arg(long)]
+    pub global: bool,
 }
 
 /// Arguments for the `export` command

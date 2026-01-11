@@ -167,7 +167,7 @@
                   "type": "Subtask",
                   "id": "P2.M1.T1.S4",
                   "title": "Add global flag field to ImportArgs",
-                  "status": "Planned",
+                  "status": "Complete",
                   "story_points": 0.5,
                   "dependencies": [],
                   "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: Layer routing system documented in plan/bugfix/architecture/layer_routing_system.md. Global flag routes to Layer 1 (Global Base).\n2. INPUT: ImportArgs struct at src/cli/args.rs:219-228. Need to add global field.\n3. LOGIC: Add new field after project field. Use exact same definition as AddArgs: '/// Target global layer' doc comment, '#[arg(long)]' attribute, 'pub global: bool' field.\n4. OUTPUT: Updated ImportArgs struct with global field. Struct should compile. Field will be unused until P2.M2."

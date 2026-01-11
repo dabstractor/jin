@@ -263,7 +263,7 @@ fn test_push_uploads_commits() -> Result<(), Box<dyn std::error::Error>> {
 
     // DEBUG: Check if the ref exists in local Jin repo
     let local_jin_repo = git2::Repository::open(jin_dir)?;
-    let ref_path = format!("refs/jin/layers/mode/{}", mode_name);
+    let ref_path = format!("refs/jin/layers/mode/{}/_", mode_name);
     match local_jin_repo.find_reference(&ref_path) {
         Ok(_) => {}
         Err(e) => {
@@ -312,7 +312,7 @@ fn test_push_uploads_commits() -> Result<(), Box<dyn std::error::Error>> {
 
     // Verify commit exists in remote by opening it as a git repo
     let remote_repo = git2::Repository::open(&remote_fixture.remote_path)?;
-    let ref_path = format!("refs/jin/layers/mode/{}", mode_name);
+    let ref_path = format!("refs/jin/layers/mode/{}/_", mode_name);
 
     match remote_repo.find_reference(&ref_path) {
         Ok(reference) => {
@@ -384,7 +384,7 @@ fn test_push_rejected_when_behind() -> Result<(), Box<dyn std::error::Error>> {
     // Now simulate remote being updated by someone else
     // Directly update the remote ref using git
     let remote_repo = git2::Repository::open(&remote_fixture.remote_path)?;
-    let remote_ref_path = format!("refs/jin/layers/mode/{}", mode_name);
+    let remote_ref_path = format!("refs/jin/layers/mode/{}/_", mode_name);
 
     // Create a new commit on the remote
     let sig = remote_repo.signature()?;
@@ -694,7 +694,7 @@ fn test_push_succeeds_when_up_to_date() -> Result<(), Box<dyn std::error::Error>
 
     // Verify remote state is unchanged
     let remote_repo = git2::Repository::open(&remote_fixture.remote_path)?;
-    let ref_path = format!("refs/jin/layers/mode/{}", mode_name);
+    let ref_path = format!("refs/jin/layers/mode/{}/_", mode_name);
 
     match remote_repo.find_reference(&ref_path) {
         Ok(reference) => {
@@ -766,7 +766,7 @@ fn test_push_rejected_when_divergent() -> Result<(), Box<dyn std::error::Error>>
 
     // Step 2: Create divergent commit in remote (via direct git2 manipulation)
     let remote_repo = git2::Repository::open(&remote_fixture.remote_path)?;
-    let remote_ref_path = format!("refs/jin/layers/mode/{}", mode_name);
+    let remote_ref_path = format!("refs/jin/layers/mode/{}/_", mode_name);
 
     // Get current remote commit as base
     let current_remote = remote_repo.find_reference(&remote_ref_path)?;

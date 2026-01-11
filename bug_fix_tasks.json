@@ -469,7 +469,7 @@
                   "type": "Subtask",
                   "id": "P3.M3.T1.S1",
                   "title": "Add push workflow integration test",
-                  "status": "Planned",
+                  "status": "Complete",
                   "story_points": 2,
                   "dependencies": [],
                   "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: From test_failure_analysis.md - no sync integration tests found.\n2. INPUT: tests/ directory structure.\n3. LOGIC: Create tests/cli_sync_workflow.rs (may exist but verify). Test: jin init, make local changes, jin push, verify refs on remote. Test push rejection when behind. Test --force bypass. Use test fixtures for remote setup.\n4. OUTPUT: Comprehensive sync test coverage.\n5. MOCKING: Integration test - no mocking."

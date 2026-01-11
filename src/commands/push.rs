@@ -131,41 +131,72 @@ fn capture_local_refs(jin_repo: &JinRepo) -> Result<HashMap<String, git2::Oid>> 
 
 /// Capture remote refs before fetch (to detect new local refs)
 ///
-/// We need to store which refs exist on remote so we can detect
-/// new local refs that should be pushed. Uses remote-tracking refs
-/// at refs/remotes/origin/ to get the actual remote state.
+/// Since our refspec fetches directly into local refs (+refs/jin/layers/*:refs/jin/layers/*),
+/// we cannot rely on remote-tracking refs. Instead, we open the remote repository
+/// directly (via its URL or filesystem path) and check which refs exist there.
 fn capture_remote_refs(jin_repo: &JinRepo) -> Result<std::collections::HashSet<String>> {
     let mut remote_refs = std::collections::HashSet::new();
 
-    // List remote-tracking refs to see what actually exists on remote
-    // The refspec copies remote refs to local, but also creates remote-tracking refs
-    let remote_tracking_refs = jin_repo
-        .list_refs("refs/remotes/origin/refs/jin/layers/*")
-        .unwrap_or_default();
+    // Get the remote URL from the git config
+    let repo = jin_repo.inner();
+    let remote = match repo.find_remote("origin") {
+        Ok(r) => r,
+        Err(_) => return Ok(remote_refs), // No remote configured
+    };
 
-    for ref_name in remote_tracking_refs {
-        // Skip user-local layer
-        if ref_name.contains("/local") {
-            continue;
-        }
+    let remote_url = match remote.url() {
+        Some(url) => url,
+        None => return Ok(remote_refs),
+    };
 
-        // Strip the refs/remotes/origin/ prefix to get the actual ref name
-        if let Some(stripped) = ref_name.strip_prefix("refs/remotes/origin/") {
-            remote_refs.insert(stripped.to_string());
+    // For file:// URLs, we can open the bare repo directly
+    if remote_url.starts_with("file://") || remote_url.starts_with('/') {
+        // Strip the file:// prefix if present
+        let remote_path = if remote_url.starts_with("file://") {
+            remote_url.trim_start_matches("file://")
+        } else {
+            remote_url
+        };
+
+        // Try to open the remote repository
+        if let Ok(remote_repo) = git2::Repository::open(remote_path) {
+            // List all refs in the remote repository
+            let all_refs = match remote_repo.references_glob("refs/jin/layers/*") {
+                Ok(refs) => refs,
+                Err(_) => return Ok(remote_refs),
+            };
+
+            for ref_result in all_refs {
+                if let Ok(reference) = ref_result {
+                    if let Some(name) = reference.name() {
+                        // Skip user-local layer
+                        if !name.contains("/local") {
+                            remote_refs.insert(name.to_string());
+                        }
+                    }
+                }
+            }
         }
     }
+
+    // For non-file URLs (network remotes), we return empty set
+    // In this case, we'll rely on fetch behavior to determine if ref exists
 
     Ok(remote_refs)
 }
 
 /// Detect modified layers that need to be pushed
 ///
-/// Compares pre-fetch local refs with remote refs to determine:
+/// Compares pre-fetch local refs with remote refs and post-fetch local refs to determine:
 /// - New local refs (not on remote) -> push
 /// - Local refs ahead of remote -> push
 /// - Local refs behind remote -> reject (unless --force)
 /// - Local refs diverged from remote -> reject (unless --force)
 /// - Local refs equal to remote -> skip
+///
+/// NOTE: Since our refspec fetches directly into local refs (+refs/jin/layers/*:refs/jin/layers/*),
+/// after fetch the local ref contains the remote OID. We use pre_fetch_remote_refs (captured
+/// by directly opening the remote repo) to determine if a ref exists on remote.
 fn detect_modified_layers(
     jin_repo: &JinRepo,
     pre_fetch_local_refs: &HashMap<String, git2::Oid>,

@@ -4,7 +4,7 @@
       "type": "Phase",
       "id": "P1",
       "title": "Phase 1: Fix Import Test Infrastructure",
-      "status": "Planned",
+      "status": "Complete",
       "description": "Fix staging index path resolution in import integration tests to properly respect JIN_DIR environment variable used for test isolation.",
       "milestones": [
         {
@@ -65,14 +65,14 @@
           "type": "Milestone",
           "id": "P1.M3",
           "title": "Milestone 3: Verify Test Fixes",
-          "status": "Planned",
+          "status": "Complete",
           "description": "Run both fixed tests to confirm they pass and verify no regressions in other import tests.",
           "tasks": [
             {
               "type": "Task",
               "id": "P1.M3.T1",
               "title": "Run and Verify Fixed Import Tests",
-              "status": "Planned",
+              "status": "Complete",
               "description": "Execute the fixed tests and confirm they pass without errors.",
               "subtasks": [
                 {
@@ -90,7 +90,7 @@
                   "type": "Subtask",
                   "id": "P1.M3.T1.S2",
                   "title": "Execute test_import_multiple_files and verify pass",
-                  "status": "Planned",
+                  "status": "Complete",
                   "story_points": 0.5,
                   "dependencies": [
                     "P1.M2.T1.S1"
@@ -101,7 +101,7 @@
                   "type": "Subtask",
                   "id": "P1.M3.T1.S3",
                   "title": "Run all import tests to verify no regressions",
-                  "status": "Planned",
+                  "status": "Complete",
                   "story_points": 1,
                   "dependencies": [
                     "P1.M3.T1.S1",

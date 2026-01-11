@@ -1070,3 +1070,95 @@ fn test_import_with_mode_and_scope_flags() {
         staging_content
     );
 }
+
+/// Test: `jin import --mode --scope=<scope> --project` routes to Layer 4 (ModeScopeProject)
+#[test]
+fn test_import_with_mode_scope_and_project_flags() {
+    let temp = TempDir::new().unwrap();
+    let jin_dir = temp.path().join(".jin_global");
+
+    // Initialize Git repo
+    git_init_with_config(&temp);
+
+    // Initialize Jin
+    jin()
+        .arg("init")
+        .current_dir(temp.path())
+        .env("JIN_DIR", &jin_dir)
+        .assert()
+        .success();
+
+    // Create a mode
+    jin()
+        .args(["mode", "create", "testmode"])
+        .current_dir(temp.path())
+        .env("JIN_DIR", &jin_dir)
+        .assert()
+        .success();
+
+    // Activate the mode (required for --mode flag)
+    jin()
+        .args(["mode", "use", "testmode"])
+        .current_dir(temp.path())
+        .env("JIN_DIR", &jin_dir)
+        .assert()
+        .success();
+
+    // Create and commit a file to Git
+    let config_path = temp.path().join("mode_scope_project_config.json");
+    fs::write(&config_path, r#"{"layer": "mode-scope-project"}"#).unwrap();
+
+    StdCommand::new("git")
+        .args(["add", "mode_scope_project_config.json"])
+        .current_dir(temp.path())
+        .output()
+        .unwrap();
+
+    StdCommand::new("git")
+        .args(["commit", "-m", "Initial"])
+        .current_dir(temp.path())
+        .output()
+        .unwrap();
+
+    // Import with --mode --scope --project flags (routes to Layer 4)
+    jin()
+        .args([
+            "import",
+            "--mode",
+            "--scope=testscope",
+            "--project",
+            "mode_scope_project_config.json",
+        ])
+        .current_dir(temp.path())
+        .env("JIN_DIR", &jin_dir)
+        .assert()
+        .success()
+        .stdout(contains("Imported 1 file(s)"));
+
+    // Verify file removed from Git index
+    let git_files_output = StdCommand::new("git")
+        .args(["ls-files"])
+        .current_dir(temp.path())
+        .output()
+        .unwrap();
+    let git_files = String::from_utf8_lossy(&git_files_output.stdout);
+    assert!(!git_files.contains("mode_scope_project_config.json"));
+
+    // Verify file still exists in workspace
+    assert!(config_path.exists());
+
+    // Verify staging index exists at JIN_DIR-aware path
+    let staging_index_path = jin_dir.join("staging").join("index.json");
+    assert!(staging_index_path.exists());
+    let staging_content = fs::read_to_string(&staging_index_path).unwrap();
+
+    // Verify file in staging index
+    assert!(staging_content.contains("mode_scope_project_config.json"));
+
+    // Verify target_layer is mode_scope_project (Layer 4)
+    assert!(
+        staging_content.contains("ModeScopeProject") || staging_content.contains("mode_scope_project"),
+        "Staging index should contain ModeScopeProject layer reference. Content:\n{}",
+        staging_content
+    );
+}

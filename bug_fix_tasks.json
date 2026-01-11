@@ -79,7 +79,7 @@
                   "type": "Subtask",
                   "id": "P1.M3.T1.S1",
                   "title": "Execute test_import_single_file and verify pass",
-                  "status": "Planned",
+                  "status": "Complete",
                   "story_points": 0.5,
                   "dependencies": [
                     "P1.M1.T1.S1"

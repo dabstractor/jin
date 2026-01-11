@@ -168,14 +168,14 @@
           "type": "Milestone",
           "id": "P1.M3",
           "title": "Fix Dry Run and Apply Output",
-          "status": "Planned",
+          "status": "Complete",
           "description": "Fix the dry run showing '0 files' bug and improve apply command output clarity.",
           "tasks": [
             {
               "type": "Task",
               "id": "P1.M3.T1",
               "title": "Debug and Fix Dry Run File Count",
-              "status": "Planned",
+              "status": "Complete",
               "description": "Investigate why merge_layers() returns empty merged_files in dry run mode.",
               "subtasks": [
                 {
@@ -191,7 +191,7 @@
                   "type": "Subtask",
                   "id": "P1.M3.T1.S2",
                   "title": "Fix root cause of empty merged_files",
-                  "status": "Planned",
+                  "status": "Complete",
                   "story_points": 2,
                   "dependencies": [
                     "P1.M3.T1.S1"
@@ -220,7 +220,7 @@
                   "type": "Subtask",
                   "id": "P1.M4.T1.S1",
                   "title": "Create integration test for .txt file conflicts",
-                  "status": "Planned",
+                  "status": "Complete",
                   "story_points": 2,
                   "dependencies": [],
                   "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: From Issue 2 in PRD - text_merge() may never be called due to routing bug.\n2. INPUT: Test setup creates .txt file (not .json/.yaml), adds to global and mode layers with different content.\n3. LOGIC: Create test in tests/cli_apply_conflict.rs: test_text_file_conflicts_create_jinmerge. Setup: echo 'line1\nline2\nline3' > config.txt, add to global, echo 'line1\nMODIFIED\nline3' > config.txt, add to mode, rm config.txt, run jin apply. Assert: .jinmerge file created, conflict markers show text-style conflicts.\n4. OUTPUT: Passing test verifying text file conflict detection.\n5. MOCKING: Integration test - no mocking."

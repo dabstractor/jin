@@ -157,11 +157,19 @@ impl CommitPipeline {
         context: &ProjectContext,
         message: &str,
     ) -> Result<(Oid, Option<String>)> {
-        // Build tree from entries
-        let tree_oid = self.build_layer_tree(repo, entries)?;
-
         // Get parent commit if layer ref exists
         let parent_oids = self.get_parent_commits(repo, layer, context)?;
+
+        // Get parent tree OID for merging (if parent exists)
+        let parent_tree_oid = parent_oids.first().and_then(|oid| {
+            repo.find_commit(*oid)
+                .ok()
+                .and_then(|commit| commit.tree().ok())
+                .map(|tree| tree.id())
+        });
+
+        // Build tree from entries, merging with parent tree
+        let tree_oid = self.build_layer_tree(repo, entries, parent_tree_oid)?;
 
         // Capture parent OID for audit
         let parent_oid = parent_oids.first().map(|oid| oid.to_string());
@@ -172,30 +180,64 @@ impl CommitPipeline {
         Ok((commit_oid, parent_oid))
     }
 
-    /// Build a tree from staged entries
-    fn build_layer_tree(&self, repo: &JinRepo, entries: &[&StagedEntry]) -> Result<Oid> {
-        // Convert entries to (path, oid) tuples, filtering out deletions
-        let files: Vec<(String, Oid)> = entries
-            .iter()
-            .filter(|e| !e.is_delete())
-            .map(|e| {
-                let oid = Oid::from_str(&e.content_hash).map_err(|err| {
+    /// Build a tree from staged entries, merging with parent tree
+    ///
+    /// This function creates a new Git tree by merging the parent commit's tree
+    /// with the newly staged entries. New entries override parent entries,
+    /// and deletion entries remove files from the parent tree.
+    fn build_layer_tree(
+        &self,
+        repo: &JinRepo,
+        entries: &[&StagedEntry],
+        parent_tree_oid: Option<git2::Oid>,
+    ) -> Result<git2::Oid> {
+        use crate::git::TreeOps;
+        use std::collections::HashMap;
+
+        // Start with parent tree entries (if parent exists)
+        let mut files: HashMap<String, git2::Oid> = HashMap::new();
+
+        if let Some(parent_oid) = parent_tree_oid {
+            // Walk the parent tree and collect all entries
+            repo.walk_tree_pre(parent_oid, |path, entry| {
+                if let Some(name) = entry.name() {
+                    if entry.kind() == Some(git2::ObjectType::Blob) {
+                        let full_path = if path.is_empty() {
+                            name.to_string()
+                        } else {
+                            format!("{}{}", path, name)
+                        };
+                        files.insert(full_path, entry.id());
+                    }
+                }
+                git2::TreeWalkResult::Ok
+            })?;
+        }
+
+        // Apply staged entries: add new, update existing, handle deletions
+        for entry in entries {
+            let path_str = entry.path.display().to_string();
+            if entry.is_delete() {
+                // Remove file from tree (deletion)
+                files.remove(&path_str);
+            } else {
+                // Add or update file
+                let oid = git2::Oid::from_str(&entry.content_hash).map_err(|err| {
                     JinError::Transaction(format!(
                         "Invalid content hash for {}: {}",
-                        e.path.display(),
+                        entry.path.display(),
                         err
                     ))
                 })?;
-                Ok((e.path.display().to_string(), oid))
-            })
-            .collect::<Result<Vec<_>>>()?;
-
-        // Handle empty tree (all deletions)
-        if files.is_empty() {
-            return repo.create_tree(&[]);
+                files.insert(path_str, oid);
+            }
         }
 
-        repo.create_tree_from_paths(&files)
+        // Convert HashMap to Vec for create_tree_from_paths
+        let files_vec: Vec<(String, git2::Oid)> = files.into_iter().collect();
+
+        // Create tree from merged entries
+        repo.create_tree_from_paths(&files_vec)
     }
 
     /// Get parent commit OIDs for a layer
@@ -421,7 +463,7 @@ mod tests {
         let pipeline = CommitPipeline::new(staging);
         let entries = vec![&entry];
 
-        let tree_oid = pipeline.build_layer_tree(&repo, &entries).unwrap();
+        let tree_oid = pipeline.build_layer_tree(&repo, &entries, None).unwrap();
         let tree = repo.find_tree(tree_oid).unwrap();
 
         assert_eq!(tree.len(), 1);
@@ -450,7 +492,7 @@ mod tests {
         let pipeline = CommitPipeline::new(staging);
         let entries = vec![&entry1, &entry2];
 
-        let tree_oid = pipeline.build_layer_tree(&repo, &entries).unwrap();
+        let tree_oid = pipeline.build_layer_tree(&repo, &entries, None).unwrap();
         let tree = repo.find_tree(tree_oid).unwrap();
 
         assert_eq!(tree.len(), 2);
@@ -474,7 +516,7 @@ mod tests {
         let pipeline = CommitPipeline::new(staging);
         let entries = vec![&entry];
 
-        let tree_oid = pipeline.build_layer_tree(&repo, &entries).unwrap();
+        let tree_oid = pipeline.build_layer_tree(&repo, &entries, None).unwrap();
         let tree = repo.find_tree(tree_oid).unwrap();
 
         // Should have .claude directory at root
@@ -500,7 +542,7 @@ mod tests {
         let pipeline = CommitPipeline::new(staging);
         let entries = vec![&keep_entry, &delete_entry];
 
-        let tree_oid = pipeline.build_layer_tree(&repo, &entries).unwrap();
+        let tree_oid = pipeline.build_layer_tree(&repo, &entries, None).unwrap();
         let tree = repo.find_tree(tree_oid).unwrap();
 
         // Only keep.json should be in tree
@@ -520,7 +562,7 @@ mod tests {
         let pipeline = CommitPipeline::new(staging);
         let entries = vec![&delete_entry1, &delete_entry2];
 
-        let tree_oid = pipeline.build_layer_tree(&repo, &entries).unwrap();
+        let tree_oid = pipeline.build_layer_tree(&repo, &entries, None).unwrap();
         let tree = repo.find_tree(tree_oid).unwrap();
 
         // Empty tree when all entries are deletions
@@ -679,6 +721,114 @@ mod tests {
     }
 
     #[test]
+    fn test_build_layer_tree_merges_with_parent() {
+        let (_temp, repo, _base_path) = create_test_setup();
+
+        // Create parent tree with two files
+        let blob1 = repo.create_blob(b"file1 content").unwrap();
+        let blob2 = repo.create_blob(b"file2 content").unwrap();
+        let parent_tree_oid = repo
+            .create_tree(&[
+                TreeEntry::blob("file1.txt", blob1),
+                TreeEntry::blob("file2.txt", blob2),
+            ])
+            .unwrap();
+
+        // Verify parent tree has 2 files
+        let parent_tree = repo.find_tree(parent_tree_oid).unwrap();
+        assert_eq!(parent_tree.len(), 2);
+
+        // Create new entry to add
+        let blob3 = repo.create_blob(b"file3 content").unwrap();
+        let staging = StagingIndex::new();
+        let new_entry = StagedEntry::new(
+            PathBuf::from("file3.txt"),
+            Layer::GlobalBase,
+            blob3.to_string(),
+        );
+
+        let pipeline = CommitPipeline::new(staging);
+        let entries = vec![&new_entry];
+
+        // Build tree merging with parent - should have all 3 files
+        let merged_tree_oid = pipeline
+            .build_layer_tree(&repo, &entries, Some(parent_tree_oid))
+            .unwrap();
+        let merged_tree = repo.find_tree(merged_tree_oid).unwrap();
+
+        assert_eq!(merged_tree.len(), 3);
+        assert!(merged_tree.get_name("file1.txt").is_some());
+        assert!(merged_tree.get_name("file2.txt").is_some());
+        assert!(merged_tree.get_name("file3.txt").is_some());
+    }
+
+    #[test]
+    fn test_build_layer_tree_updates_parent_entry() {
+        let (_temp, repo, _base_path) = create_test_setup();
+
+        // Create parent tree with a file
+        let old_blob = repo.create_blob(b"old content").unwrap();
+        let parent_tree_oid = repo
+            .create_tree(&[TreeEntry::blob("config.txt", old_blob)])
+            .unwrap();
+
+        // Create new entry to UPDATE the same file
+        let new_blob = repo.create_blob(b"new content").unwrap();
+        let staging = StagingIndex::new();
+        let updated_entry = StagedEntry::new(
+            PathBuf::from("config.txt"),
+            Layer::GlobalBase,
+            new_blob.to_string(),
+        );
+
+        let pipeline = CommitPipeline::new(staging);
+        let entries = vec![&updated_entry];
+
+        // Build tree merging with parent - should have updated content
+        let merged_tree_oid = pipeline
+            .build_layer_tree(&repo, &entries, Some(parent_tree_oid))
+            .unwrap();
+        let merged_tree = repo.find_tree(merged_tree_oid).unwrap();
+
+        assert_eq!(merged_tree.len(), 1);
+        let entry = merged_tree.get_name("config.txt").unwrap();
+        assert_eq!(entry.id(), new_blob); // Should have NEW blob, not old
+        assert_ne!(entry.id(), old_blob);
+    }
+
+    #[test]
+    fn test_build_layer_tree_deletes_from_parent() {
+        let (_temp, repo, _base_path) = create_test_setup();
+
+        // Create parent tree with two files
+        let blob1 = repo.create_blob(b"keep content").unwrap();
+        let blob2 = repo.create_blob(b"delete content").unwrap();
+        let parent_tree_oid = repo
+            .create_tree(&[
+                TreeEntry::blob("keep.txt", blob1),
+                TreeEntry::blob("delete.txt", blob2),
+            ])
+            .unwrap();
+
+        // Create deletion entry
+        let staging = StagingIndex::new();
+        let delete_entry = StagedEntry::delete(PathBuf::from("delete.txt"), Layer::GlobalBase);
+
+        let pipeline = CommitPipeline::new(staging);
+        let entries = vec![&delete_entry];
+
+        // Build tree merging with parent - should only have keep.txt
+        let merged_tree_oid = pipeline
+            .build_layer_tree(&repo, &entries, Some(parent_tree_oid))
+            .unwrap();
+        let merged_tree = repo.find_tree(merged_tree_oid).unwrap();
+
+        assert_eq!(merged_tree.len(), 1);
+        assert!(merged_tree.get_name("keep.txt").is_some());
+        assert!(merged_tree.get_name("delete.txt").is_none());
+    }
+
+    #[test]
     fn test_invalid_content_hash() {
         let (_temp, repo, _base_path) = create_test_setup();
 
@@ -692,7 +842,7 @@ mod tests {
         let pipeline = CommitPipeline::new(staging);
         let entries = vec![&entry];
 
-        let result = pipeline.build_layer_tree(&repo, &entries);
+        let result = pipeline.build_layer_tree(&repo, &entries, None);
         assert!(result.is_err());
         if let Err(JinError::Transaction(msg)) = result {
             assert!(msg.contains("Invalid content hash"));

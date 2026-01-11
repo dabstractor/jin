@@ -693,3 +693,123 @@ fn test_apply_with_identical_content_different_formatting() {
     let paused_state_path = fixture.path().join(".jin/.paused_apply.yaml");
     assert!(!paused_state_path.exists());
 }
+
+/// Test that text file conflicts create .jinmerge files
+///
+/// This test verifies Issue 2 investigation: text files should use
+/// text_merge() for 3-way merge, not deep_merge() scalar override.
+///
+/// Setup:
+/// - Create .txt file with multi-line content
+/// - Add to global layer with original content
+/// - Modify middle line and add to mode layer
+/// - Remove from workspace
+/// - Run jin apply
+///
+/// Expected:
+/// - .jinmerge file created with conflict markers
+/// - Both versions visible in conflict
+///
+/// If test fails: routing bug confirmed (text_merge never called)
+#[test]
+fn test_text_file_conflicts_create_jinmerge() {
+    let fixture = setup_test_repo().unwrap();
+    let jin_dir = fixture.jin_dir.clone().unwrap();
+
+    // Create and activate test mode
+    let mode_name = format!("test_mode_{}", unique_test_id());
+    jin_cmd()
+        .args(["mode", "create", &mode_name])
+        .env("JIN_DIR", &jin_dir)
+        .assert()
+        .success();
+
+    jin_cmd()
+        .args(["mode", "use", &mode_name])
+        .current_dir(fixture.path())
+        .env("JIN_DIR", &jin_dir)
+        .assert()
+        .success();
+
+    // Add text file to global layer
+    let config_path = fixture.path().join("config.txt");
+    fs::write(&config_path, "line1\nline2\nline3\n").unwrap();
+
+    jin_cmd()
+        .args(["add", "config.txt", "--global"])
+        .current_dir(fixture.path())
+        .env("JIN_DIR", &jin_dir)
+        .assert()
+        .success();
+
+    jin_cmd()
+        .args(["commit", "-m", "Add config.txt to global"])
+        .current_dir(fixture.path())
+        .env("JIN_DIR", &jin_dir)
+        .assert()
+        .success();
+
+    // Modify and add to mode layer (creates conflict)
+    fs::write(&config_path, "line1\nMODIFIED\nline3\n").unwrap();
+
+    jin_cmd()
+        .args(["add", "config.txt", "--mode"])
+        .current_dir(fixture.path())
+        .env("JIN_DIR", &jin_dir)
+        .assert()
+        .success();
+
+    jin_cmd()
+        .args(["commit", "-m", "Add config.txt to mode"])
+        .current_dir(fixture.path())
+        .env("JIN_DIR", &jin_dir)
+        .assert()
+        .success();
+
+    // Remove and run apply
+    fs::remove_file(&config_path).unwrap();
+
+    jin_cmd()
+        .arg("apply")
+        .current_dir(fixture.path())
+        .env("JIN_DIR", &jin_dir)
+        .assert()
+        .success()
+        .stdout(predicate::str::contains("Operation paused"))
+        .stdout(predicate::str::contains("jin resolve"));
+
+    // Verify .jinmerge file with conflict markers
+    let jinmerge_path = fixture.path().join("config.txt.jinmerge");
+    assert!(
+        jinmerge_path.exists(),
+        ".jinmerge file should be created for text file conflict"
+    );
+
+    let jinmerge_content = fs::read_to_string(&jinmerge_path).unwrap();
+
+    // Verify header
+    assert!(
+        jinmerge_content.contains("# Jin merge conflict"),
+        ".jinmerge should contain header comment"
+    );
+
+    // Verify conflict markers
+    assert!(
+        jinmerge_content.contains("<<<<<<<"),
+        ".jinmerge should contain opening conflict marker"
+    );
+    assert!(
+        jinmerge_content.contains("======="),
+        ".jinmerge should contain separator"
+    );
+    assert!(
+        jinmerge_content.contains(">>>>>>>"),
+        ".jinmerge should contain closing conflict marker"
+    );
+
+    // Verify layer contents visible
+    assert!(
+        jinmerge_content.contains("line2") || jinmerge_content.contains("MODIFIED"),
+        ".jinmerge should contain at least one of the conflicting versions"
+    );
+}

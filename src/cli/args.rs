@@ -233,6 +233,10 @@ pub struct ImportArgs {
     /// Target scope layer
     #[arg(long)]
     pub scope: Option<String>,
+
+    /// Add to mode-project layer (Layer 5, requires --mode). For project-base layer (Layer 7), use: jin import <file> without flags
+    #[arg(long)]
+    pub project: bool,
 }
 
 /// Arguments for the `export` command

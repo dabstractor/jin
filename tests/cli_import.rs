@@ -95,7 +95,7 @@ fn test_import_single_file() {
     assert!(config_path.exists());
 
     // Verify file in Jin staging
-    let staging_index_path = temp.path().join(".jin/staging/index.json");
+    let staging_index_path = jin_dir.join("staging").join("index.json");
     assert!(staging_index_path.exists());
     let staging_content = fs::read_to_string(&staging_index_path).unwrap();
     assert!(staging_content.contains("config.json"));
@@ -160,7 +160,7 @@ fn test_import_multiple_files() {
     assert!(!git_files.contains("config3.json"));
 
     // Verify all files in Jin staging
-    let staging_content = fs::read_to_string(temp.path().join(".jin/staging/index.json")).unwrap();
+    let staging_content = fs::read_to_string(jin_dir.join("staging").join("index.json")).unwrap();
     assert!(staging_content.contains("config1.json"));
     assert!(staging_content.contains("config2.json"));
     assert!(staging_content.contains("config3.json"));

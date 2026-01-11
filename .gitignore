@@ -28,6 +28,7 @@ Thumbs.db
 *.bak
 test.json
 tests/manual/
+validation_output.log
 
 # Environment and secrets
 .env

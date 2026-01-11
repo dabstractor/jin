@@ -4,28 +4,28 @@
       "type": "Phase",
       "id": "P1",
       "title": "Phase 1: Fix Import Test Infrastructure",
-      "status": "Ready",
+      "status": "Planned",
       "description": "Fix staging index path resolution in import integration tests to properly respect JIN_DIR environment variable used for test isolation.",
       "milestones": [
         {
           "type": "Milestone",
           "id": "P1.M1",
           "title": "Milestone 1: Fix test_import_single_file Staging Path",
-          "status": "Planned",
+          "status": "Complete",
           "description": "Update the test_import_single_file test to check staging index at the correct JIN_DIR-aware path.",
           "tasks": [
             {
               "type": "Task",
               "id": "P1.M1.T1",
               "title": "Fix Staging Index Path Assertion in test_import_single_file",
-              "status": "Planned",
+              "status": "Complete",
               "description": "Update the staging index path assertion to respect JIN_DIR environment variable instead of using hard-coded .jin path.",
               "subtasks": [
                 {
                   "type": "Subtask",
                   "id": "P1.M1.T1.S1",
                   "title": "Update staging_index_path construction to use JIN_DIR",
-                  "status": "Planned",
+                  "status": "Complete",
                   "story_points": 1,
                   "dependencies": [],
                   "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: Tests set JIN_DIR environment variable for isolation (plan/bugfix/architecture/test_patterns.md). StagingIndex::default_path() at src/staging/index.rs:68-74 checks JIN_DIR first before falling back to .jin path.\n2. INPUT: test_import_single_file function in tests/cli_import.rs (lines 89-110). Test sets JIN_DIR to temp.path().join('.jin_global').\n3. LOGIC: Replace hard-coded path construction at line 98 (temp.path().join('.jin/staging').join('index.json')) with JIN_DIR-aware logic. Read JIN_DIR env var using std::env::var('JIN_DIR'). If set, use PathBuf::from(jin_dir).join('staging').join('index.json'). If not set, fall back to temp.path().join('.jin/staging').join('index.json').\n4. OUTPUT: Updated assertion at line 99 that checks staging index exists at correct JIN_DIR-aware location. Test should pass after fix."
@@ -81,7 +81,9 @@
                   "title": "Execute test_import_single_file and verify pass",
                   "status": "Planned",
                   "story_points": 0.5,
-                  "dependencies": ["P1.M1.T1.S1"],
+                  "dependencies": [
+                    "P1.M1.T1.S1"
+                  ],
                   "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: Test infrastructure pattern documented in plan/bugfix/architecture/test_patterns.md. Tests use JIN_DIR for isolation.\n2. INPUT: Completed fixes from P1.M1.T1.S1 (staging path update in test_import_single_file).\n3. LOGIC: Run cargo test test_import_single_file. Verify assertion 'assert!(staging_index_path.exists())' at line 99 passes. Confirm no panic or unwrap errors. Test should complete successfully with 'test result: ok' output.\n4. OUTPUT: Confirmation that test passes. Return test output showing successful execution."
                 },
                 {
@@ -90,7 +92,9 @@
                   "title": "Execute test_import_multiple_files and verify pass",
                   "status": "Planned",
                   "story_points": 0.5,
-                  "dependencies": ["P1.M2.T1.S1"],
+                  "dependencies": [
+                    "P1.M2.T1.S1"
+                  ],
                   "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: Test infrastructure pattern documented in plan/bugfix/architecture/test_patterns.md. Tests use JIN_DIR for isolation.\n2. INPUT: Completed fixes from P1.M2.T1.S1 (staging path update in test_import_multiple_files).\n3. LOGIC: Run cargo test test_import_multiple_files. Verify fs::read_to_string() call at line 163 successfully reads staging index content. Confirm no 'NotFound' error or unwrap panic. Test should complete successfully with 'test result: ok' output.\n4. OUTPUT: Confirmation that test passes. Return test output showing successful execution."
                 },
                 {
@@ -99,7 +103,10 @@
                   "title": "Run all import tests to verify no regressions",
                   "status": "Planned",
                   "story_points": 1,
-                  "dependencies": ["P1.M3.T1.S1", "P1.M3.T1.S2"],
+                  "dependencies": [
+                    "P1.M3.T1.S1",
+                    "P1.M3.T1.S2"
+                  ],
                   "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: Full test suite for import command in tests/cli_import.rs. Tests cover single file, multiple files, force flag, and error cases.\n2. INPUT: Completed fixes from P1.M1.T1.S1 and P1.M2.T1.S1.\n3. LOGIC: Run cargo test --test cli_import to execute all import integration tests. Verify all tests pass (test_import_single_file, test_import_multiple_files, test_import_force_flag, test_import_not_in_git, test_import_modified_file_no_force). Check that no tests fail or error. Confirm pass rate is 100% for import tests.\n4. OUTPUT: Confirmation that all import tests pass. Return test summary showing pass/fail counts."
                 }
               ]
@@ -198,7 +205,13 @@
                   "title": "Build RoutingOptions from ImportArgs in import_cmd.rs",
                   "status": "Planned",
                   "story_points": 1,
-                  "dependencies": ["P2.M1.T1.S1", "P2.M1.T1.S2", "P2.M1.T1.S3", "P2.M1.T1.S4", "P2.M1.T1.S5"],
+                  "dependencies": [
+                    "P2.M1.T1.S1",
+                    "P2.M1.T1.S2",
+                    "P2.M1.T1.S3",
+                    "P2.M1.T1.S4",
+                    "P2.M1.T1.S5"
+                  ],
                   "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: RoutingOptions construction pattern documented in plan/bugfix/architecture/layer_routing_system.md. Reference implementation at src/commands/add.rs:50-56 shows exact pattern. Current import_cmd.rs at line 58-60 uses RoutingOptions::default().\n2. INPUT: ImportArgs struct now has mode, scope, project, global, local fields from P2.M1.T1.S*. ImportCommand::execute() function at src/commands/import_cmd.rs:45-80.\n3. LOGIC: Locate line 58-60 where RoutingOptions::default() is called. Replace with explicit construction: 'let options = RoutingOptions { mode: self.args.mode, scope: self.args.scope.clone(), project: self.args.project, global: self.args.global, local: self.args.local };'. Use .clone() on scope field (Option<String>) to avoid move errors. Match exact formatting from add.rs (fields on one line or aligned multi-line).\n4. OUTPUT: Updated import command that builds RoutingOptions from CLI arguments. Code should compile without errors. Options will be validated in next subtask."
                 },
                 {
@@ -207,7 +220,9 @@
                   "title": "Add validate_routing_options() call to import command",
                   "status": "Planned",
                   "story_points": 1,
-                  "dependencies": ["P2.M2.T1.S1"],
+                  "dependencies": [
+                    "P2.M2.T1.S1"
+                  ],
                   "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: Validation function documented in plan/bugfix/architecture/layer_routing_system.md at src/staging/router.rs:81-106. Validates flag combinations (e.g., --project requires --mode, cannot combine --global with other flags). Reference implementation at src/commands/add.rs:56 shows pattern.\n2. INPUT: RoutingOptions constructed in P2.M2.T1.S1. validate_routing_options function already exists in src/staging/router.rs.\n3. LOGIC: After constructing RoutingOptions (line 60), add validation call: 'validate_routing_options(&options)?;'. Use ? operator to propagate Result errors. This ensures invalid flag combinations return user-friendly error messages before import proceeds. Match exact pattern from add.rs.\n4. OUTPUT: Import command now validates routing options before proceeding. Code should compile. Invalid flag combinations will produce proper error messages."
                 }
               ]
@@ -234,7 +249,9 @@
                   "title": "Add after_help attribute to ImportArgs",
                   "status": "Planned",
                   "story_points": 1,
-                  "dependencies": ["P2.M1.T1.S5"],
+                  "dependencies": [
+                    "P2.M1.T1.S5"
+                  ],
                   "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: Help documentation pattern documented in plan/bugfix/architecture/layer_routing_system.md. Reference implementation in AddArgs at src/cli/args.rs:20-43 uses #[command(after_help = \"...\")] decorator. Routing table shows flag combinations and target layers.\n2. INPUT: ImportArgs struct at src/cli/args.rs:219-228 with routing flags added in P2.M1.T1.S*. Need to add help documentation.\n3. LOGIC: Add #[command(after_help = \"...\")] attribute to ImportArgs struct. Use exact same routing table as AddArgs: 'LAYER ROUTING:\\n  No flags              Project Base (Layer 7, default)\\n  --local               User Local layer (Layer 8)\\n  --global              Global layer (Layer 1)\\n  --mode                Mode Base layer (Layer 2)\\n  --mode --project      Mode Project layer (Layer 5)\\n  --scope <NAME>        Scope Base layer (Layer 6)\\n  --mode --scope <NAME> Mode Scope Base layer (Layer 3)\\n  --mode --scope <NAME> --project  Mode Scope Project layer (Layer 4)\\n\\n  See \\'jin help routing\\' for more details.'. Use raw string literal (r#\"...\"#) or escape newlines properly. Place attribute before struct definition, same as AddArgs.\n4. OUTPUT: ImportArgs struct with help documentation. Running 'jin import --help' should display routing table. Documentation should match formatting of 'jin add --help'."
                 }
               ]
@@ -261,7 +278,9 @@
                   "title": "Add test_import_with_local_flag test",
                   "status": "Planned",
                   "story_points": 2,
-                  "dependencies": ["P2.M2.T1.S2"],
+                  "dependencies": [
+                    "P2.M2.T1.S2"
+                  ],
                   "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: Test patterns documented in plan/bugfix/architecture/test_patterns.md. Use JIN_DIR for isolation. Reference tests in cli_add.rs show routing test patterns. Layer 8 is User Local.\n2. INPUT: Completed routing implementation from P2.M2.T1.S2. Test file tests/cli_import.rs with existing test patterns.\n3. LOGIC: Create new test function 'test_import_with_local_flag' in tests/cli_import.rs. Follow existing test structure: create TestFixture, initialize Jin repo, create and git commit a test file, run 'jin import --local <file>' command. Verify file is removed from Git index. Verify staging index exists at JIN_DIR-aware path. Read staging index and verify target_layer is 'user_local' (Layer 8). Use assert!(staging_path.exists()) pattern with JIN_DIR check. Use fixture pattern or manual JIN_DIR path construction.\n4. OUTPUT: New test function that verifies --local flag routes to Layer 8. Test should pass when routing is working correctly."
                 },
                 {
@@ -270,7 +289,9 @@
                   "title": "Add test_import_with_global_flag test",
                   "status": "Planned",
                   "story_points": 2,
-                  "dependencies": ["P2.M2.T1.S2"],
+                  "dependencies": [
+                    "P2.M2.T1.S2"
+                  ],
                   "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: Test patterns documented in plan/bugfix/architecture/test_patterns.md. Layer 1 is Global Base. Reference tests in cli_add.rs.\n2. INPUT: Completed routing implementation from P2.M2.T1.S2.\n3. LOGIC: Create 'test_import_with_global_flag' test function. Same pattern as S1 but use 'jin import --global <file>'. Verify staging index shows target_layer is 'global_base' (Layer 1). Check file removed from Git index.\n4. OUTPUT: Test function verifying --global routes to Layer 1. Test should pass."
                 },
                 {
@@ -279,7 +300,9 @@
                   "title": "Add test_import_with_mode_flag test",
                   "status": "Planned",
                   "story_points": 2,
-                  "dependencies": ["P2.M2.T1.S2"],
+                  "dependencies": [
+                    "P2.M2.T1.S2"
+                  ],
                   "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: Test patterns in plan/bugfix/architecture/test_patterns.md. Layer 2 is Mode Base. Requires active mode. Reference tests in cli_mode.rs and cli_add.rs.\n2. INPUT: Completed routing implementation from P2.M2.T1.S2.\n3. LOGIC: Create 'test_import_with_mode_flag' test function. Initialize Jin repo, create mode 'testmode', set as active, create and git commit test file, run 'jin import --mode <file>'. Verify staging index shows target_layer with mode field set to 'testmode'. Check Git index removal.\n4. OUTPUT: Test function verifying --mode routes to Layer 2. Test should pass."
                 },
                 {
@@ -288,7 +311,9 @@
                   "title": "Add test_import_with_scope_flag test",
                   "status": "Planned",
                   "story_points": 2,
-                  "dependencies": ["P2.M2.T1.S2"],
+                  "dependencies": [
+                    "P2.M2.T1.S2"
+                  ],
                   "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: Test patterns in plan/bugfix/architecture/test_patterns.md. Layer 6 is Scope Base. Reference tests in cli_scope.rs and cli_add.rs.\n2. INPUT: Completed routing implementation from P2.M2.T1.S2.\n3. LOGIC: Create 'test_import_with_scope_flag' test function. Initialize Jin repo, create and git commit test file, run 'jin import --scope testscope <file>'. Verify staging index shows target_layer with scope field set to 'testscope'. Check Git index removal.\n4. OUTPUT: Test function verifying --scope routes to Layer 6. Test should pass."
                 },
                 {
@@ -297,7 +322,9 @@
                   "title": "Add test_import_with_mode_and_project_flags test",
                   "status": "Planned",
                   "story_points": 2,
-                  "dependencies": ["P2.M2.T1.S2"],
+                  "dependencies": [
+                    "P2.M2.T1.S2"
+                  ],
                   "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: Test patterns in plan/bugfix/architecture/test_patterns.md. Layer 5 is Mode Project. Requires active mode. Reference tests in cli_add.rs.\n2. INPUT: Completed routing implementation from P2.M2.T1.S2.\n3. LOGIC: Create 'test_import_with_mode_and_project_flags' test function. Initialize Jin repo, create mode 'testmode', set as active, create and git commit test file, run 'jin import --mode --project <file>'. Verify staging index shows target_layer with mode field 'testmode' and is_mode_project variant. Check Git index removal.\n4. OUTPUT: Test function verifying --mode --project routes to Layer 5. Test should pass."
                 },
                 {
@@ -306,7 +333,9 @@
                   "title": "Add test_import_with_mode_and_scope_flags test",
                   "status": "Planned",
                   "story_points": 2,
-                  "dependencies": ["P2.M2.T1.S2"],
+                  "dependencies": [
+                    "P2.M2.T1.S2"
+                  ],
                   "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: Test patterns in plan/bugfix/architecture/test_patterns.md. Layer 3 is Mode Scope Base. Requires active mode. Reference tests in cli_add.rs.\n2. INPUT: Completed routing implementation from P2.M2.T1.S2.\n3. LOGIC: Create 'test_import_with_mode_and_scope_flags' test function. Initialize Jin repo, create mode 'testmode', set as active, create and git commit test file, run 'jin import --mode --scope testscope <file>'. Verify staging index shows target_layer with mode 'testmode' and scope 'testscope'. Check Git index removal.\n4. OUTPUT: Test function verifying --mode --scope routes to Layer 3. Test should pass."
                 },
                 {
@@ -315,7 +344,9 @@
                   "title": "Add test_import_with_mode_scope_and_project_flags test",
                   "status": "Planned",
                   "story_points": 2,
-                  "dependencies": ["P2.M2.T1.S2"],
+                  "dependencies": [
+                    "P2.M2.T1.S2"
+                  ],
                   "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: Test patterns in plan/bugfix/architecture/test_patterns.md. Layer 4 is Mode Scope Project. Requires active mode. Reference tests in cli_add.rs.\n2. INPUT: Completed routing implementation from P2.M2.T1.S2.\n3. LOGIC: Create 'test_import_with_mode_scope_and_project_flags' test function. Initialize Jin repo, create mode 'testmode', set as active, create and git commit test file, run 'jin import --mode --scope testscope --project <file>'. Verify staging index shows target_layer with mode 'testmode', scope 'testscope', and is_mode_scope_project variant. Check Git index removal.\n4. OUTPUT: Test function verifying --mode --scope --project routes to Layer 4. Test should pass."
                 },
                 {
@@ -324,7 +355,9 @@
                   "title": "Add test_import_with_invalid_routing_combination test",
                   "status": "Planned",
                   "story_points": 2,
-                  "dependencies": ["P2.M2.T1.S2"],
+                  "dependencies": [
+                    "P2.M2.T1.S2"
+                  ],
                   "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: Validation rules in plan/bugfix/architecture/layer_routing_system.md. Invalid combinations: --global with other flags, --local with other flags, --project without --mode. Reference tests in cli_add.rs.\n2. INPUT: Completed validation implementation from P2.M2.T1.S2.\n3. LOGIC: Create 'test_import_with_invalid_routing_combination' test function. Initialize Jin repo, create and git commit test file, attempt 'jin import --global --local <file>' (conflicting flags). Verify command returns error with message containing 'Cannot combine'. Also test 'jin import --project <file>' without --mode, verify error message 'requires --mode'. Use Command::cargo_bin() pattern and assert!().cmd().arg(...).fails().\n4. OUTPUT: Test function verifying invalid flag combinations are rejected with proper error messages. Test should pass."
                 }
               ]
@@ -351,7 +384,16 @@
                   "title": "Run all import integration tests",
                   "status": "Planned",
                   "story_points": 1,
-                  "dependencies": ["P2.M4.T1.S1", "P2.M4.T1.S2", "P2.M4.T1.S3", "P2.M4.T1.S4", "P2.M4.T1.S5", "P2.M4.T1.S6", "P2.M4.T1.S7", "P2.M4.T1.S8"],
+                  "dependencies": [
+                    "P2.M4.T1.S1",
+                    "P2.M4.T1.S2",
+                    "P2.M4.T1.S3",
+                    "P2.M4.T1.S4",
+                    "P2.M4.T1.S5",
+                    "P2.M4.T1.S6",
+                    "P2.M4.T1.S7",
+                    "P2.M4.T1.S8"
+                  ],
                   "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: Test infrastructure documented in plan/bugfix/architecture/test_patterns.md. All import tests in tests/cli_import.rs. New routing tests added in P2.M4.T1.S*.\n2. INPUT: Completed routing implementation (P2.M2.T1.S2) and all routing tests (P2.M4.T1.S*).\n3. LOGIC: Run 'cargo test --test cli_import' to execute all import tests including new routing tests. Verify all 10+ tests pass: original tests (test_import_single_file, test_import_multiple_files, test_import_force_flag, test_import_not_in_git, test_import_modified_file_no_force) and new routing tests (test_import_with_local_flag, test_import_with_global_flag, test_import_with_mode_flag, test_import_with_scope_flag, test_import_with_mode_and_project_flags, test_import_with_mode_and_scope_flags, test_import_with_mode_scope_and_project_flags, test_import_with_invalid_routing_combination). Check test output for 'test result: ok' and pass count.\n4. OUTPUT: Confirmation that all import tests pass. Return test summary showing pass/fail counts."
                 },
                 {
@@ -360,7 +402,9 @@
                   "title": "Manual verification of jin import --help",
                   "status": "Planned",
                   "story_points": 0.5,
-                  "dependencies": ["P2.M3.T1.S1"],
+                  "dependencies": [
+                    "P2.M3.T1.S1"
+                  ],
                   "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: Help documentation added in P2.M3.T1.S1. Should show routing table matching jin add.\n2. INPUT: Completed help documentation from P2.M3.T1.S1.\n3. LOGIC: Run 'cargo build --release' to build jin binary. Run './target/release/jin import --help' (or 'jin import --help' if installed). Capture output. Verify 'LAYER ROUTING:' section is present. Verify all 9 routing combinations are listed with correct layer numbers. Verify formatting matches 'jin add --help'.\n4. OUTPUT: Screenshot or text of help output showing routing table. Confirmation that documentation is complete and correct."
                 },
                 {
@@ -369,7 +413,9 @@
                   "title": "Manual smoke test of import routing",
                   "status": "Planned",
                   "story_points": 1,
-                  "dependencies": ["P2.M5.T1.S1"],
+                  "dependencies": [
+                    "P2.M5.T1.S1"
+                  ],
                   "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: Manual testing confirms real-world usage works. Test infrastructure documented in plan/bugfix/architecture/test_patterns.md.\n2. INPUT: Completed and tested routing implementation.\n3. LOGIC: Create temporary Git repository, initialize 'jin init', create a test file and 'git add' it. Test routing flags: 'jin import --local testfile.txt', 'jin import --global testfile.txt', 'jin mode create testmode && jin mode use testmode && jin import --mode testfile.txt'. For each, verify file is removed from Git index ('git ls-files' should not show it). Verify file is staged to Jin ('jin status' should show it). Verify routing worked by checking layer-specific behavior (e.g., 'jin log --local' for --local imports).\n4. OUTPUT: Confirmation that manual testing successful. Document any issues found (should be none if tests pass)."
                 }
               ]
@@ -405,7 +451,10 @@
                   "title": "Run cargo test --all and verify pass rate",
                   "status": "Planned",
                   "story_points": 1,
-                  "dependencies": ["P1.M3.T1.S3", "P2.M5.T1.S1"],
+                  "dependencies": [
+                    "P1.M3.T1.S3",
+                    "P2.M5.T1.S1"
+                  ],
                   "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: Full test suite has 598+ tests with 99.7% pass rate. Bug fixes should not break existing tests. Test infrastructure documented in plan/bugfix/architecture/test_patterns.md.\n2. INPUT: Completed test infrastructure fixes (P1.M1-M3) and routing implementation (P2.M1-M5).\n3. LOGIC: Run 'cargo test --all' to execute full test suite (unit tests + integration tests). Capture output. Verify pass rate is still 99%+ (should be 100% after fixes). Verify no new test failures introduced. Check that both previously failing import tests now pass. Verify all new routing tests pass. Confirm test count is ~606+ (original 598 + 8 new routing tests).\n4. OUTPUT: Test summary output showing pass/fail counts. Confirmation that all tests pass. Report any unexpected failures."
                 }
               ]
@@ -424,7 +473,7 @@
               "id": "P3.M2.T1",
               "title": "Document Fixes in CHANGELOG.md",
               "status": "Planned",
-                  "description": "Add changelog entry describing the test infrastructure fix and new import routing feature.",
+              "description": "Add changelog entry describing the test infrastructure fix and new import routing feature.",
               "subtasks": [
                 {
                   "type": "Subtask",
@@ -432,7 +481,9 @@
                   "title": "Add Unreleased section to CHANGELOG.md",
                   "status": "Planned",
                   "story_points": 1,
-                  "dependencies": ["P3.M1.T1.S1"],
+                  "dependencies": [
+                    "P3.M1.T1.S1"
+                  ],
                   "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: Bug fix report documents two issues: test infrastructure (minor, test-only) and import routing flags (minor feature gap). These are user-visible improvements.\n2. INPUT: Completed all fixes (P1.M1-M3, P2.M1-M5). CHANGELOG.md in project root.\n3. LOGIC: Open CHANGELOG.md. Add '## [Unreleased]' section if not present. Add two entries under '### Fixed': 'Test infrastructure: Fixed staging index path resolution in import tests to respect JIN_DIR environment variable' and 'Layer routing: Added support for --local, --global, --mode, --scope, and --project flags to jin import command'. Add entry under '### Added': 'jin import: Import command now supports full layer routing flags matching jin add functionality'. Follow existing CHANGELOG format. Use conventional commit message style.\n4. OUTPUT: Updated CHANGELOG.md with documentation of fixes. Changelog should be clear and concise for users."
                 }
               ]
@@ -459,7 +510,9 @@
                   "title": "Verify Issue 1 (Test Path Resolution) is resolved",
                   "status": "Planned",
                   "story_points": 0.5,
-                  "dependencies": ["P3.M1.T1.S1"],
+                  "dependencies": [
+                    "P3.M1.T1.S1"
+                  ],
                   "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: Issue 1 from bug report documented in plan/bugfix/architecture/import_command_analysis.md. Tests fail due to JIN_DIR path resolution.\n2. INPUT: Test fixes from P1.M1-M3, full test suite results from P3.M1.T1.S1.\n3. LOGIC: Run 'cargo test test_import_single_file test_import_multiple_files' to verify both previously failing tests now pass. Confirm no test failures related to staging index path. Verify assertions use JIN_DIR-aware path construction. Check test output shows 'test result: ok'.\n4. OUTPUT: Confirmation that Issue 1 is resolved. Both tests should pass."
                 },
                 {
@@ -468,7 +521,9 @@
                   "title": "Verify Issue 2 (Import Routing Flags) is resolved",
                   "status": "Planned",
                   "story_points": 0.5,
-                  "dependencies": ["P3.M1.T1.S1"],
+                  "dependencies": [
+                    "P3.M1.T1.S1"
+                  ],
                   "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: Issue 2 from bug report documented in plan/bugfix/architecture/import_command_analysis.md. Import command lacks routing flags.\n2. INPUT: Routing implementation from P2.M1-M5, test results from P3.M1.T1.S1.\n3. LOGIC: Run 'jin import --help' to verify all routing flags are documented. Test 'jin import --local <file>' to confirm flag works (no 'unexpected argument' error). Verify routing tests from P2.M4 all pass. Confirm import command now matches add command functionality.\n4. OUTPUT: Confirmation that Issue 2 is resolved. All routing flags should work correctly."
                 },
                 {
@@ -477,7 +532,10 @@
                   "title": "Generate final validation report",
                   "status": "Planned",
                   "story_points": 1,
-                  "dependencies": ["P3.M3.T1.S1", "P3.M3.T1.S2"],
+                  "dependencies": [
+                    "P3.M3.T1.S1",
+                    "P3.M3.T1.S2"
+                  ],
                   "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: Bug report concluded implementation is production-ready with 2 minor issues. Both issues should now be resolved.\n2. INPUT: Verification results from P3.M3.T1.S1 and P3.M3.T1.S2. Original bug report findings.\n3. LOGIC: Compile final validation report summarizing: Original bug report findings (2 minor issues, 0 critical/major), Fixes implemented (test path resolution, import routing flags), Test results (all 606+ tests passing, 100% pass rate), Manual verification results (routing flags work, help documentation complete), Conclusion (implementation is production-ready, all issues resolved). Format as markdown report. Save to plan/bugfix/validation_report.md.\n4. OUTPUT: Final validation report confirming both issues are resolved and system is production-ready. Report should be clear and comprehensive for stakeholders."
                 }
               ]

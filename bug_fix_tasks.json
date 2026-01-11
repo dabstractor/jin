@@ -431,7 +431,7 @@
                   "type": "Subtask",
                   "id": "P3.M2.T1.S1",
                   "title": "Check if jin resolve command exists",
-                  "status": "Planned",
+                  "status": "Complete",
                   "story_points": 1,
                   "dependencies": [],
                   "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: From Issue 10 in PRD - resolve command existence unverified.\n2. INPUT: src/commands/ directory and src/cli/args.rs.\n3. LOGIC: Search for resolve.rs in commands. Check if ResolveArgs exists in cli/args.rs. Check if resolve is wired up in commands/mod.rs. If missing, note that implementation is needed. If exists, examine the implementation.\n4. OUTPUT: Confirmation of resolve command existence or gap identified.\n5. MOCKING: Code review - no test needed."

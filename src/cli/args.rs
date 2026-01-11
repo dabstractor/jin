@@ -5,17 +5,17 @@ use clap::Args;
 /// Arguments for the `add` command
 #[derive(Args, Debug)]
 #[command(after_help = r#"LAYER ROUTING:
-  Flags                  Target Layer
-  ──────────────────────────────────────────────────────
-  (no flags)             → Layer 7 (ProjectBase)
-  --mode                 → Layer 2 (ModeBase)
-  --mode --project       → Layer 5 (ModeProject)
-  --scope=<X>            → Layer 6 (ScopeBase)
-  --mode --scope=<X>     → Layer 3 (ModeScope)
+  Flags                  Target Layer           Storage
+  ─────────────────────────────────────────────────────────────────────────────
+  (no flags)             → Layer 7 (ProjectBase)     jin/project/<project>/
+  --mode                 → Layer 2 (ModeBase)        jin/mode/<mode>/
+  --mode --project       → Layer 5 (ModeProject)     jin/mode/<mode>/project/<project>/
+  --scope=<X>            → Layer 6 (ScopeBase)       jin/scope/<scope>/
+  --mode --scope=<X>     → Layer 3 (ModeScope)       jin/mode/<mode>/scope/<scope>/
   --mode --scope=<X> --project
-                         → Layer 4 (ModeScopeProject)
-  --global               → Layer 1 (GlobalBase)
-  --local                → Layer 8 (UserLocal)
+                         → Layer 4 (ModeScopeProject) jin/mode/<mode>/scope/<scope>/project/<project>/
+  --global               → Layer 1 (GlobalBase)      jin/global/
+  --local                → Layer 8 (UserLocal)       ~/.jin/local/
 "#)]
 pub struct AddArgs {
     /// Files to stage

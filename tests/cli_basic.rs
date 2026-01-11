@@ -27,6 +27,19 @@ fn test_version() {
 }
 
 #[test]
+fn test_add_help() {
+    jin()
+        .args(["add", "--help"])
+        .assert()
+        .success()
+        .stdout(predicate::str::contains("LAYER ROUTING:"))
+        .stdout(predicate::str::contains("Storage"))
+        .stdout(predicate::str::contains("jin/project/<project>/"))
+        .stdout(predicate::str::contains("jin/global/"))
+        .stdout(predicate::str::contains("~/.jin/local/"));
+}
+
+#[test]
 fn test_init_subcommand() {
     use tempfile::TempDir;
     let temp = TempDir::new().unwrap();

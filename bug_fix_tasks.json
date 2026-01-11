@@ -253,7 +253,7 @@
           "type": "Milestone",
           "id": "P2.M1",
           "title": "Enhance Command Help Text",
-          "status": "Planned",
+          "status": "Complete",
           "description": "Add comprehensive help text for push and apply commands explaining safety features and workflows.",
           "tasks": [
             {
@@ -296,14 +296,14 @@
               "type": "Task",
               "id": "P2.M1.T3",
               "title": "Enhance Layer Routing Help",
-              "status": "Planned",
+              "status": "Complete",
               "description": "Add storage paths and descriptions to layer routing help table.",
               "subtasks": [
                 {
                   "type": "Subtask",
                   "id": "P2.M1.T3.S1",
                   "title": "Add storage path column to layer routing table",
-                  "status": "Planned",
+                  "status": "Complete",
                   "story_points": 1,
                   "dependencies": [],
                   "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: From Issue 8 in PRD - layer routing help could show storage paths.\n2. INPUT: src/cli/args.rs AddArgs help text.\n3. LOGIC: Update LAYER ROUTING table to add 'Storage' column. Format: 'Flags | Layer | Description | Storage'. Add paths: Layer 1 → jin/global/, Layer 2 → jin/mode/<mode>/, Layer 7 → jin/project/<project>/, etc. Use plan_bugfix/architecture/codebase_structure.md for correct paths.\n4. OUTPUT: Enhanced routing table with storage paths.\n5. MOCKING: Manual test - run jin add --help and verify table."

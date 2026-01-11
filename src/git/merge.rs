@@ -196,15 +196,8 @@ mod tests {
                 )
                 .unwrap()
             } else {
-                repo.commit(
-                    None,
-                    &sig,
-                    &sig,
-                    &format!("Commit {}", i),
-                    &tree,
-                    &[],
-                )
-                .unwrap()
+                repo.commit(None, &sig, &sig, &format!("Commit {}", i), &tree, &[])
+                    .unwrap()
             };
 
             commit_oids.push(oid);

@@ -413,6 +413,10 @@ fn serialize_merged_content(
 
 /// Preview changes that would be applied
 fn preview_changes(merged: &crate::merge::LayerMergeResult) -> Result<()> {
+    eprintln!(
+        "[DEBUG] preview_changes: merged_files.len() = {}",
+        merged.merged_files.len()
+    );
     println!("Would apply {} files:", merged.merged_files.len());
 
     // Show added files (files in merged result but not in workspace)
@@ -420,13 +424,21 @@ fn preview_changes(merged: &crate::merge::LayerMergeResult) -> Result<()> {
     let mut modified = Vec::new();
 
     for (path, merged_file) in &merged.merged_files {
+        eprintln!("[DEBUG] preview_changes: Checking path: {}", path.display());
+        eprintln!("[DEBUG] preview_changes: path.exists() = {}", path.exists());
         if path.exists() {
             // File exists, check if it would be modified
             let workspace_content = std::fs::read_to_string(path)?;
             let merged_content =
                 serialize_merged_content(&merged_file.content, merged_file.format)?;
 
-            if workspace_content != merged_content {
+            let content_differs = workspace_content != merged_content;
+            eprintln!(
+                "[DEBUG] preview_changes: File content differs: {}",
+                content_differs
+            );
+
+            if content_differs {
                 modified.push(path);
             }
         } else {
@@ -437,14 +449,14 @@ fn preview_changes(merged: &crate::merge::LayerMergeResult) -> Result<()> {
 
     if !added.is_empty() {
         println!("\nAdded files:");
-        for path in added {
+        for path in &added {
             println!("  + {}", path.display());
         }
     }
 
     if !modified.is_empty() {
         println!("\nModified files:");
-        for path in modified {
+        for path in &modified {
             println!("  M {}", path.display());
         }
     }
@@ -457,6 +469,11 @@ fn preview_changes(merged: &crate::merge::LayerMergeResult) -> Result<()> {
         }
     }
 
+    eprintln!(
+        "[DEBUG] preview_changes: Added: {}, Modified: {}",
+        added.len(),
+        modified.len()
+    );
     Ok(())
 }
 

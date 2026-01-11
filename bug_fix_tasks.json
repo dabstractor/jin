@@ -182,7 +182,7 @@
                   "type": "Subtask",
                   "id": "P1.M3.T1.S1",
                   "title": "Debug merge_layers() return value in dry run",
-                  "status": "Planned",
+                  "status": "Complete",
                   "story_points": 2,
                   "dependencies": [],
                   "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: From Issue 3 in PRD - dry-run shows 'Would apply 0 files' even with files in layers.\n2. INPUT: src/commands/apply.rs:415 preview_changes() function.\n3. LOGIC: Add debug logging to trace: merged.merged_files hashmap size, individual file paths in hashmap, whether path.exists() check affects count. Add logging to merge_layers() to trace file collection. Run test with logging enabled.\n4. OUTPUT: Understanding of why merged_files is empty - likely in collect_all_file_paths() or merge_file_across_layers().\n5. MOCKING: Use existing test test_apply_dry_run_with_conflicts_shows_preview."

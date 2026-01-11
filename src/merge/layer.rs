@@ -107,22 +107,37 @@ impl LayerMergeResult {
 ///
 /// * `LayerMergeResult` with merged files and their content, plus conflict/added/removed files
 pub fn merge_layers(config: &LayerMergeConfig, repo: &JinRepo) -> Result<LayerMergeResult> {
+    eprintln!(
+        "[DEBUG] merge_layers: Starting with {} layers",
+        config.layers.len()
+    );
     let mut result = LayerMergeResult::new();
 
     // Collect all unique file paths across all layers
     let all_paths = collect_all_file_paths(&config.layers, config, repo)?;
+    eprintln!(
+        "[DEBUG] merge_layers: Collected {} unique file paths",
+        all_paths.len()
+    );
+    eprintln!("[DEBUG] merge_layers: File paths: {:?}", all_paths);
 
     // Merge each file path
     for path in &all_paths {
+        eprintln!("[DEBUG] merge_layers: Processing path: {}", path.display());
         // ============================================================
         // NEW: Collision detection BEFORE merge_file_across_layers()
         // ============================================================
         let layers_with_file = find_layers_containing_file(path, &config.layers, config, repo)?;
+        eprintln!(
+            "[DEBUG] merge_layers: Layers with file: {:?}",
+            layers_with_file
+        );
 
         if layers_with_file.len() > 1 {
             // File exists in multiple layers - check for content conflicts
             let has_conflict =
                 has_different_content_across_layers(path, &layers_with_file, config, repo)?;
+            eprintln!("[DEBUG] merge_layers: Has conflict: {}", has_conflict);
 
             if has_conflict {
                 // Different content detected - add to conflicts and skip merge
@@ -135,7 +150,13 @@ pub fn merge_layers(config: &LayerMergeConfig, repo: &JinRepo) -> Result<LayerMe
             // ============================================================
             // All layers have identical content - use first layer directly
             let first_layer = &layers_with_file[0];
-            let mut merged = create_merged_file_from_first_layer(path, first_layer, config, repo)?;
+            let merged = create_merged_file_from_first_layer(path, first_layer, config, repo);
+            eprintln!(
+                "[DEBUG] merge_layers: Merged result (same content): {:?}",
+                merged.is_ok()
+            );
+
+            let mut merged = merged?;
 
             // CRITICAL: Add ALL layers to source_layers for metadata completeness
             merged
@@ -151,15 +172,30 @@ pub fn merge_layers(config: &LayerMergeConfig, repo: &JinRepo) -> Result<LayerMe
         // ============================================================
         match merge_file_across_layers(path, &config.layers, config, repo) {
             Ok(merged) => {
+                eprintln!("[DEBUG] merge_layers: Merged result (merge_file_across_layers): Ok");
                 result.merged_files.insert(path.clone(), merged);
             }
             Err(JinError::MergeConflict { .. }) => {
+                eprintln!(
+                    "[DEBUG] merge_layers: Merged result (merge_file_across_layers): MergeConflict"
+                );
                 result.conflict_files.push(path.clone());
             }
-            Err(e) => return Err(e),
+            Err(e) => {
+                eprintln!(
+                    "[DEBUG] merge_layers: Merged result (merge_file_across_layers): Error {:?}",
+                    e
+                );
+                return Err(e);
+            }
         }
     }
 
+    eprintln!(
+        "[DEBUG] merge_layers: Returning with {} merged files, {} conflicts",
+        result.merged_files.len(),
+        result.conflict_files.len()
+    );
     Ok(result)
 }
 
@@ -172,6 +208,10 @@ fn collect_all_file_paths(
     config: &LayerMergeConfig,
     repo: &JinRepo,
 ) -> Result<HashSet<PathBuf>> {
+    eprintln!(
+        "[DEBUG] collect_all_file_paths: Checking {} layers",
+        layers.len()
+    );
     let mut paths = HashSet::new();
 
     for layer in layers {
@@ -180,14 +220,27 @@ fn collect_all_file_paths(
             config.scope.as_deref(),
             config.project.as_deref(),
         );
+        eprintln!(
+            "[DEBUG] collect_all_file_paths: Layer {:?}, ref_path: {}",
+            layer, ref_path
+        );
 
         // CRITICAL: Check ref_exists() before resolve_ref()
+        eprintln!(
+            "[DEBUG] collect_all_file_paths: ref_exists: {}",
+            repo.ref_exists(&ref_path)
+        );
         if repo.ref_exists(&ref_path) {
             if let Ok(commit_oid) = repo.resolve_ref(&ref_path) {
+                eprintln!(
+                    "[DEBUG] collect_all_file_paths: Resolved commit_oid: {:?}",
+                    commit_oid
+                );
                 let commit = repo.inner().find_commit(commit_oid)?;
                 let tree_oid = commit.tree_id();
 
                 for file_path in repo.list_tree_files(tree_oid)? {
+                    eprintln!("[DEBUG] collect_all_file_paths: Tree file: {:?}", file_path);
                     paths.insert(PathBuf::from(file_path));
                 }
             }
@@ -195,6 +248,10 @@ fn collect_all_file_paths(
         // Layer ref doesn't exist = no files in this layer (skip gracefully)
     }
 
+    eprintln!(
+        "[DEBUG] collect_all_file_paths: Total paths collected: {}",
+        paths.len()
+    );
     Ok(paths)
 }
 

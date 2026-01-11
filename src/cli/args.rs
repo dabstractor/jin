@@ -225,6 +225,10 @@ pub struct ImportArgs {
     /// Force import even if files are modified
     #[arg(long)]
     pub force: bool,
+
+    /// Target mode layer
+    #[arg(long)]
+    pub mode: bool,
 }
 
 /// Arguments for the `export` command

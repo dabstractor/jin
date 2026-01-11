@@ -385,6 +385,7 @@ mod tests {
         let args = ImportArgs {
             files: vec![],
             force: false,
+            mode: false,
         };
         let result = execute(args);
         assert!(result.is_err());

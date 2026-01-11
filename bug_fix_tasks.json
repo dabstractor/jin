@@ -119,7 +119,7 @@
       "type": "Phase",
       "id": "P2",
       "title": "Phase 2: Add Layer Routing Flags to Import Command",
-      "status": "Ready",
+      "status": "Planned",
       "description": "Add full layer routing support (--local, --global, --mode, --scope, --project) to the jin import command to match jin add functionality.",
       "milestones": [
         {
@@ -140,7 +140,7 @@
                   "type": "Subtask",
                   "id": "P2.M1.T1.S1",
                   "title": "Add mode flag field to ImportArgs",
-                  "status": "Planned",
+                  "status": "Complete",
                   "story_points": 0.5,
                   "dependencies": [],
                   "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: Layer routing system documented in plan/bugfix/architecture/layer_routing_system.md. AddArgs reference implementation at src/cli/args.rs:20-43 shows exact pattern for flag definitions.\n2. INPUT: ImportArgs struct at src/cli/args.rs:219-228 currently has only 'files: Vec<String>' and 'force: bool' fields.\n3. LOGIC: Add new field to ImportArgs struct after 'force' field. Use exact same definition as AddArgs: '/// Target mode layer' doc comment, '#[arg(long)]' attribute, 'pub mode: bool' field. Follow Rust naming conventions and existing code formatting (4-space indent).\n4. OUTPUT: Updated ImportArgs struct with mode field. Struct should compile without errors. Field will be unused until P2.M2."

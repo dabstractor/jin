@@ -9,6 +9,7 @@ build/
 # Research and implementation documentation (kept local)
 plan/*/research/
 plan/docs/
+plan_bugfix/
 
 # OS-specific files
 .DS_Store

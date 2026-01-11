@@ -346,6 +346,164 @@ pub fn find_layers_containing_file(
     Ok(containing_layers)
 }
 
+/// Check if a file has different content across multiple layers.
+///
+/// Compares file content across all provided layers to detect conflicts.
+/// For structured files (JSON, YAML, TOML, INI), content is parsed to
+/// `MergeValue` for semantic comparison. For text files, raw content
+/// strings are compared directly.
+///
+/// # Arguments
+///
+/// * `file_path` - Path to the file to check (relative to repo root)
+/// * `layers_with_file` - Layers containing this file (from find_layers_containing_file)
+/// * `config` - Merge configuration with mode/scope/project context
+/// * `repo` - Jin repository for Git operations
+///
+/// # Returns
+///
+/// * `Ok(false)` - 0-1 layers OR all layers have identical content (no conflict)
+/// * `Ok(true)` - 2+ layers with differing content (conflict detected)
+/// * `Err(JinError)` - Git operation failure or parse error
+///
+/// # Examples
+///
+/// ```ignore
+/// use jin::merge::{find_layers_containing_file, has_different_content_across_layers};
+/// use jin::core::Layer;
+/// use std::path::Path;
+///
+/// let layers = vec![Layer::GlobalBase, Layer::ModeBase];
+/// let config = LayerMergeConfig { /* ... */ };
+/// let containing = find_layers_containing_file(Path::new("config.json"), &layers, &config, &repo)?;
+///
+/// if containing.len() > 1 {
+///     let has_conflict = has_different_content_across_layers(
+///         Path::new("config.json"),
+///         &containing,
+///         &config,
+///         &repo
+///     )?;
+///     if has_conflict {
+///         println!("Conflict detected!");
+///     }
+/// }
+/// ```
+pub fn has_different_content_across_layers(
+    file_path: &std::path::Path,
+    layers_with_file: &[Layer],
+    config: &LayerMergeConfig,
+    repo: &JinRepo,
+) -> Result<bool> {
+    // Early exit: no conflict possible with fewer than 2 layers
+    if layers_with_file.len() <= 1 {
+        return Ok(false);
+    }
+
+    let format = detect_format(file_path);
+
+    // For text files, compare raw strings (not MergeValue)
+    if format == FileFormat::Text {
+        return has_different_text_content(file_path, layers_with_file, config, repo);
+    }
+
+    // For structured files, parse and compare MergeValue
+    has_different_structured_content(file_path, layers_with_file, config, repo, format)
+}
+
+/// Helper: Compare text file content across layers (raw string comparison)
+fn has_different_text_content(
+    file_path: &std::path::Path,
+    layers_with_file: &[Layer],
+    config: &LayerMergeConfig,
+    repo: &JinRepo,
+) -> Result<bool> {
+    // Read content from first layer
+    let first_layer = &layers_with_file[0];
+    let first_ref_path = first_layer.ref_path(
+        config.mode.as_deref(),
+        config.scope.as_deref(),
+        config.project.as_deref(),
+    );
+
+    let first_commit_oid = repo.resolve_ref(&first_ref_path)?;
+    let first_commit = repo.inner().find_commit(first_commit_oid)?;
+    let first_tree_oid = first_commit.tree_id();
+
+    let first_content_bytes = repo.read_file_from_tree(first_tree_oid, file_path)?;
+    let first_content = String::from_utf8_lossy(&first_content_bytes);
+
+    // Compare with each subsequent layer
+    for layer in &layers_with_file[1..] {
+        let ref_path = layer.ref_path(
+            config.mode.as_deref(),
+            config.scope.as_deref(),
+            config.project.as_deref(),
+        );
+
+        let commit_oid = repo.resolve_ref(&ref_path)?;
+        let commit = repo.inner().find_commit(commit_oid)?;
+        let tree_oid = commit.tree_id();
+
+        let content_bytes = repo.read_file_from_tree(tree_oid, file_path)?;
+        let content = String::from_utf8_lossy(&content_bytes);
+
+        if content != first_content {
+            return Ok(true); // Different content detected
+        }
+    }
+
+    Ok(false) // All layers have identical content
+}
+
+/// Helper: Compare structured file content across layers (MergeValue comparison)
+fn has_different_structured_content(
+    file_path: &std::path::Path,
+    layers_with_file: &[Layer],
+    config: &LayerMergeConfig,
+    repo: &JinRepo,
+    format: FileFormat,
+) -> Result<bool> {
+    // Read and parse content from first layer
+    let first_layer = &layers_with_file[0];
+    let first_ref_path = first_layer.ref_path(
+        config.mode.as_deref(),
+        config.scope.as_deref(),
+        config.project.as_deref(),
+    );
+
+    let first_commit_oid = repo.resolve_ref(&first_ref_path)?;
+    let first_commit = repo.inner().find_commit(first_commit_oid)?;
+    let first_tree_oid = first_commit.tree_id();
+
+    let first_content_bytes = repo.read_file_from_tree(first_tree_oid, file_path)?;
+    let first_content_str = String::from_utf8_lossy(&first_content_bytes);
+    let first_value = parse_content(&first_content_str, format)?;
+
+    // Compare with each subsequent layer
+    for layer in &layers_with_file[1..] {
+        let ref_path = layer.ref_path(
+            config.mode.as_deref(),
+            config.scope.as_deref(),
+            config.project.as_deref(),
+        );
+
+        let commit_oid = repo.resolve_ref(&ref_path)?;
+        let commit = repo.inner().find_commit(commit_oid)?;
+        let tree_oid = commit.tree_id();
+
+        let content_bytes = repo.read_file_from_tree(tree_oid, file_path)?;
+        let content_str = String::from_utf8_lossy(&content_bytes);
+        let value = parse_content(&content_str, format)?;
+
+        if value != first_value {
+            return Ok(true); // Different content detected
+        }
+    }
+
+    Ok(false) // All layers have identical content
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -877,5 +1035,430 @@ mod tests {
                 .unwrap();
         assert_eq!(result.len(), 1);
         assert_eq!(result[0], Layer::ModeScope);
+    }
+
+    // ========== has_different_content_across_layers Tests ==========
+
+    #[test]
+    fn test_has_different_content_single_layer() {
+        let (_temp, repo) = create_layer_test_repo();
+        let config = LayerMergeConfig {
+            layers: vec![Layer::GlobalBase],
+            mode: None,
+            scope: None,
+            project: None,
+        };
+
+        // Single layer - should return false
+        let layers = vec![Layer::GlobalBase];
+        let result =
+            has_different_content_across_layers(Path::new("config.json"), &layers, &config, &repo);
+
+        assert!(result.is_ok());
+        assert!(!result.unwrap()); // No conflict with single layer
+    }
+
+    #[test]
+    fn test_has_different_content_same_structured() {
+        let (_temp, repo) = create_layer_test_repo();
+        let config = LayerMergeConfig {
+            layers: vec![Layer::GlobalBase, Layer::ModeBase],
+            mode: Some("test".to_string()),
+            scope: None,
+            project: None,
+        };
+
+        let content = br#"{"port": 8080, "debug": true}"#;
+
+        // Both layers have identical content
+        create_layer_with_file(&repo, "refs/jin/layers/global", "config.json", content).unwrap();
+        create_layer_with_file(&repo, "refs/jin/layers/mode/test/_", "config.json", content)
+            .unwrap();
+
+        let layers = vec![Layer::GlobalBase, Layer::ModeBase];
+        let result =
+            has_different_content_across_layers(Path::new("config.json"), &layers, &config, &repo);
+
+        assert!(result.is_ok());
+        assert!(!result.unwrap()); // No conflict - same content
+    }
+
+    #[test]
+    fn test_has_different_content_different_structured() {
+        let (_temp, repo) = create_layer_test_repo();
+        let config = LayerMergeConfig {
+            layers: vec![Layer::GlobalBase, Layer::ModeBase],
+            mode: Some("test".to_string()),
+            scope: None,
+            project: None,
+        };
+
+        let global_content = br#"{"port": 8080}"#;
+        let mode_content = br#"{"port": 9090}"#;
+
+        // Layers have different content
+        create_layer_with_file(
+            &repo,
+            "refs/jin/layers/global",
+            "config.json",
+            global_content,
+        )
+        .unwrap();
+        create_layer_with_file(
+            &repo,
+            "refs/jin/layers/mode/test/_",
+            "config.json",
+            mode_content,
+        )
+        .unwrap();
+
+        let layers = vec![Layer::GlobalBase, Layer::ModeBase];
+        let result =
+            has_different_content_across_layers(Path::new("config.json"), &layers, &config, &repo);
+
+        assert!(result.is_ok());
+        assert!(result.unwrap()); // Conflict detected
+    }
+
+    #[test]
+    fn test_has_different_content_same_text() {
+        let (_temp, repo) = create_layer_test_repo();
+        let config = LayerMergeConfig {
+            layers: vec![Layer::GlobalBase, Layer::ModeBase],
+            mode: Some("test".to_string()),
+            scope: None,
+            project: None,
+        };
+
+        let content = b"hello world\nline two\n";
+
+        // Both layers have identical text content
+        create_layer_with_file(&repo, "refs/jin/layers/global", "README.txt", content).unwrap();
+        create_layer_with_file(&repo, "refs/jin/layers/mode/test/_", "README.txt", content)
+            .unwrap();
+
+        let layers = vec![Layer::GlobalBase, Layer::ModeBase];
+        let result =
+            has_different_content_across_layers(Path::new("README.txt"), &layers, &config, &repo);
+
+        assert!(result.is_ok());
+        assert!(!result.unwrap()); // No conflict - same content
+    }
+
+    #[test]
+    fn test_has_different_content_different_text() {
+        let (_temp, repo) = create_layer_test_repo();
+        let config = LayerMergeConfig {
+            layers: vec![Layer::GlobalBase, Layer::ModeBase],
+            mode: Some("test".to_string()),
+            scope: None,
+            project: None,
+        };
+
+        let global_content = b"hello world\n";
+        let mode_content = b"goodbye world\n";
+
+        // Layers have different text content
+        create_layer_with_file(
+            &repo,
+            "refs/jin/layers/global",
+            "README.txt",
+            global_content,
+        )
+        .unwrap();
+        create_layer_with_file(
+            &repo,
+            "refs/jin/layers/mode/test/_",
+            "README.txt",
+            mode_content,
+        )
+        .unwrap();
+
+        let layers = vec![Layer::GlobalBase, Layer::ModeBase];
+        let result =
+            has_different_content_across_layers(Path::new("README.txt"), &layers, &config, &repo);
+
+        assert!(result.is_ok());
+        assert!(result.unwrap()); // Conflict detected
+    }
+
+    #[test]
+    fn test_has_different_content_three_layers_all_same() {
+        let (_temp, repo) = create_layer_test_repo();
+        let config = LayerMergeConfig {
+            layers: vec![Layer::GlobalBase, Layer::ModeBase, Layer::ModeScope],
+            mode: Some("test".to_string()),
+            scope: Some("web".to_string()),
+            project: None,
+        };
+
+        let content = br#"{"value": 42}"#;
+
+        // All three layers have identical content
+        create_layer_with_file(&repo, "refs/jin/layers/global", "config.json", content).unwrap();
+        create_layer_with_file(&repo, "refs/jin/layers/mode/test/_", "config.json", content)
+            .unwrap();
+        create_layer_with_file(
+            &repo,
+            "refs/jin/layers/mode/test/scope/web/_",
+            "config.json",
+            content,
+        )
+        .unwrap();
+
+        let layers = vec![Layer::GlobalBase, Layer::ModeBase, Layer::ModeScope];
+        let result =
+            has_different_content_across_layers(Path::new("config.json"), &layers, &config, &repo);
+
+        assert!(result.is_ok());
+        assert!(!result.unwrap()); // No conflict - all same
+    }
+
+    #[test]
+    fn test_has_different_content_three_layers_one_different() {
+        let (_temp, repo) = create_layer_test_repo();
+        let config = LayerMergeConfig {
+            layers: vec![Layer::GlobalBase, Layer::ModeBase, Layer::ModeScope],
+            mode: Some("test".to_string()),
+            scope: Some("web".to_string()),
+            project: None,
+        };
+
+        let global_content = br#"{"value": 1}"#;
+        let mode_content = br#"{"value": 2}"#;
+        let scope_content = br#"{"value": 2}"#;
+
+        // Global differs, mode and scope are same
+        create_layer_with_file(
+            &repo,
+            "refs/jin/layers/global",
+            "config.json",
+            global_content,
+        )
+        .unwrap();
+        create_layer_with_file(
+            &repo,
+            "refs/jin/layers/mode/test/_",
+            "config.json",
+            mode_content,
+        )
+        .unwrap();
+        create_layer_with_file(
+            &repo,
+            "refs/jin/layers/mode/test/scope/web/_",
+            "config.json",
+            scope_content,
+        )
+        .unwrap();
+
+        let layers = vec![Layer::GlobalBase, Layer::ModeBase, Layer::ModeScope];
+        let result =
+            has_different_content_across_layers(Path::new("config.json"), &layers, &config, &repo);
+
+        assert!(result.is_ok());
+        assert!(result.unwrap()); // Conflict detected
+    }
+
+    #[test]
+    fn test_has_different_content_yaml_format() {
+        let (_temp, repo) = create_layer_test_repo();
+        let config = LayerMergeConfig {
+            layers: vec![Layer::GlobalBase, Layer::ModeBase],
+            mode: Some("test".to_string()),
+            scope: None,
+            project: None,
+        };
+
+        let global_content = b"port: 8080\n";
+        let mode_content = b"port: 9090\n";
+
+        create_layer_with_file(
+            &repo,
+            "refs/jin/layers/global",
+            "config.yaml",
+            global_content,
+        )
+        .unwrap();
+        create_layer_with_file(
+            &repo,
+            "refs/jin/layers/mode/test/_",
+            "config.yaml",
+            mode_content,
+        )
+        .unwrap();
+
+        let layers = vec![Layer::GlobalBase, Layer::ModeBase];
+        let result =
+            has_different_content_across_layers(Path::new("config.yaml"), &layers, &config, &repo);
+
+        assert!(result.is_ok());
+        assert!(result.unwrap()); // Conflict detected
+    }
+
+    #[test]
+    fn test_has_different_content_toml_format() {
+        let (_temp, repo) = create_layer_test_repo();
+        let config = LayerMergeConfig {
+            layers: vec![Layer::GlobalBase, Layer::ModeBase],
+            mode: Some("test".to_string()),
+            scope: None,
+            project: None,
+        };
+
+        let global_content = br#"port = 8080"#;
+        let mode_content = br#"port = 9090"#;
+
+        create_layer_with_file(
+            &repo,
+            "refs/jin/layers/global",
+            "config.toml",
+            global_content,
+        )
+        .unwrap();
+        create_layer_with_file(
+            &repo,
+            "refs/jin/layers/mode/test/_",
+            "config.toml",
+            mode_content,
+        )
+        .unwrap();
+
+        let layers = vec![Layer::GlobalBase, Layer::ModeBase];
+        let result =
+            has_different_content_across_layers(Path::new("config.toml"), &layers, &config, &repo);
+
+        assert!(result.is_ok());
+        assert!(result.unwrap()); // Conflict detected
+    }
+
+    #[test]
+    fn test_has_different_content_ini_format() {
+        let (_temp, repo) = create_layer_test_repo();
+        let config = LayerMergeConfig {
+            layers: vec![Layer::GlobalBase, Layer::ModeBase],
+            mode: Some("test".to_string()),
+            scope: None,
+            project: None,
+        };
+
+        let global_content = b"[section]\nport=8080\n";
+        let mode_content = b"[section]\nport=9090\n";
+
+        create_layer_with_file(
+            &repo,
+            "refs/jin/layers/global",
+            "config.ini",
+            global_content,
+        )
+        .unwrap();
+        create_layer_with_file(
+            &repo,
+            "refs/jin/layers/mode/test/_",
+            "config.ini",
+            mode_content,
+        )
+        .unwrap();
+
+        let layers = vec![Layer::GlobalBase, Layer::ModeBase];
+        let result =
+            has_different_content_across_layers(Path::new("config.ini"), &layers, &config, &repo);
+
+        assert!(result.is_ok());
+        assert!(result.unwrap()); // Conflict detected
+    }
+
+    #[test]
+    fn test_has_different_content_semantic_json_whitespace() {
+        let (_temp, repo) = create_layer_test_repo();
+        let config = LayerMergeConfig {
+            layers: vec![Layer::GlobalBase, Layer::ModeBase],
+            mode: Some("test".to_string()),
+            scope: None,
+            project: None,
+        };
+
+        // Semantically identical JSON, different formatting
+        let global_content = br#"{"name":"test","value":42}"#;
+        let mode_content = br#"{
+  "name": "test",
+  "value": 42
+}"#;
+
+        create_layer_with_file(
+            &repo,
+            "refs/jin/layers/global",
+            "config.json",
+            global_content,
+        )
+        .unwrap();
+        create_layer_with_file(
+            &repo,
+            "refs/jin/layers/mode/test/_",
+            "config.json",
+            mode_content,
+        )
+        .unwrap();
+
+        let layers = vec![Layer::GlobalBase, Layer::ModeBase];
+        let result =
+            has_different_content_across_layers(Path::new("config.json"), &layers, &config, &repo);
+
+        assert!(result.is_ok());
+        assert!(!result.unwrap()); // No conflict - semantically same
+    }
+
+    #[test]
+    fn test_has_different_content_text_exact_match_required() {
+        let (_temp, repo) = create_layer_test_repo();
+        let config = LayerMergeConfig {
+            layers: vec![Layer::GlobalBase, Layer::ModeBase],
+            mode: Some("test".to_string()),
+            scope: None,
+            project: None,
+        };
+
+        // Text files: different whitespace = different content
+        let global_content = b"hello\nworld\n";
+        let mode_content = b"hello\n  world\n"; // Extra spaces
+
+        create_layer_with_file(
+            &repo,
+            "refs/jin/layers/global",
+            "README.txt",
+            global_content,
+        )
+        .unwrap();
+        create_layer_with_file(
+            &repo,
+            "refs/jin/layers/mode/test/_",
+            "README.txt",
+            mode_content,
+        )
+        .unwrap();
+
+        let layers = vec![Layer::GlobalBase, Layer::ModeBase];
+        let result =
+            has_different_content_across_layers(Path::new("README.txt"), &layers, &config, &repo);
+
+        assert!(result.is_ok());
+        assert!(result.unwrap()); // Conflict - text requires exact match
+    }
+
+    #[test]
+    fn test_has_different_content_empty_layer_list() {
+        let (_temp, repo) = create_layer_test_repo();
+        let config = LayerMergeConfig {
+            layers: vec![],
+            mode: None,
+            scope: None,
+            project: None,
+        };
+
+        let layers: Vec<Layer> = vec![];
+        let result =
+            has_different_content_across_layers(Path::new("config.json"), &layers, &config, &repo);
+
+        assert!(result.is_ok());
+        assert!(!result.unwrap()); // No conflict with empty list
     }
 }

@@ -13,6 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Remote sync commands (fetch, pull, push, sync)
 - Link command with remote config repository support
 - Complete documentation suite with README, guides, and examples
+- Layer routing: Added support for --local, --global, --mode, --scope, and --project flags to jin import command, matching jin add functionality
 
 ### Infrastructure
 - Multi-platform CI/CD pipeline with GitHub Actions
@@ -21,6 +22,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Automated changelog generation from conventional commits
 - Shell and PowerShell installers
 - Homebrew formula generation
+- Test infrastructure: Fixed staging index path resolution in import tests to respect JIN_DIR environment variable for proper test isolation
 
 ## [0.1.0] - Initial Release
 

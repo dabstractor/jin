@@ -465,21 +465,21 @@
           "type": "Milestone",
           "id": "P3.M2",
           "title": "Milestone 2: Update Documentation",
-          "status": "Planned",
+          "status": "Complete",
           "description": "Update CHANGELOG.md to document the bug fixes and new feature.",
           "tasks": [
             {
               "type": "Task",
               "id": "P3.M2.T1",
               "title": "Document Fixes in CHANGELOG.md",
-              "status": "Planned",
+              "status": "Complete",
               "description": "Add changelog entry describing the test infrastructure fix and new import routing feature.",
               "subtasks": [
                 {
                   "type": "Subtask",
                   "id": "P3.M2.T1.S1",
                   "title": "Add Unreleased section to CHANGELOG.md",
-                  "status": "Planned",
+                  "status": "Complete",
                   "story_points": 1,
                   "dependencies": [
                     "P3.M1.T1.S1"

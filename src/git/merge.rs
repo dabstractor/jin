@@ -181,35 +181,31 @@ mod tests {
             let tree_oid = tree_builder.write().unwrap();
             let tree = repo.find_tree(tree_oid).unwrap();
 
-            // Build parent slice using local array
+            // Build parent slice safely and create commit
             // This creates a linear chain: commit_0 <- commit_1 <- commit_2
-            let parent_array: [&git2::Commit<'_>; 1] = match commit_oids.last() {
-                Some(oid) => {
-                    let commit = repo.find_commit(*oid).unwrap();
-                    // Store reference in local array
-                    // SAFETY: The commit lives until the end of this scope,
-                    // and we immediately use it in the commit call below
-                    unsafe { std::mem::transmute([&commit]) }
-                }
-                None => unsafe { std::mem::zeroed() },
-            };
-
-            let parent_refs: &[&git2::Commit<'_>] = if commit_oids.is_empty() {
-                &[]
-            } else {
-                &parent_array
-            };
-
-            let oid = repo
-                .commit(
+            let oid = if let Some(last_oid) = commit_oids.last() {
+                let parent_commit = repo.find_commit(*last_oid).unwrap();
+                // Safe: parent_commit lives until repo.commit() returns
+                repo.commit(
                     None,
                     &sig,
                     &sig,
                     &format!("Commit {}", i),
                     &tree,
-                    parent_refs,
+                    &[&parent_commit],
                 )
-                .unwrap();
+                .unwrap()
+            } else {
+                repo.commit(
+                    None,
+                    &sig,
+                    &sig,
+                    &format!("Commit {}", i),
+                    &tree,
+                    &[],
+                )
+                .unwrap()
+            };
 
             commit_oids.push(oid);
         }

@@ -16,6 +16,7 @@ fn test_mv_single_file() {
     jin()
         .args(["add", "config.json"])
         .current_dir(fixture.path())
+        .env("JIN_DIR", fixture.jin_dir.as_ref().unwrap())
         .assert()
         .success();
 
@@ -26,6 +27,7 @@ fn test_mv_single_file() {
     jin()
         .args(["mv", "config.json", "settings.json"])
         .current_dir(fixture.path())
+        .env("JIN_DIR", fixture.jin_dir.as_ref().unwrap())
         .assert()
         .success()
         .stdout(predicates::str::contains(
@@ -33,8 +35,8 @@ fn test_mv_single_file() {
         ));
 
     // Verify staging was updated
-    assert_staging_not_contains(fixture.path(), "config.json");
-    assert_staging_contains(fixture.path(), "settings.json");
+    assert_staging_not_contains(fixture.path(), "config.json", fixture.jin_dir.as_deref());
+    assert_staging_contains(fixture.path(), "settings.json", fixture.jin_dir.as_deref());
 
     // Verify workspace files (file was deleted after staging to avoid prompt)
     assert_workspace_file_not_exists(fixture.path(), "config.json");
@@ -50,6 +52,7 @@ fn test_mv_force() {
     std::fs::write(fixture.path.join("data.txt"), "original content").unwrap();
     jin()
         .args(["add", "data.txt"])
+        .env("JIN_DIR", fixture.jin_dir.as_ref().unwrap())
         .current_dir(fixture.path())
         .assert()
         .success();
@@ -57,13 +60,14 @@ fn test_mv_force() {
     // Rename with force
     jin()
         .args(["mv", "--force", "data.txt", "renamed.txt"])
+        .env("JIN_DIR", fixture.jin_dir.as_ref().unwrap())
         .current_dir(fixture.path())
         .assert()
         .success();
 
     // Verify staging was updated
-    assert_staging_not_contains(fixture.path(), "data.txt");
-    assert_staging_contains(fixture.path(), "renamed.txt");
+    assert_staging_not_contains(fixture.path(), "data.txt", fixture.jin_dir.as_deref());
+    assert_staging_contains(fixture.path(), "renamed.txt", fixture.jin_dir.as_deref());
 
     // Verify workspace file was moved
     assert_workspace_file_not_exists(fixture.path(), "data.txt");
@@ -79,6 +83,7 @@ fn test_mv_dry_run() {
     std::fs::write(fixture.path.join("test.json"), r#"{"test": true}"#).unwrap();
     jin()
         .args(["add", "test.json"])
+        .env("JIN_DIR", fixture.jin_dir.as_ref().unwrap())
         .current_dir(fixture.path())
         .assert()
         .success();
@@ -86,14 +91,15 @@ fn test_mv_dry_run() {
     // Dry-run move
     jin()
         .args(["mv", "--dry-run", "test.json", "renamed.json"])
+        .env("JIN_DIR", fixture.jin_dir.as_ref().unwrap())
         .current_dir(fixture.path())
         .assert()
         .success()
         .stdout(predicates::str::contains("Would move:"));
 
     // Verify staging was NOT changed
-    assert_staging_contains(fixture.path(), "test.json");
-    assert_staging_not_contains(fixture.path(), "renamed.json");
+    assert_staging_contains(fixture.path(), "test.json", fixture.jin_dir.as_deref());
+    assert_staging_not_contains(fixture.path(), "renamed.json", fixture.jin_dir.as_deref());
 }
 
 /// Test layer routing with --mode flag
@@ -123,6 +129,7 @@ fn test_mv_with_layer_flags() {
     .unwrap();
     jin()
         .args(["add", "--mode", "mode-config.json"])
+        .env("JIN_DIR", jin_dir)
         .current_dir(fixture.path())
         .assert()
         .success();
@@ -138,6 +145,7 @@ fn test_mv_with_layer_flags() {
             "mode-config.json",
             "mode-config-renamed.json",
         ])
+        .env("JIN_DIR", jin_dir)
         .current_dir(fixture.path())
         .assert()
         .success()
@@ -146,8 +154,8 @@ fn test_mv_with_layer_flags() {
         ));
 
     // Verify staging was updated
-    assert_staging_not_contains(fixture.path(), "mode-config.json");
-    assert_staging_contains(fixture.path(), "mode-config-renamed.json");
+    assert_staging_not_contains(fixture.path(), "mode-config.json", fixture.jin_dir.as_deref());
+    assert_staging_contains(fixture.path(), "mode-config-renamed.json", fixture.jin_dir.as_deref());
 }
 
 /// Test error: source file not in staging
@@ -161,6 +169,7 @@ fn test_mv_source_not_staged() {
     // Try to move unstaged file
     jin()
         .args(["mv", "unstaged.txt", "target.txt"])
+        .env("JIN_DIR", fixture.jin_dir.as_ref().unwrap())
         .current_dir(fixture.path())
         .assert()
         .failure()
@@ -177,6 +186,7 @@ fn test_mv_destination_exists() {
     std::fs::write(fixture.path.join("dest.txt"), "dest").unwrap();
     jin()
         .args(["add", "source.txt", "dest.txt"])
+        .env("JIN_DIR", fixture.jin_dir.as_ref().unwrap())
         .current_dir(fixture.path())
         .assert()
         .success();
@@ -188,6 +198,7 @@ fn test_mv_destination_exists() {
     // Try to move source to dest (already staged)
     jin()
         .args(["mv", "source.txt", "dest.txt"])
+        .env("JIN_DIR", fixture.jin_dir.as_ref().unwrap())
         .current_dir(fixture.path())
         .assert()
         .failure()
@@ -202,6 +213,7 @@ fn test_mv_odd_number_of_files() {
     // Try with odd number of args (not pairs)
     jin()
         .args(["mv", "file1.txt", "file2.txt", "file3.txt"])
+        .env("JIN_DIR", fixture.jin_dir.as_ref().unwrap())
         .current_dir(fixture.path())
         .assert()
         .failure();
@@ -220,6 +232,7 @@ fn test_mv_batch() {
 
     jin()
         .args(["add", "file1.txt", "file2.txt", "file3.txt", "file4.txt"])
+        .env("JIN_DIR", fixture.jin_dir.as_ref().unwrap())
         .current_dir(fixture.path())
         .assert()
         .success();
@@ -243,21 +256,22 @@ fn test_mv_batch() {
             "file4.txt",
             "renamed4.txt",
         ])
+        .env("JIN_DIR", fixture.jin_dir.as_ref().unwrap())
         .current_dir(fixture.path())
         .assert()
         .success()
         .stdout(predicates::str::contains("Moved 4 file(s)"));
 
     // Verify all files were moved in staging
-    assert_staging_not_contains(fixture.path(), "file1.txt");
-    assert_staging_not_contains(fixture.path(), "file2.txt");
-    assert_staging_not_contains(fixture.path(), "file3.txt");
-    assert_staging_not_contains(fixture.path(), "file4.txt");
+    assert_staging_not_contains(fixture.path(), "file1.txt", fixture.jin_dir.as_deref());
+    assert_staging_not_contains(fixture.path(), "file2.txt", fixture.jin_dir.as_deref());
+    assert_staging_not_contains(fixture.path(), "file3.txt", fixture.jin_dir.as_deref());
+    assert_staging_not_contains(fixture.path(), "file4.txt", fixture.jin_dir.as_deref());
 
-    assert_staging_contains(fixture.path(), "renamed1.txt");
-    assert_staging_contains(fixture.path(), "renamed2.txt");
-    assert_staging_contains(fixture.path(), "renamed3.txt");
-    assert_staging_contains(fixture.path(), "renamed4.txt");
+    assert_staging_contains(fixture.path(), "renamed1.txt", fixture.jin_dir.as_deref());
+    assert_staging_contains(fixture.path(), "renamed2.txt", fixture.jin_dir.as_deref());
+    assert_staging_contains(fixture.path(), "renamed3.txt", fixture.jin_dir.as_deref());
+    assert_staging_contains(fixture.path(), "renamed4.txt", fixture.jin_dir.as_deref());
 }
 
 /// Test move to subdirectory
@@ -270,20 +284,23 @@ fn test_mv_to_subdirectory() {
     jin()
         .args(["add", "config.json"])
         .current_dir(fixture.path())
+        .env("JIN_DIR", fixture.jin_dir.as_ref().unwrap())
         .assert()
         .success();
 
     // Move to subdirectory
     jin()
         .args(["mv", "--force", "config.json", "settings/config.json"])
+        .env("JIN_DIR", fixture.jin_dir.as_ref().unwrap())
         .current_dir(fixture.path())
         .assert()
         .success();
 
     // Verify staging was updated
     // Check for exact JSON path (with quotes to avoid substring matches)
-    let staging_content =
-        std::fs::read_to_string(fixture.path.join(".jin/staging/index.json")).unwrap();
+    let staging_content = std::fs::read_to_string(
+        fixture.jin_dir.as_ref().unwrap().join("staging/index.json")
+    ).unwrap();
     assert!(!staging_content.contains("\"config.json\""));
     assert!(staging_content.contains("\"settings/config.json\""));
 
@@ -304,6 +321,7 @@ fn test_mv_project_without_mode() {
     // Try to use --project without --mode
     jin()
         .args(["mv", "--project", "source.txt", "dest.txt"])
+        .env("JIN_DIR", fixture.jin_dir.as_ref().unwrap())
         .current_dir(fixture.path())
         .assert()
         .failure()
@@ -318,6 +336,7 @@ fn test_mv_global_with_mode() {
     // Try to use --global with --mode
     jin()
         .args(["mv", "--global", "--mode", "source.txt", "dest.txt"])
+        .env("JIN_DIR", fixture.jin_dir.as_ref().unwrap())
         .current_dir(fixture.path())
         .assert()
         .failure()
@@ -334,6 +353,7 @@ fn test_mv_gitignore_update() {
     jin()
         .args(["add", "config.json"])
         .current_dir(fixture.path())
+        .env("JIN_DIR", fixture.jin_dir.as_ref().unwrap())
         .assert()
         .success();
 
@@ -348,6 +368,7 @@ fn test_mv_gitignore_update() {
     jin()
         .args(["mv", "config.json", "settings.json"])
         .current_dir(fixture.path())
+        .env("JIN_DIR", fixture.jin_dir.as_ref().unwrap())
         .assert()
         .success();
 
@@ -366,6 +387,7 @@ fn test_mv_confirmation_prompt() {
     std::fs::write(fixture.path.join("test.txt"), "content").unwrap();
     jin()
         .args(["add", "test.txt"])
+        .env("JIN_DIR", fixture.jin_dir.as_ref().unwrap())
         .current_dir(fixture.path())
         .assert()
         .success();
@@ -374,6 +396,7 @@ fn test_mv_confirmation_prompt() {
     // Should prompt for confirmation
     jin()
         .args(["mv", "test.txt", "moved.txt"])
+        .env("JIN_DIR", fixture.jin_dir.as_ref().unwrap())
         .current_dir(fixture.path())
         .write_stdin("no")
         .assert()
@@ -381,8 +404,8 @@ fn test_mv_confirmation_prompt() {
         .stdout(predicates::str::contains("Move cancelled"));
 
     // Verify nothing changed
-    assert_staging_contains(fixture.path(), "test.txt");
-    assert_staging_not_contains(fixture.path(), "moved.txt");
+    assert_staging_contains(fixture.path(), "test.txt", fixture.jin_dir.as_deref());
+    assert_staging_not_contains(fixture.path(), "moved.txt", fixture.jin_dir.as_deref());
 }
 
 /// Test partial success: some files fail
@@ -396,6 +419,7 @@ fn test_mv_partial_success() {
 
     jin()
         .args(["add", "staged.txt"])
+        .env("JIN_DIR", fixture.jin_dir.as_ref().unwrap())
         .current_dir(fixture.path())
         .assert()
         .success();
@@ -413,14 +437,16 @@ fn test_mv_partial_success() {
             "unstaged.txt",
             "renamed-unstaged.txt",
         ])
+        .env("JIN_DIR", fixture.jin_dir.as_ref().unwrap())
         .current_dir(fixture.path())
         .assert()
         .success() // Partial success returns Ok
         .stderr(predicates::str::contains("Error:"));
 
     // Verify the staged file was moved (use exact JSON path matching)
-    let staging_content =
-        std::fs::read_to_string(fixture.path.join(".jin/staging/index.json")).unwrap();
+    let staging_content = std::fs::read_to_string(
+        fixture.jin_dir.as_ref().unwrap().join("staging/index.json")
+    ).unwrap();
     assert!(!staging_content.contains("\"staged.txt\""));
     assert!(staging_content.contains("\"renamed-staged.txt\""));
 

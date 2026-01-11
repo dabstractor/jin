@@ -75,11 +75,16 @@ pub fn assert_workspace_file_not_exists(project_path: &Path, file: &str) {
 /// # Arguments
 /// * `project_path` - Path to the project (with .jin directory)
 /// * `file` - Relative path to the file that should be staged
+/// * `jin_dir` - Optional path to Jin directory (if None, uses project_path/.jin)
 ///
 /// # Panics
 /// Panics if staging index doesn't exist or doesn't contain the file
-pub fn assert_staging_contains(project_path: &Path, file: &str) {
-    let staging_index_path = project_path.join(".jin/staging/index.json");
+pub fn assert_staging_contains(project_path: &Path, file: &str, jin_dir: Option<&Path>) {
+    let staging_index_path = match jin_dir {
+        Some(dir) => dir.join("staging/index.json"),
+        None => project_path.join(".jin/staging/index.json"),
+    };
+
     assert!(
         staging_index_path.exists(),
         "Staging index should exist at {:?}",
@@ -102,11 +107,15 @@ pub fn assert_staging_contains(project_path: &Path, file: &str) {
 /// # Arguments
 /// * `project_path` - Path to the project (with .jin directory)
 /// * `file` - Relative path to the file that should not be staged
+/// * `jin_dir` - Optional path to Jin directory (if None, uses project_path/.jin)
 ///
 /// # Panics
 /// Panics if staging index contains the file
-pub fn assert_staging_not_contains(project_path: &Path, file: &str) {
-    let staging_index_path = project_path.join(".jin/staging/index.json");
+pub fn assert_staging_not_contains(project_path: &Path, file: &str, jin_dir: Option<&Path>) {
+    let staging_index_path = match jin_dir {
+        Some(dir) => dir.join("staging/index.json"),
+        None => project_path.join(".jin/staging/index.json"),
+    };
 
     if !staging_index_path.exists() {
         // If staging index doesn't exist, the file is definitely not staged

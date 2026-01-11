@@ -391,8 +391,9 @@ fn test_list_empty_categories_hidden() {
     let mode_file = fixture.path().join("config.txt");
     std::fs::write(&mode_file, "config").unwrap();
 
+    // Use --mode flag to add file to mode layer, not project layer
     jin()
-        .args(["add", "config.txt"])
+        .args(["add", "config.txt", "--mode"])
         .current_dir(fixture.path())
         .env("JIN_DIR", &jin_dir)
         .assert()

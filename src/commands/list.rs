@@ -46,6 +46,17 @@ pub fn execute() -> Result<()> {
         }
     }
 
+    // Enumerate scope refs from refs/jin/scopes/
+    // Untethered scopes are stored at refs/jin/scopes/{name}
+    if let Ok(refs) = git_repo.references_glob("refs/jin/scopes/**") {
+        for ref_result in refs {
+            let reference = ref_result?;
+            if let Some(name) = reference.name() {
+                parse_scope_ref(name, &mut scopes);
+            }
+        }
+    }
+
     // Display results
     println!("Available in Jin repository:");
     println!();
@@ -153,7 +164,7 @@ fn parse_ref_path(
 /// Parse mode refs from refs/jin/modes/ namespace
 ///
 /// Modes are stored at refs/jin/modes/{name}/_mode
-/// Mode-bound scopes are at refs/jin/modes/{mode}/scopes/{scope}/_scope
+/// Mode-bound scopes are at refs/jin/modes/{mode}/scopes/{scope}
 fn parse_mode_ref(ref_path: &str, modes: &mut HashSet<String>, scopes: &mut HashSet<String>) {
     if !ref_path.starts_with("refs/jin/modes/") {
         return;
@@ -167,15 +178,37 @@ fn parse_mode_ref(ref_path: &str, modes: &mut HashSet<String>, scopes: &mut Hash
             // refs/jin/modes/{mode}/_mode
             modes.insert(mode.to_string());
         }
-        [mode, "scopes", scope, "_scope"] => {
-            // refs/jin/modes/{mode}/scopes/{scope}/_scope
+        [mode, "scopes", scope @ ..] => {
+            // refs/jin/modes/{mode}/scopes/{scope}
+            // The scope name may contain slashes for nested scopes (e.g., "config/vim")
             modes.insert(mode.to_string());
-            scopes.insert(scope.to_string());
+            if !scope.is_empty() {
+                let scope_name = scope.join("/");
+                // Convert slashes back to colons for display
+                let scope_name = scope_name.replace('/', ":");
+                scopes.insert(scope_name);
+            }
         }
         _ => {
             // Ignore other patterns (e.g., intermediate directories)
         }
     }
+}
+
+/// Parse scope refs from refs/jin/scopes/ namespace
+///
+/// Untethered scopes are at refs/jin/scopes/{name}
+/// The name may contain slashes for namespaced scopes like "config/vim" (from "config:vim")
+fn parse_scope_ref(ref_path: &str, scopes: &mut HashSet<String>) {
+    if !ref_path.starts_with("refs/jin/scopes/") {
+        return;
+    }
+
+    let path = &ref_path["refs/jin/scopes/".len()..];
+    // Convert slashes back to colons for display
+    // e.g., "config/vim" -> "config:vim"
+    let scope_name = path.replace('/', ":");
+    scopes.insert(scope_name);
 }
 
 #[cfg(test)]
@@ -293,7 +326,7 @@ mod tests {
         let mut scopes = HashSet::new();
 
         parse_mode_ref(
-            "refs/jin/modes/editor/scopes/config:vim/_scope",
+            "refs/jin/modes/editor/scopes/config/vim",
             &mut modes,
             &mut scopes,
         );
@@ -315,5 +348,21 @@ mod tests {
         parse_mode_ref("refs/jin/layers/mode/development", &mut modes, &mut scopes);
         assert!(modes.is_empty());
         assert!(scopes.is_empty());
+    }
+
+    #[test]
+    fn test_parse_scope_ref() {
+        let mut scopes = HashSet::new();
+
+        parse_scope_ref("refs/jin/scopes/config/vim", &mut scopes);
+        assert!(scopes.contains("config:vim"));
+    }
+
+    #[test]
+    fn test_parse_scope_ref_simple() {
+        let mut scopes = HashSet::new();
+
+        parse_scope_ref("refs/jin/scopes/myapp", &mut scopes);
+        assert!(scopes.contains("myapp"));
     }
 }

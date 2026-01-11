@@ -48,8 +48,7 @@ fn test_mode_create_and_use() -> Result<(), Box<dyn std::error::Error>> {
     let project_path = fixture.path();
     let jin_dir = fixture.jin_dir.as_ref().unwrap();
 
-    fixture.set_jin_dir();
-    jin_init(project_path, None)?;
+    jin_init(project_path, Some(jin_dir))?;
 
     // Create unique mode name to avoid conflicts
     let mode_name = format!("test_mode_{}", unique_test_id());
@@ -82,8 +81,7 @@ fn test_add_files_to_mode_layer() -> Result<(), Box<dyn std::error::Error>> {
     let project_path = fixture.path();
     let jin_dir = fixture.jin_dir.as_ref().unwrap();
 
-    fixture.set_jin_dir();
-    jin_init(project_path, None)?;
+    jin_init(project_path, Some(jin_dir))?;
 
     // Create and use mode
     let mode_name = format!("test_mode_{}", unique_test_id());
@@ -109,7 +107,7 @@ fn test_add_files_to_mode_layer() -> Result<(), Box<dyn std::error::Error>> {
         .success();
 
     // Verify file in staging
-    assert_staging_contains(project_path, "config.json");
+    assert_staging_contains(project_path, "config.json", Some(jin_dir));
 
     Ok(())
 }
@@ -121,8 +119,7 @@ fn test_commit_creates_layer_commit() -> Result<(), Box<dyn std::error::Error>> 
     let project_path = fixture.path();
     let jin_dir = fixture.jin_dir.as_ref().unwrap();
 
-    fixture.set_jin_dir();
-    jin_init(project_path, None)?;
+    jin_init(project_path, Some(jin_dir))?;
 
     // Create and use mode
     let mode_name = format!("test_mode_{}", unique_test_id());
@@ -154,11 +151,12 @@ fn test_commit_creates_layer_commit() -> Result<(), Box<dyn std::error::Error>> 
         .success();
 
     // Verify layer ref exists
-    let ref_path = format!("refs/jin/layers/mode/{}", mode_name);
+    // ModeBase refs use /_ suffix to avoid conflicts with child refs
+    let ref_path = format!("refs/jin/layers/mode/{}/_", mode_name);
     assert_layer_ref_exists(&ref_path, Some(jin_dir));
 
     // Verify staging cleared after commit
-    assert_staging_not_contains(project_path, "test.txt");
+    assert_staging_not_contains(project_path, "test.txt", Some(jin_dir));
 
     Ok(())
 }
@@ -170,8 +168,7 @@ fn test_apply_merges_to_workspace() -> Result<(), Box<dyn std::error::Error>> {
     let project_path = fixture.path();
     let jin_dir = fixture.jin_dir.as_ref().unwrap();
 
-    fixture.set_jin_dir();
-    jin_init(project_path, None)?;
+    jin_init(project_path, Some(jin_dir))?;
 
     // Create and use mode
     let mode_name = format!("test_mode_{}", unique_test_id());
@@ -239,27 +236,33 @@ fn test_apply_merges_to_workspace() -> Result<(), Box<dyn std::error::Error>> {
 fn test_complete_workflow_init_to_apply() -> Result<(), Box<dyn std::error::Error>> {
     let fixture = TestFixture::new()?;
     let project_path = fixture.path();
+    let jin_dir = fixture.jin_dir.as_ref().unwrap();
+
+    fixture.set_jin_dir();
 
     // Step 1: Initialize
     jin()
         .arg("init")
         .current_dir(project_path)
+        .env("JIN_DIR", jin_dir)
         .assert()
         .success();
 
     assert_jin_initialized(project_path);
 
     // Step 2: Create and use mode
-    let mode_name = format!("workflow_test_{}", std::process::id());
+    let mode_name = format!("workflow_test_{}", unique_test_id());
 
     jin()
         .args(["mode", "create", &mode_name])
+        .env("JIN_DIR", jin_dir)
         .assert()
         .success();
 
     jin()
         .args(["mode", "use", &mode_name])
         .current_dir(project_path)
+        .env("JIN_DIR", jin_dir)
         .assert()
         .success();
 
@@ -277,19 +280,21 @@ fn test_complete_workflow_init_to_apply() -> Result<(), Box<dyn std::error::Erro
     jin()
         .args(["add", &format!(".{}/settings.yaml", mode_name), "--mode"])
         .current_dir(project_path)
+        .env("JIN_DIR", jin_dir)
         .assert()
         .success();
 
-    assert_staging_contains(project_path, "settings.yaml");
+    assert_staging_contains(project_path, "settings.yaml", Some(jin_dir));
 
     // Step 5: Commit
     jin()
         .args(["commit", "-m", "Add workflow settings"])
         .current_dir(project_path)
+        .env("JIN_DIR", jin_dir)
         .assert()
         .success();
 
-    assert_staging_not_contains(project_path, "settings.yaml");
+    assert_staging_not_contains(project_path, "settings.yaml", Some(jin_dir));
 
     // Step 6: Remove file and apply to restore it
     fs::remove_file(&config_path)?;
@@ -298,6 +303,7 @@ fn test_complete_workflow_init_to_apply() -> Result<(), Box<dyn std::error::Erro
     jin()
         .arg("apply")
         .current_dir(project_path)
+        .env("JIN_DIR", jin_dir)
         .assert()
         .success();
 
@@ -312,6 +318,7 @@ fn test_complete_workflow_init_to_apply() -> Result<(), Box<dyn std::error::Erro
     jin()
         .arg("status")
         .current_dir(project_path)
+        .env("JIN_DIR", jin_dir)
         .assert()
         .success();
 
@@ -325,8 +332,7 @@ fn test_add_to_project_base_layer() -> Result<(), Box<dyn std::error::Error>> {
     let project_path = fixture.path();
     let jin_dir = fixture.jin_dir.as_ref().unwrap();
 
-    fixture.set_jin_dir();
-    jin_init(project_path, None)?;
+    jin_init(project_path, Some(jin_dir))?;
 
     // Create test file
     fs::write(project_path.join("readme.md"), "# Project\n")?;
@@ -339,7 +345,7 @@ fn test_add_to_project_base_layer() -> Result<(), Box<dyn std::error::Error>> {
         .assert()
         .success();
 
-    assert_staging_contains(project_path, "readme.md");
+    assert_staging_contains(project_path, "readme.md", Some(jin_dir));
 
     // Commit
     jin()
@@ -359,8 +365,7 @@ fn test_add_nonexistent_file_error() -> Result<(), Box<dyn std::error::Error>> {
     let project_path = fixture.path();
     let jin_dir = fixture.jin_dir.as_ref().unwrap();
 
-    fixture.set_jin_dir();
-    jin_init(project_path, None)?;
+    jin_init(project_path, Some(jin_dir))?;
 
     // Try to add non-existent file
     jin()
@@ -383,8 +388,7 @@ fn test_commit_no_staged_changes_error() -> Result<(), Box<dyn std::error::Error
     let project_path = fixture.path();
     let jin_dir = fixture.jin_dir.as_ref().unwrap();
 
-    fixture.set_jin_dir();
-    jin_init(project_path, None)?;
+    jin_init(project_path, Some(jin_dir))?;
 
     // Try to commit without staging anything
     let result = jin()
@@ -414,8 +418,7 @@ fn test_mode_use_nonexistent_error() -> Result<(), Box<dyn std::error::Error>> {
     let project_path = fixture.path();
     let jin_dir = fixture.jin_dir.as_ref().unwrap();
 
-    fixture.set_jin_dir();
-    jin_init(project_path, None)?;
+    jin_init(project_path, Some(jin_dir))?;
 
     // Try to use non-existent mode
     jin()
@@ -436,8 +439,7 @@ fn test_init_already_initialized() -> Result<(), Box<dyn std::error::Error>> {
     let project_path = fixture.path();
     let jin_dir = fixture.jin_dir.as_ref().unwrap();
 
-    fixture.set_jin_dir();
-    jin_init(project_path, None)?;
+    jin_init(project_path, Some(jin_dir))?;
 
     // Try to init again
     let result = jin()

@@ -94,30 +94,6 @@ fn clean_lock_files_recursive(dir: &Path) -> Result<(), Box<dyn std::error::Erro
     Ok(())
 }
 
-/// Clean up Git locks BEFORE running a test
-///
-/// This function should be called at the START of test setup to ensure
-/// no stale locks from previous test runs cause failures.
-///
-/// # Arguments
-/// * `jin_dir` - Path to JIN_DIR (may be None, using default ~/.jin)
-///
-/// # Gotchas
-/// - Must clean BOTH project .git AND JIN_DIR .git
-/// - Silently ignores errors (directories may not exist yet)
-/// - Call this BEFORE any JinRepo operations
-pub fn cleanup_before_test(jin_dir: Option<&Path>) {
-    // CRITICAL: Clean up JIN_DIR locks first (most common source of contention)
-    if let Some(jin_dir) = jin_dir {
-        let _ = cleanup_git_locks(jin_dir);
-    }
-
-    // Clean up current directory's .git locks (if we're in a git repo)
-    if let Ok(current_dir) = std::env::current_dir() {
-        let _ = cleanup_git_locks(&current_dir);
-    }
-}
-
 /// Wrapper for test environments with automatic Git lock cleanup
 ///
 /// This struct manages a temporary directory with automatic cleanup of

@@ -199,34 +199,6 @@ pub fn assert_context_mode(project_path: &Path, expected_mode: &str) {
     );
 }
 
-/// Assert that the Jin context file contains expected scope
-///
-/// # Arguments
-/// * `project_path` - Path to the project (with .jin directory)
-/// * `expected_scope` - Expected active scope name
-///
-/// # Panics
-/// Panics if context doesn't exist or doesn't contain the scope
-pub fn assert_context_scope(project_path: &Path, expected_scope: &str) {
-    let context_path = project_path.join(".jin/context");
-    assert!(
-        context_path.exists(),
-        "Context file should exist at {:?}",
-        context_path
-    );
-
-    let context_content = fs::read_to_string(&context_path)
-        .unwrap_or_else(|e| panic!("Failed to read context file: {}", e));
-
-    assert!(
-        context_content.contains(&format!("\"scope\": \"{}\"", expected_scope))
-            || context_content.contains(&format!("\"scope\":\"{}\"", expected_scope)),
-        "Context should contain scope '{}'. Context content:\n{}",
-        expected_scope,
-        context_content
-    );
-}
-
 /// Assert that .jin directory exists
 ///
 /// # Arguments

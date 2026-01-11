@@ -379,14 +379,14 @@
           "type": "Milestone",
           "id": "P3.M1",
           "title": "Clean Up Unused Test Utilities",
-          "status": "Planned",
+          "status": "Complete",
           "description": "Remove or use unused test helper functions to reduce maintenance burden.",
           "tasks": [
             {
               "type": "Task",
               "id": "P3.M1.T1",
               "title": "Audit and Remove Unused Test Functions",
-              "status": "Planned",
+              "status": "Complete",
               "description": "Identify and remove unused test utilities from tests/common/.",
               "subtasks": [
                 {
@@ -402,7 +402,7 @@
                   "type": "Subtask",
                   "id": "P3.M1.T1.S2",
                   "title": "Remove or use identified unused functions",
-                  "status": "Planned",
+                  "status": "Complete",
                   "story_points": 2,
                   "dependencies": [
                     "P3.M1.T1.S1"

@@ -55,8 +55,13 @@ pub fn execute(args: ImportArgs) -> Result<()> {
     };
 
     // 3. Build and validate routing options
-    // ImportArgs doesn't have layer flags, so we use default routing (ProjectBase)
-    let options = RoutingOptions::default();
+    let options = RoutingOptions {
+        mode: args.mode,
+        scope: args.scope.clone(),
+        project: args.project,
+        global: args.global,
+        local: args.local,
+    };
     validate_routing_options(&options)?;
 
     // 4. Determine target layer

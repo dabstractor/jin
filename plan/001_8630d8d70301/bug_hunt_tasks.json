@@ -212,7 +212,7 @@
                   "type": "Subtask",
                   "id": "P1.M4.T1.S1",
                   "title": "Create test mode creation helper function",
-                  "status": "Planned",
+                  "status": "Complete",
                   "story_points": 1,
                   "dependencies": [],
                   "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: From plan/001_8630d8d70301/bugfix/001_d2716c9eb3cf/architecture/test_infrastructure_analysis.md, the test manually creates mode refs using Git commands. A helper function create_test_mode_in_context() should be created for consistency.\n2. INPUT: Access to JinRepo from src/git/repo.rs for creating refs. Access to UnitTestContext from src/test_utils.rs.\n3. LOGIC: Create a new helper function create_test_mode_in_context(name: &str, ctx: &UnitTestContext) in the test module (src/commands/scope.rs tests section). The function should: 1) Open JinRepo, 2) Create an empty Git tree, 3) Create a commit, 4) Set the ref at refs/jin/modes/{name}/_mode. This matches the pattern used by the actual mode creation code.\n4. OUTPUT: New helper function that creates a test mode ref in the isolated test context. Function should use absolute paths from ctx.jin_dir instead of environment variables."

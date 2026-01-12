@@ -185,7 +185,11 @@ fn test_layer_routing_mode_scope() -> Result<(), Box<dyn std::error::Error>> {
 
     // Verify ref created for mode scope layer
     // CRITICAL: Scope names with colons are sanitized to slashes in Git refs
-    let ref_path = format!("refs/jin/layers/mode/{}/scope/{}/_", mode_name, scope_name.replace(':', "/"));
+    let ref_path = format!(
+        "refs/jin/layers/mode/{}/scope/{}/_",
+        mode_name,
+        scope_name.replace(':', "/")
+    );
     assert_layer_ref_exists(&ref_path, Some(jin_dir));
 
     Ok(())
@@ -256,7 +260,9 @@ fn test_layer_routing_mode_scope_project() -> Result<(), Box<dyn std::error::Err
         .expect("Failed to get project name");
     let ref_path = format!(
         "refs/jin/layers/mode/{}/scope/{}/project/{}",
-        mode_name, scope_name.replace(':', "/"), project_name
+        mode_name,
+        scope_name.replace(':', "/"),
+        project_name
     );
     assert_layer_ref_exists(&ref_path, Some(jin_dir));
 

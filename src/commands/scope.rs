@@ -431,6 +431,7 @@ fn unset() -> Result<()> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::test_utils::{setup_unit_test, UnitTestContext};
     use serial_test::serial;
     use tempfile::TempDir;
 
@@ -466,6 +467,41 @@ mod tests {
             .create_commit(None, &format!("Initialize mode: {}", name), empty_tree, &[])
             .unwrap();
         // Use _mode suffix to make the mode name a directory (allows nested scopes)
+        repo.set_ref(
+            &format!("refs/jin/modes/{}/_mode", name),
+            commit_oid,
+            &format!("create mode {}", name),
+        )
+        .unwrap();
+    }
+
+    /// Create a test mode in the given UnitTestContext
+    ///
+    /// Creates a mode ref at `refs/jin/modes/{name}/_mode` using absolute paths
+    /// from the context, ensuring proper test isolation without relying on
+    /// environment variables.
+    ///
+    /// # Arguments
+    /// * `name` - Mode name (e.g., "testmode")
+    /// * `ctx` - UnitTestContext containing the isolated jin_dir path
+    ///
+    /// # Critical Behavior
+    /// - Uses `JinRepo::open_or_create_at(&ctx.jin_dir)` for isolation
+    /// - Creates ref at `refs/jin/modes/{name}/_mode` (underscore prefix required)
+    /// - Does NOT rely on JIN_DIR environment variable
+    fn create_test_mode_in_context(name: &str, ctx: &UnitTestContext) {
+        // CRITICAL: Use open_or_create_at with explicit path for isolation
+        let repo = JinRepo::open_or_create_at(&ctx.jin_dir).unwrap();
+
+        // Create empty tree for initial commit
+        let empty_tree = repo.create_tree(&[]).unwrap();
+
+        // Create initial commit with no parents
+        let commit_oid = repo
+            .create_commit(None, &format!("Initialize mode: {}", name), empty_tree, &[])
+            .unwrap();
+
+        // Set mode ref with _mode suffix (makes mode name a directory for nested scopes)
         repo.set_ref(
             &format!("refs/jin/modes/{}/_mode", name),
             commit_oid,

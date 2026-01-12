@@ -172,7 +172,7 @@
                   "type": "Subtask",
                   "id": "P1.M3.T1.S3",
                   "title": "Fix test_multiple_modes_isolated ref paths",
-                  "status": "Planned",
+                  "status": "Complete",
                   "story_points": 1,
                   "dependencies": [],
                   "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: From plan/001_8630d8d70301/bugfix/001_d2716c9eb3cf/architecture/test_infrastructure_analysis.md, test_multiple_modes_isolated at lines 634-635 has two incorrect assertions for mode_a and mode_b, both missing the /_ suffix.\n2. INPUT: Access to tests/mode_scope_workflow.rs lines 634-635. Find the two assert_layer_ref_exists() calls.\n3. LOGIC: Update both assertions from format!(\"refs/jin/layers/mode/{}\", mode_a) and format!(\"refs/jin/layers/mode/{}\", mode_b) to format!(\"refs/jin/layers/mode/{}/_\", mode_a) and format!(\"refs/jin/layers/mode/{}/_\", mode_b) respectively.\n4. OUTPUT: Updated assertions at lines 634-635 with correct ref paths. Run the test to verify it passes."

@@ -633,8 +633,8 @@ fn test_multiple_modes_isolated() -> Result<(), Box<dyn std::error::Error>> {
         .success();
 
     // Verify both mode refs exist independently
-    assert_layer_ref_exists(&format!("refs/jin/layers/mode/{}", mode_a), Some(jin_dir));
-    assert_layer_ref_exists(&format!("refs/jin/layers/mode/{}", mode_b), Some(jin_dir));
+    assert_layer_ref_exists(&format!("refs/jin/layers/mode/{}/_", mode_a), Some(jin_dir));
+    assert_layer_ref_exists(&format!("refs/jin/layers/mode/{}/_", mode_b), Some(jin_dir));
 
     Ok(())
 }

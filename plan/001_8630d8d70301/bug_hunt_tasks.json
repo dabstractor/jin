@@ -105,7 +105,7 @@
                   "type": "Subtask",
                   "id": "P1.M2.T1.S1",
                   "title": "Add parse_layer_from_ref_path() helper function",
-                  "status": "Planned",
+                  "status": "Complete",
                   "story_points": 2,
                   "dependencies": [],
                   "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: From plan/001_8630d8d70301/bugfix/001_d2716c9eb3cf/architecture/log_command_analysis.md, the log command currently uses Layer::all_in_precedence_order() and layer.ref_path() which only checks canonical paths. It misses refs like refs/jin/layers/mode/<mode>/scope/<scope>/_.\n2. INPUT: No dependencies - this is a new function. Reference src/core/layer.rs for Layer enum variants and their ref path patterns.\n3. LOGIC: Create a new function parse_layer_from_ref_path(ref_path: &str) -> Option<Layer> in src/commands/log.rs. Parse the ref path string by splitting on '/'. Match patterns like: refs/jin/layers/global => Layer::Global, refs/jin/layers/mode/<name>/_ => Layer::ModeBase, refs/jin/layers/mode/<name>/scope/<scope>/_ => Layer::ModeScope, refs/jin/layers/scope/<name> => Layer::ScopeBase, etc. Handle the /_ suffix correctly.\n4. OUTPUT: New helper function that returns Some(Layer) when the ref path matches a known layer pattern, or None otherwise. Function should handle all 9 layer types correctly."

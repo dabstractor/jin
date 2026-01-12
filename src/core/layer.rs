@@ -166,6 +166,60 @@ impl Layer {
             Layer::ModeScopeProject | Layer::ModeProject | Layer::ProjectBase
         )
     }
+
+    /// Parse a layer from a Git ref path.
+    ///
+    /// Returns `Some(Layer)` if the ref path matches a known layer pattern,
+    /// or `None` if the path is invalid or doesn't match any layer.
+    ///
+    /// # Examples
+    ///
+    /// ```ignore
+    /// assert_eq!(Layer::parse_layer_from_ref_path("refs/jin/layers/global"), Some(Layer::GlobalBase));
+    /// assert_eq!(Layer::parse_layer_from_ref_path("refs/jin/layers/mode/development/_"), Some(Layer::ModeBase));
+    /// assert_eq!(Layer::parse_layer_from_ref_path("refs/jin/layers/mode/production/scope/api/_"), Some(Layer::ModeScope));
+    /// assert_eq!(Layer::parse_layer_from_ref_path("invalid/path"), None);
+    /// ```
+    pub fn parse_layer_from_ref_path(ref_path: &str) -> Option<Layer> {
+        // Split the entire ref path and filter empty segments first
+        // This handles extra slashes like "refs/jin/layers//global" correctly
+        let all_parts: Vec<&str> = ref_path.split('/').filter(|s| !s.is_empty()).collect();
+
+        // Check if we have enough parts and the prefix is correct
+        // Prefix is: refs, jin, layers
+        if all_parts.len() < 4 {
+            return None;
+        }
+        if all_parts[0] != "refs" || all_parts[1] != "jin" || all_parts[2] != "layers" {
+            return None;
+        }
+
+        // Extract the parts after "refs/jin/layers/"
+        let parts = &all_parts[3..];
+
+        // Match on slice patterns
+        // CRITICAL: More specific patterns must come before less specific ones
+        // CRITICAL: "_" in patterns is a literal string (the suffix), not a wildcard
+        match parts {
+            // Most specific: 6 segments for ModeScopeProject
+            ["mode", _, "scope", _, "project", _] => Some(Layer::ModeScopeProject),
+            // 5 segments for ModeScope with /_ suffix
+            ["mode", _, "scope", _, "_"] => Some(Layer::ModeScope),
+            // 4 segments for ModeProject
+            ["mode", _, "project", _] => Some(Layer::ModeProject),
+            // 3 segments for ModeBase with /_ suffix
+            ["mode", _, "_"] => Some(Layer::ModeBase),
+            // 2 segments with wildcard
+            ["scope", _] => Some(Layer::ScopeBase),
+            ["project", _] => Some(Layer::ProjectBase),
+            // Single segments
+            ["global"] => Some(Layer::GlobalBase),
+            ["local"] => Some(Layer::UserLocal),
+            ["workspace"] => Some(Layer::WorkspaceActive),
+            // Unknown pattern
+            _ => None,
+        }
+    }
 }
 
 impl std::fmt::Display for Layer {
@@ -291,5 +345,217 @@ mod tests {
     fn test_display() {
         assert_eq!(Layer::GlobalBase.to_string(), "global-base");
         assert_eq!(Layer::WorkspaceActive.to_string(), "workspace-active");
+    }
+
+    // Tests for parse_layer_from_ref_path()
+
+    #[test]
+    fn test_parse_layer_from_ref_path_global_base() {
+        let result = Layer::parse_layer_from_ref_path("refs/jin/layers/global");
+        assert!(result.is_some());
+        assert_eq!(result.unwrap(), Layer::GlobalBase);
+    }
+
+    #[test]
+    fn test_parse_layer_from_ref_path_mode_base() {
+        let result = Layer::parse_layer_from_ref_path("refs/jin/layers/mode/development/_");
+        assert_eq!(result, Some(Layer::ModeBase));
+
+        // Test with different mode names
+        assert_eq!(
+            Layer::parse_layer_from_ref_path("refs/jin/layers/mode/production/_"),
+            Some(Layer::ModeBase)
+        );
+        assert_eq!(
+            Layer::parse_layer_from_ref_path("refs/jin/layers/mode/claude/_"),
+            Some(Layer::ModeBase)
+        );
+    }
+
+    #[test]
+    fn test_parse_layer_from_ref_path_mode_scope() {
+        let result =
+            Layer::parse_layer_from_ref_path("refs/jin/layers/mode/production/scope/api/_");
+        assert_eq!(result, Some(Layer::ModeScope));
+
+        // Test with scope name containing colon (replaces slash in ref path)
+        assert_eq!(
+            Layer::parse_layer_from_ref_path(
+                "refs/jin/layers/mode/dev/scope/language:javascript/_"
+            ),
+            Some(Layer::ModeScope)
+        );
+    }
+
+    #[test]
+    fn test_parse_layer_from_ref_path_mode_scope_project() {
+        let result =
+            Layer::parse_layer_from_ref_path("refs/jin/layers/mode/dev/scope/api/project/ui");
+        assert_eq!(result, Some(Layer::ModeScopeProject));
+
+        // More complex example
+        assert_eq!(
+            Layer::parse_layer_from_ref_path(
+                "refs/jin/layers/mode/production/scope/config/project/backend"
+            ),
+            Some(Layer::ModeScopeProject)
+        );
+    }
+
+    #[test]
+    fn test_parse_layer_from_ref_path_mode_project() {
+        let result = Layer::parse_layer_from_ref_path("refs/jin/layers/mode/dev/project/backend");
+        assert_eq!(result, Some(Layer::ModeProject));
+    }
+
+    #[test]
+    fn test_parse_layer_from_ref_path_scope_base() {
+        let result = Layer::parse_layer_from_ref_path("refs/jin/layers/scope/config");
+        assert_eq!(result, Some(Layer::ScopeBase));
+    }
+
+    #[test]
+    fn test_parse_layer_from_ref_path_project_base() {
+        let result = Layer::parse_layer_from_ref_path("refs/jin/layers/project/api-server");
+        assert_eq!(result, Some(Layer::ProjectBase));
+    }
+
+    #[test]
+    fn test_parse_layer_from_ref_path_user_local() {
+        let result = Layer::parse_layer_from_ref_path("refs/jin/layers/local");
+        assert_eq!(result, Some(Layer::UserLocal));
+    }
+
+    #[test]
+    fn test_parse_layer_from_ref_path_workspace_active() {
+        let result = Layer::parse_layer_from_ref_path("refs/jin/layers/workspace");
+        assert_eq!(result, Some(Layer::WorkspaceActive));
+    }
+
+    // Negative cases - invalid inputs
+
+    #[test]
+    fn test_parse_layer_from_ref_path_empty_string() {
+        let result = Layer::parse_layer_from_ref_path("");
+        assert!(result.is_none());
+    }
+
+    #[test]
+    fn test_parse_layer_from_ref_path_wrong_prefix() {
+        assert_eq!(Layer::parse_layer_from_ref_path("refs/other/global"), None);
+        assert_eq!(Layer::parse_layer_from_ref_path("jin/layers/global"), None);
+        assert_eq!(
+            Layer::parse_layer_from_ref_path("refs/git/layers/global"),
+            None
+        );
+    }
+
+    #[test]
+    fn test_parse_layer_from_ref_path_partial_match() {
+        // Just the prefix, no layer name
+        assert_eq!(Layer::parse_layer_from_ref_path("refs/jin/layers"), None);
+
+        // Partial mode path without /_ suffix
+        assert_eq!(
+            Layer::parse_layer_from_ref_path("refs/jin/layers/mode"),
+            None
+        );
+
+        assert_eq!(
+            Layer::parse_layer_from_ref_path("refs/jin/layers/mode/development"),
+            None
+        );
+    }
+
+    #[test]
+    fn test_parse_layer_from_ref_path_invalid_suffix() {
+        // ModeBase without /_ suffix should not match
+        assert_eq!(
+            Layer::parse_layer_from_ref_path("refs/jin/layers/mode/development"),
+            None
+        );
+
+        // ModeScope without /_ suffix should not match
+        assert_eq!(
+            Layer::parse_layer_from_ref_path("refs/jin/layers/mode/dev/scope/api"),
+            None
+        );
+    }
+
+    // Edge cases
+
+    #[test]
+    fn test_parse_layer_from_ref_path_with_underscore_in_name() {
+        // Mode names can have underscores
+        assert_eq!(
+            Layer::parse_layer_from_ref_path("refs/jin/layers/mode/dev_env/_"),
+            Some(Layer::ModeBase)
+        );
+
+        // Scope names can have underscores
+        assert_eq!(
+            Layer::parse_layer_from_ref_path("refs/jin/layers/mode/dev/scope/api_test/_"),
+            Some(Layer::ModeScope)
+        );
+
+        // Project names can have underscores
+        assert_eq!(
+            Layer::parse_layer_from_ref_path("refs/jin/layers/mode/dev/project/test_ui"),
+            Some(Layer::ModeProject)
+        );
+    }
+
+    #[test]
+    fn test_parse_layer_from_ref_path_extra_slashes() {
+        // Double slashes should be filtered out
+        assert_eq!(
+            Layer::parse_layer_from_ref_path("refs/jin/layers//global"),
+            Some(Layer::GlobalBase)
+        );
+
+        assert_eq!(
+            Layer::parse_layer_from_ref_path("refs/jin//layers/global"),
+            Some(Layer::GlobalBase)
+        );
+
+        // Triple slashes
+        assert_eq!(
+            Layer::parse_layer_from_ref_path("refs///jin///layers///global"),
+            Some(Layer::GlobalBase)
+        );
+    }
+
+    #[test]
+    fn test_parse_layer_from_ref_path_trailing_slash() {
+        // Trailing slash creates empty segment that gets filtered
+        assert_eq!(
+            Layer::parse_layer_from_ref_path("refs/jin/layers/global/"),
+            Some(Layer::GlobalBase)
+        );
+    }
+
+    #[test]
+    fn test_parse_layer_from_ref_path_unknown_layer() {
+        // Unknown layer type
+        assert_eq!(
+            Layer::parse_layer_from_ref_path("refs/jin/layers/unknown"),
+            None
+        );
+
+        // Invalid mode structure
+        assert_eq!(
+            Layer::parse_layer_from_ref_path("refs/jin/layers/mode/dev/invalid"),
+            None
+        );
+    }
+
+    #[test]
+    fn test_parse_layer_from_ref_path_pattern_order() {
+        // Verify that more specific patterns match before less specific ones
+        // ModeScopeProject (6 segments) should match, not ModeScope
+        assert_eq!(
+            Layer::parse_layer_from_ref_path("refs/jin/layers/mode/dev/scope/api/project/ui"),
+            Some(Layer::ModeScopeProject)
+        );
     }
 }

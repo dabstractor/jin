@@ -1251,9 +1251,7 @@ fn test_array_key_based_merge() -> Result<(), Box<dyn std::error::Error>> {
     // CRITICAL ASSERTIONS for array merging
 
     // 1. Array length check (should be 2, not 3)
-    let merged_array = merged
-        .as_array()
-        .expect("Merged value should be an array");
+    let merged_array = merged.as_array().expect("Merged value should be an array");
     assert_eq!(
         merged_array.len(),
         2,

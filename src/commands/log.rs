@@ -4,9 +4,10 @@
 
 use crate::cli::LogArgs;
 use crate::core::{JinError, Layer, ProjectContext, Result};
-use crate::git::JinRepo;
+use crate::git::{refs::RefOps, JinRepo};
 use chrono::{DateTime, Utc};
 use git2::Sort;
+use std::collections::HashMap;
 
 /// Execute the log command
 ///
@@ -32,6 +33,18 @@ pub fn execute(args: LogArgs) -> Result<()> {
         show_layer_history(git_repo, layer, &context, args.count)?;
     } else {
         // Show history for all layers with commits
+        // Discover all layer refs dynamically
+        let all_refs = repo.list_refs("refs/jin/layers/**")?;
+
+        // Group refs by layer type
+        let mut layer_refs: HashMap<Layer, Vec<String>> = HashMap::new();
+        for path in all_refs {
+            if let Some(layer) = Layer::parse_layer_from_ref_path(&path) {
+                layer_refs.entry(layer).or_default().push(path);
+            }
+        }
+
+        // Display in precedence order
         let all_layers = Layer::all_in_precedence_order();
         let mut shown_any = false;
 
@@ -44,21 +57,17 @@ pub fn execute(args: LogArgs) -> Result<()> {
                 continue;
             }
 
-            let ref_path = layer.ref_path(
-                context.mode.as_deref(),
-                context.scope.as_deref(),
-                context.project.as_deref(),
-            );
-
-            // Check if ref exists
-            if git_repo.find_reference(&ref_path).is_ok() {
-                if shown_any {
+            // Get all refs for this layer type
+            if let Some(refs) = layer_refs.get(layer) {
+                for path in refs {
+                    if shown_any {
+                        println!();
+                    }
+                    println!("=== {} ===", layer);
                     println!();
+                    show_history_for_ref_path(git_repo, path, *layer, args.count)?;
+                    shown_any = true;
                 }
-                println!("=== {} ===", layer);
-                println!();
-                show_layer_history(git_repo, *layer, &context, args.count)?;
-                shown_any = true;
             }
         }
 
@@ -83,8 +92,21 @@ fn show_layer_history(
         context.project.as_deref(),
     );
 
+    show_history_for_ref_path(repo, &ref_path, layer, count)
+}
+
+/// Show commit history for a specific ref path
+///
+/// This is a helper function that displays commit history for an arbitrary
+/// ref path, used internally for dynamic layer ref discovery.
+fn show_history_for_ref_path(
+    repo: &git2::Repository,
+    ref_path: &str,
+    layer: Layer,
+    count: usize,
+) -> Result<()> {
     // Check if ref exists
-    let _reference = match repo.find_reference(&ref_path) {
+    let _reference = match repo.find_reference(ref_path) {
         Ok(r) => r,
         Err(_) => {
             println!("No commits yet for layer: {}", layer);
@@ -94,7 +116,7 @@ fn show_layer_history(
 
     // Create revwalk
     let mut revwalk = repo.revwalk()?;
-    revwalk.push_ref(&ref_path)?;
+    revwalk.push_ref(ref_path)?;
     revwalk.set_sorting(Sort::TIME)?;
 
     // Iterate through commits

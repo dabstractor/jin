@@ -140,14 +140,14 @@
           "type": "Milestone",
           "id": "P1.M3",
           "title": "Fix Test Suite Ref Paths",
-          "status": "Planned",
+          "status": "Complete",
           "description": "Update incorrect ref path assertions in tests to include the required /_ suffix for layer refs that can have child refs.",
           "tasks": [
             {
               "type": "Task",
               "id": "P1.M3.T1",
               "title": "Update ref path assertions in mode_scope_workflow.rs",
-              "status": "Planned",
+              "status": "Complete",
               "description": "Fix the 4 incorrect ref path assertions in tests/mode_scope_workflow.rs by adding the missing /_ suffix.",
               "subtasks": [
                 {
@@ -181,7 +181,7 @@
                   "type": "Subtask",
                   "id": "P1.M3.T1.S4",
                   "title": "Run full test suite to verify all ref path fixes",
-                  "status": "Planned",
+                  "status": "Complete",
                   "story_points": 1,
                   "dependencies": [
                     "P1.M3.T1.S1",

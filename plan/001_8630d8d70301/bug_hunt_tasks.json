@@ -163,7 +163,7 @@
                   "type": "Subtask",
                   "id": "P1.M3.T1.S2",
                   "title": "Fix test_layer_routing_mode_scope ref path",
-                  "status": "Planned",
+                  "status": "Complete",
                   "story_points": 1,
                   "dependencies": [],
                   "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: From plan/001_8630d8d70301/bugfix/001_d2716c9eb3cf/architecture/test_infrastructure_analysis.md, test_layer_routing_mode_scope at line 187 uses refs/jin/layers/mode/{mode}/scope/{scope} but should use refs/jin/layers/mode/{mode}/scope/{scope}/_ because ModeScope can have ModeScopeProject children.\n2. INPUT: Access to tests/mode_scope_workflow.rs line 187. Find the assert_layer_ref_exists() call.\n3. LOGIC: Update the assertion string format from format!(\"refs/jin/layers/mode/{}/scope/{}\", mode_name, scope_name) to format!(\"refs/jin/layers/mode/{}/scope/{}/_\", mode_name, scope_name). Add the /_ suffix.\n4. OUTPUT: Updated assertion at line 187 with correct ref path. Run the test to verify it passes."

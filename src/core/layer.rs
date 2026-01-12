@@ -60,6 +60,11 @@ impl Layer {
         scope: Option<&str>,
         project: Option<&str>,
     ) -> String {
+        // Sanitize scope name: replace colons with slashes for Git ref compatibility
+        // This matches the behavior of scope creation in src/commands/scope.rs
+        let scope_sanitized = scope.map(|s| s.replace(':', "/"));
+        let scope_ref = scope_sanitized.as_deref().or(scope).unwrap_or("default");
+
         match self {
             Layer::GlobalBase => "refs/jin/layers/global".to_string(),
             // ModeBase uses /_ suffix because ModeScope, ModeScopeProject, and ModeProject
@@ -71,12 +76,12 @@ impl Layer {
             Layer::ModeScope => format!(
                 "refs/jin/layers/mode/{}/scope/{}/_",
                 mode.unwrap_or("default"),
-                scope.unwrap_or("default")
+                scope_ref
             ),
             Layer::ModeScopeProject => format!(
                 "refs/jin/layers/mode/{}/scope/{}/project/{}",
                 mode.unwrap_or("default"),
-                scope.unwrap_or("default"),
+                scope_ref,
                 project.unwrap_or("default")
             ),
             Layer::ModeProject => format!(
@@ -85,7 +90,7 @@ impl Layer {
                 project.unwrap_or("default")
             ),
             Layer::ScopeBase => {
-                format!("refs/jin/layers/scope/{}", scope.unwrap_or("default"))
+                format!("refs/jin/layers/scope/{}", scope_ref)
             }
             Layer::ProjectBase => {
                 format!("refs/jin/layers/project/{}", project.unwrap_or("default"))

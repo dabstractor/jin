@@ -134,37 +134,55 @@ pub fn merge_layers(config: &LayerMergeConfig, repo: &JinRepo) -> Result<LayerMe
         );
 
         if layers_with_file.len() > 1 {
-            // File exists in multiple layers - check for content conflicts
-            let has_conflict =
-                has_different_content_across_layers(path, &layers_with_file, config, repo)?;
-            eprintln!("[DEBUG] merge_layers: Has conflict: {}", has_conflict);
+            // Detect file format to determine conflict check strategy
+            let format = detect_format(path);
+            eprintln!("[DEBUG] merge_layers: File format: {:?}", format);
 
-            if has_conflict {
-                // Different content detected - add to conflicts and skip merge
-                result.conflict_files.push(path.clone());
-                continue; // Skip merge_file_across_layers() for this file
+            // Only check for conflicts in text files (line-based 3-way merge)
+            if format == FileFormat::Text {
+                let has_conflict =
+                    has_different_text_content(path, &layers_with_file, config, repo)?;
+                eprintln!("[DEBUG] merge_layers: Text file has conflict: {}", has_conflict);
+
+                if has_conflict {
+                    // Different text content detected - add to conflicts and skip merge
+                    result.conflict_files.push(path.clone());
+                    continue; // Skip merge_file_across_layers() for this file
+                }
             }
 
-            // ============================================================
-            // NEW: Optimization for same content across multiple layers
-            // ============================================================
-            // All layers have identical content - use first layer directly
-            let first_layer = &layers_with_file[0];
-            let merged = create_merged_file_from_first_layer(path, first_layer, config, repo);
-            eprintln!(
-                "[DEBUG] merge_layers: Merged result (same content): {:?}",
-                merged.is_ok()
-            );
+            // Check if all layers have the same content (optimization applies)
+            let same_content = if format == FileFormat::Text {
+                // For text files: already checked above, reached here = same content
+                true
+            } else {
+                // For structured files: check if semantic content is identical
+                !has_different_content_across_layers(path, &layers_with_file, config, repo)?
+            };
 
-            let mut merged = merged?;
+            if same_content {
+                // ============================================================
+                // Optimization for same content across multiple layers
+                // ============================================================
+                // All layers have identical content - use first layer directly
+                let first_layer = &layers_with_file[0];
+                let merged = create_merged_file_from_first_layer(path, first_layer, config, repo);
+                eprintln!(
+                    "[DEBUG] merge_layers: Merged result (same content): {:?}",
+                    merged.is_ok()
+                );
 
-            // CRITICAL: Add ALL layers to source_layers for metadata completeness
-            merged
-                .source_layers
-                .extend(layers_with_file.iter().copied());
+                let mut merged = merged?;
 
-            result.merged_files.insert(path.clone(), merged);
-            continue; // Skip merge_file_across_layers() - optimization complete
+                // CRITICAL: Add ALL layers to source_layers for metadata completeness
+                merged
+                    .source_layers
+                    .extend(layers_with_file.iter().copied());
+
+                result.merged_files.insert(path.clone(), merged);
+                continue; // Skip merge_file_across_layers() - optimization complete
+            }
+            // For structured files with different content: proceed to deep merge below
         }
 
         // ============================================================
@@ -2309,15 +2327,15 @@ mod tests {
     }
 
     #[test]
-    fn test_merge_layers_two_layers_different_content_conflict() {
+    fn test_merge_layers_two_layers_different_structured_content_auto_merge() {
         let (_temp, repo) = create_layer_test_repo();
 
-        // Layers have different content
+        // Layers have different structured content - should auto-merge, not conflict
         create_layer_with_file(
             &repo,
             "refs/jin/layers/global",
             "config.json",
-            br#"{"port": 8080}"#,
+            br#"{"port": 8080, "debug": false}"#,
         )
         .unwrap();
 
@@ -2325,7 +2343,7 @@ mod tests {
             &repo,
             "refs/jin/layers/mode/dev/_",
             "config.json",
-            br#"{"port": 9090}"#,
+            br#"{"port": 9090, "feature": true}"#,
         )
         .unwrap();
 
@@ -2339,66 +2357,56 @@ mod tests {
 
         let result = merge_layers(&config, &repo).unwrap();
 
-        // Should detect conflict and skip merge
-        assert_eq!(result.conflict_files.len(), 1);
-        assert_eq!(result.conflict_files[0], Path::new("config.json"));
-        assert_eq!(result.merged_files.len(), 0); // Not merged due to conflict
+        // Should deep-merge successfully (no conflict)
+        assert_eq!(result.conflict_files.len(), 0);
+        assert_eq!(result.merged_files.len(), 1);
+
+        // Verify merged content: mode layer (9090) overrides global (8080)
+        let merged = result.merged_files.get(&PathBuf::from("config.json")).unwrap();
+        let obj = merged.content.as_object().unwrap();
+        assert_eq!(obj.get("port").unwrap().as_i64(), Some(9090)); // From mode layer
+        assert_eq!(obj.get("debug").unwrap().as_bool(), Some(false)); // From global layer
+        assert_eq!(obj.get("feature").unwrap().as_bool(), Some(true)); // From mode layer
     }
 
     #[test]
-    fn test_merge_layers_partial_merge_some_conflicts() {
+    fn test_merge_layers_text_file_conflict_still_detected() {
         let (_temp, repo) = create_layer_test_repo();
 
-        // File 1: Conflict (different content)
-        // Create conflict.json in global layer first
-        create_layer_with_file(
-            &repo,
-            "refs/jin/layers/global",
-            "conflict.json",
-            br#"{"v": 1}"#,
-        )
-        .unwrap();
+        // Text files with different content should still create conflicts
+        // File 1: Conflict (different text content)
+        let conflict_blob1 = repo.create_blob(b"version 1\n").unwrap();
+        let safe_blob = repo.create_blob(b"safe content\n").unwrap();
 
-        // File 2: No conflict (single layer)
-        // Create safe.json in global layer (doesn't overwrite conflict.json because we'll re-create the layer with both files)
-        // Actually, we need a helper that creates multiple files in one layer
-        // For now, let's use the workaround of creating the global layer last with both files
-
-        // Create the mode layer with conflict.json
-        create_layer_with_file(
-            &repo,
-            "refs/jin/layers/mode/dev/_",
-            "conflict.json",
-            br#"{"v": 2}"#,
-        )
-        .unwrap();
-
-        // Now re-create the global layer with BOTH files (conflict.json and safe.json)
-        // We need to create both blobs, then create a tree with both paths
-        let conflict_blob = repo.create_blob(br#"{"v": 1}"#).unwrap();
-        let safe_blob = repo.create_blob(br#"{"safe": true}"#).unwrap();
-
-        let tree_oid = repo
+        // Create global layer with both files
+        let tree_oid1 = repo
             .create_tree_from_paths(&[
-                ("conflict.json".to_string(), conflict_blob),
-                ("safe.json".to_string(), safe_blob),
+                ("conflict.txt".to_string(), conflict_blob1),
+                ("safe.txt".to_string(), safe_blob),
             ])
             .unwrap();
 
         let sig = git2::Signature::now("test", "test@test.com").unwrap();
-        let tree = repo.inner().find_tree(tree_oid).unwrap();
-        let commit_oid = repo
+        let tree1 = repo.inner().find_tree(tree_oid1).unwrap();
+        let commit_oid1 = repo
             .inner()
-            .commit(
-                None,
-                &sig,
-                &sig,
-                "test commit with multiple files",
-                &tree,
-                &[],
-            )
+            .commit(None, &sig, &sig, "test commit", &tree1, &[])
             .unwrap();
-        repo.set_ref("refs/jin/layers/global", commit_oid, "test layer")
+        repo.set_ref("refs/jin/layers/global", commit_oid1, "test layer")
+            .unwrap();
+
+        // Create mode layer with different conflict.txt content
+        let conflict_blob2 = repo.create_blob(b"version 2\n").unwrap();
+        let tree_oid2 = repo
+            .create_tree_from_paths(&[("conflict.txt".to_string(), conflict_blob2)])
+            .unwrap();
+
+        let tree2 = repo.inner().find_tree(tree_oid2).unwrap();
+        let commit_oid2 = repo
+            .inner()
+            .commit(None, &sig, &sig, "test commit", &tree2, &[])
+            .unwrap();
+        repo.set_ref("refs/jin/layers/mode/dev/_", commit_oid2, "test layer")
             .unwrap();
 
         let layers = vec![Layer::GlobalBase, Layer::ModeBase];
@@ -2411,14 +2419,70 @@ mod tests {
 
         let result = merge_layers(&config, &repo).unwrap();
 
-        // conflict.json should be in conflict_files
-        // safe.json should be merged
+        // conflict.txt should be in conflict_files (text file)
+        // safe.txt should be merged (single layer)
         assert_eq!(result.conflict_files.len(), 1);
         assert!(result
             .conflict_files
-            .contains(&PathBuf::from("conflict.json")));
+            .contains(&PathBuf::from("conflict.txt")));
         assert_eq!(result.merged_files.len(), 1);
-        assert!(result.merged_files.contains_key(Path::new("safe.json")));
+        assert!(result.merged_files.contains_key(Path::new("safe.txt")));
+    }
+
+    #[test]
+    fn test_merge_layers_structured_files_auto_merge_no_conflict() {
+        let (_temp, repo) = create_layer_test_repo();
+
+        // Structured files with different content should auto-merge, not conflict
+        let json1_blob = repo.create_blob(br#"{"key": "value1"}"#).unwrap();
+        let json2_blob = repo.create_blob(br#"{"key": "value2"}"#).unwrap();
+
+        // Create global layer with config.json
+        let tree_oid1 = repo
+            .create_tree_from_paths(&[("config.json".to_string(), json1_blob)])
+            .unwrap();
+
+        let sig = git2::Signature::now("test", "test@test.com").unwrap();
+        let tree1 = repo.inner().find_tree(tree_oid1).unwrap();
+        let commit_oid1 = repo
+            .inner()
+            .commit(None, &sig, &sig, "test commit", &tree1, &[])
+            .unwrap();
+        repo.set_ref("refs/jin/layers/global", commit_oid1, "test layer")
+            .unwrap();
+
+        // Create mode layer with different config.json content
+        let tree_oid2 = repo
+            .create_tree_from_paths(&[("config.json".to_string(), json2_blob)])
+            .unwrap();
+
+        let tree2 = repo.inner().find_tree(tree_oid2).unwrap();
+        let commit_oid2 = repo
+            .inner()
+            .commit(None, &sig, &sig, "test commit", &tree2, &[])
+            .unwrap();
+        repo.set_ref("refs/jin/layers/mode/dev/_", commit_oid2, "test layer")
+            .unwrap();
+
+        let layers = vec![Layer::GlobalBase, Layer::ModeBase];
+        let config = LayerMergeConfig {
+            layers,
+            mode: Some("dev".to_string()),
+            scope: None,
+            project: None,
+        };
+
+        let result = merge_layers(&config, &repo).unwrap();
+
+        // config.json should be merged (no conflict)
+        assert_eq!(result.conflict_files.len(), 0);
+        assert_eq!(result.merged_files.len(), 1);
+        assert!(result.merged_files.contains_key(Path::new("config.json")));
+
+        // Verify merged content: mode layer overrides global
+        let merged = result.merged_files.get(&PathBuf::from("config.json")).unwrap();
+        let obj = merged.content.as_object().unwrap();
+        assert_eq!(obj.get("key").unwrap().as_str(), Some("value2")); // From mode layer
     }
 
     #[test]

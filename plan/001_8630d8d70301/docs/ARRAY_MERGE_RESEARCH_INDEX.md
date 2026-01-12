@@ -4,11 +4,78 @@
 
 This is a comprehensive research project on array merge strategies in configuration file merging systems. The research covers theoretical foundations, real-world tool implementations, practical code examples, and best practices.
 
-**Total Research Size:** 2,572 lines across 4 markdown documents
+**Total Research Size:** 4,800+ lines across 6 markdown documents
 
 ## Documents
 
-### 1. ARRAY_MERGE_SUMMARY.md (199 lines) - START HERE
+### 1. ARRAY_MERGE_TESTING_QUICK_REFERENCE.md - PRP START HERE
+**Quick reference for PRP creation with external URLs and test patterns**
+
+- Essential URLs for array merge testing
+- Critical test patterns (copy-paste ready)
+- Test categories checklist
+- Edge cases checklist
+- Quick start guide
+- Success criteria
+
+**Ideal for:** PRP creation, quick test setup, reference during implementation
+
+---
+
+### 2. ARRAY_MERGE_TESTING_BEST_PRACTICES.md (NEW - 600+ lines)
+**Comprehensive testing patterns and external documentation**
+
+**Sections:**
+
+1. **External Documentation URLs**
+   - Kubernetes Strategic Merge Patch
+   - webpack-merge Documentation
+   - Helm Chart Values
+   - Docker Compose Merge
+   - ESLint Configuration
+   - Rust Ecosystem Libraries
+   - Community Resources
+
+2. **Testing Patterns for Key-Based Merging**
+   - Basic key match and merge
+   - Multiple key field fallback
+   - Custom key fields
+
+3. **Testing Order Preservation**
+   - Base order preservation with new items appended
+   - Explicit order control
+
+4. **Testing New Item Appending**
+   - New items from overlay
+   - Empty overlay array behavior
+
+5. **Common Edge Cases to Test**
+   - Missing keys (fallback to replace)
+   - Duplicate keys in source
+   - Mixed type arrays
+   - Null values in arrays
+   - Empty base array
+
+6. **Integration Test Patterns**
+   - Multi-layer merge integration
+   - Conflict detection for arrays
+   - Format-specific array merging
+
+7. **Well-Known Library Examples**
+   - serde_json (Rust)
+   - Lodash merge (JavaScript) - Bug report
+   - webpack-merge (JavaScript)
+   - Helm (Go)
+
+8. **Test Case Templates**
+   - Comprehensive array merge test suite
+   - Property-based testing
+
+**Ideal for:** Test implementation, external reference citation, best practice guidance
+
+---
+
+### 3. ARRAY_MERGE_SUMMARY.md (199 lines) - START HERE
 **Quick reference and key takeaways**
 
 - The 5 core array merge strategies at a glance

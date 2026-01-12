@@ -1149,3 +1149,161 @@ fn test_nested_object_deep_merge() -> Result<(), Box<dyn std::error::Error>> {
 
     Ok(())
 }
+
+/// Test array key-based merging across layers
+///
+/// Scenario:
+/// - Layer 2 (ModeBase): [{"id": "1", "name": "task1", "status": "pending"}]
+/// - Layer 7 (ProjectBase): [{"id": "1", "priority": "high"}, {"id": "2", "name": "task2"}]
+///
+/// Expected result after deep merge:
+/// - Item id=1: Merged with all fields {"id": "1", "name": "task1", "status": "pending", "priority": "high"}
+/// - Item id=2: Appended from overlay {"id": "2", "name": "task2"}
+/// - Total items: 2 (no duplicates)
+///
+/// This test verifies that the deep merge engine correctly handles arrays
+/// with key-based matching (id/name fields) following RFC 7396 semantics
+/// with Jin's layer precedence.
+///
+/// Note: Key fields must have string values for key-based merging to work.
+/// The default key fields ["id", "name"] are checked in priority order.
+#[test]
+fn test_array_key_based_merge() -> Result<(), Box<dyn std::error::Error>> {
+    let fixture = setup_test_repo().unwrap();
+    let jin_dir = fixture.jin_dir.clone().unwrap();
+
+    // Create and activate a mode
+    let mode_name = format!("test_mode_{}", unique_test_id());
+    jin_cmd()
+        .args(["mode", "create", &mode_name])
+        .env("JIN_DIR", &jin_dir)
+        .assert()
+        .success();
+
+    jin_cmd()
+        .args(["mode", "use", &mode_name])
+        .current_dir(fixture.path())
+        .env("JIN_DIR", &jin_dir)
+        .assert()
+        .success();
+
+    // Add config.json to ModeBase layer (Layer 2) with keyed array
+    let config_path = fixture.path().join("config.json");
+    fs::write(
+        &config_path,
+        r#"[{"id": "1", "name": "task1", "status": "pending"}]"#,
+    )?;
+
+    jin_cmd()
+        .args(["add", "config.json", "--mode"])
+        .current_dir(fixture.path())
+        .env("JIN_DIR", &jin_dir)
+        .assert()
+        .success();
+
+    jin_cmd()
+        .args(["commit", "-m", "Add base array"])
+        .current_dir(fixture.path())
+        .env("JIN_DIR", &jin_dir)
+        .assert()
+        .success();
+
+    // Overwrite config.json and add to ProjectBase layer (Layer 7)
+    // Note: No flags needed for ProjectBase (it's the default layer)
+    fs::write(
+        &config_path,
+        r#"[{"id": "1", "priority": "high"}, {"id": "2", "name": "task2"}]"#,
+    )?;
+
+    jin_cmd()
+        .args(["add", "config.json"])
+        .current_dir(fixture.path())
+        .env("JIN_DIR", &jin_dir)
+        .assert()
+        .success();
+
+    jin_cmd()
+        .args(["commit", "-m", "Add overlay array"])
+        .current_dir(fixture.path())
+        .env("JIN_DIR", &jin_dir)
+        .assert()
+        .success();
+
+    // Verify no conflict file created (clean merge expected)
+    let merge_conflict_path = config_path.with_extension(".jinmerge");
+    assert!(
+        !merge_conflict_path.exists(),
+        "No conflict file should be created for mergeable arrays"
+    );
+
+    // Apply merge to workspace
+    jin_cmd()
+        .arg("apply")
+        .current_dir(fixture.path())
+        .env("JIN_DIR", &jin_dir)
+        .assert()
+        .success();
+
+    // Verify merged result matches expected output
+    let merged_content = fs::read_to_string(&config_path)?;
+    let merged: serde_json::Value = serde_json::from_str(&merged_content)?;
+
+    // CRITICAL ASSERTIONS for array merging
+
+    // 1. Array length check (should be 2, not 3)
+    let merged_array = merged
+        .as_array()
+        .expect("Merged value should be an array");
+    assert_eq!(
+        merged_array.len(),
+        2,
+        "Array should have 2 items after merge (id=1 merged, id=2 appended)"
+    );
+
+    // 2. Find item with id=1 and verify all fields present
+    let item_1 = merged_array
+        .iter()
+        .find(|v| v.get("id").and_then(|id| id.as_str()) == Some("1"))
+        .expect("Item with id=1 should exist");
+
+    assert_eq!(
+        item_1.get("name").and_then(|n| n.as_str()),
+        Some("task1"),
+        "name should be preserved from ModeBase (Layer 2)"
+    );
+    assert_eq!(
+        item_1.get("status").and_then(|s| s.as_str()),
+        Some("pending"),
+        "status should be preserved from ModeBase (Layer 2)"
+    );
+    assert_eq!(
+        item_1.get("priority").and_then(|p| p.as_str()),
+        Some("high"),
+        "priority should be added from ProjectBase (Layer 7)"
+    );
+
+    // 3. Find item with id=2 and verify it was appended
+    let item_2 = merged_array
+        .iter()
+        .find(|v| v.get("id").and_then(|id| id.as_str()) == Some("2"))
+        .expect("Item with id=2 should exist (appended from overlay)");
+
+    assert_eq!(
+        item_2.get("name").and_then(|n| n.as_str()),
+        Some("task2"),
+        "name should be present for id=2"
+    );
+
+    // 4. Verify order: id=1 before id=2 (base order preserved)
+    let ids: Vec<_> = merged_array
+        .iter()
+        .filter_map(|v| v.get("id").and_then(|id| id.as_str()))
+        .collect();
+    assert_eq!(
+        ids,
+        vec!["1", "2"],
+        "Order should be preserved: base items first, new items appended"
+    );
+
+    Ok(())
+}

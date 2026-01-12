@@ -11,7 +11,7 @@
           "type": "Milestone",
           "id": "P1.M1",
           "title": "Fix Structured Merge Conflict Detection",
-          "status": "Planned",
+          "status": "Complete",
           "description": "Fix the incorrect conflict detection logic that treats any content difference as a conflict for JSON/YAML/TOML files, when it should use deep merge with layer precedence.",
           "tasks": [
             {
@@ -58,7 +58,7 @@
               "type": "Task",
               "id": "P1.M1.T2",
               "title": "Test Nested Object and Array Merging",
-              "status": "Planned",
+              "status": "Complete",
               "description": "Add test coverage for complex structured merge scenarios including nested objects and array key-based merging.",
               "subtasks": [
                 {
@@ -76,7 +76,7 @@
                   "type": "Subtask",
                   "id": "P1.M1.T2.S2",
                   "title": "Add test for array key-based merging",
-                  "status": "Planned",
+                  "status": "Complete",
                   "story_points": 1,
                   "dependencies": [
                     "P1.M1.T2.S1"

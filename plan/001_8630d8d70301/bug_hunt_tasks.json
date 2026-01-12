@@ -1,0 +1,283 @@
+{
+  "backlog": [
+    {
+      "type": "Phase",
+      "id": "P1",
+      "title": "Bug Fix Phase - Jin CLI Implementation",
+      "status": "Ready",
+      "description": "Fix 2 Major bugs and test suite issues identified during comprehensive end-to-end testing of the Jin CLI implementation. This phase addresses incorrect conflict detection for structured files, missing commits in jin log output, and test suite reliability issues.",
+      "milestones": [
+        {
+          "type": "Milestone",
+          "id": "P1.M1",
+          "title": "Fix Structured Merge Conflict Detection",
+          "status": "Planned",
+          "description": "Fix the incorrect conflict detection logic that treats any content difference as a conflict for JSON/YAML/TOML files, when it should use deep merge with layer precedence.",
+          "tasks": [
+            {
+              "type": "Task",
+              "id": "P1.M1.T1",
+              "title": "Update Merge Logic to Use Deep Merge First",
+              "status": "Planned",
+              "description": "Modify the merge_layers() function in src/merge/layer.rs to attempt deep merge for structured files before checking for conflicts, rather than pre-checking for content differences.",
+              "subtasks": [
+                {
+                  "type": "Subtask",
+                  "id": "P1.M1.T1.S1",
+                  "title": "Remove pre-merge conflict check for structured files",
+                  "status": "Planned",
+                  "story_points": 2,
+                  "dependencies": [],
+                  "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: According to plan/001_8630d8d70301/bugfix/001_d2716c9eb3cf/architecture/merge_engine_analysis.md, the current implementation incorrectly checks for conflicts before attempting deep merge. The has_different_content_across_layers() function returns true when JSON content differs, even though those differences should be resolved via deep merge.\n2. INPUT: Access to src/merge/layer.rs, specifically the merge_layers() function (lines 127-168) which currently calls has_different_content_across_layers() before merge_file_across_layers().\n3. LOGIC: Remove the structured file conflict check (lines ~137-145 in merge_layers). For FileFormat::Text, keep the existing has_different_text_content() check. For FileFormat::{Json,Yaml,Toml,Ini}, skip the pre-check entirely and proceed directly to merge_file_across_layers().\n4. OUTPUT: Updated merge_layers() function that only pre-checks conflicts for text files, allowing structured files to proceed to deep merge regardless of content differences."
+                },
+                {
+                  "type": "Subtask",
+                  "id": "P1.M1.T1.S2",
+                  "title": "Verify deep merge handles layer precedence correctly",
+                  "status": "Planned",
+                  "story_points": 1,
+                  "dependencies": ["P1.M1.T1.S1"],
+                  "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: From plan/001_8630d8d70301/bugfix/001_d2716c9eb3cf/architecture/merge_engine_analysis.md, the deep_merge() function in src/merge/deep.rs is already correct and implements RFC 7396 semantics with proper layer precedence.\n2. INPUT: After S1 completes, merge_layers() will call merge_file_across_layers() for structured files. merge_file_across_layers() calls deep_merge() which takes (base, overlay) parameters.\n3. LOGIC: Verify that merge_file_across_layers() passes layers in the correct order (highest precedence last) to deep_merge(). Confirm the match arm in deep_merge() that handles (_, overlay) => Ok(overlay) correctly implements layer precedence. No code changes needed, just verification.\n4. OUTPUT: Confirmation comment in code or test verifying layer precedence is correct. The deep merge logic should resolve: Layer 2 {\"a\": 1} + Layer 7 {\"a\": 2, \"b\": 2} = {\"a\": 2, \"b\": 2} (Layer 7 wins)."
+                },
+                {
+                  "type": "Subtask",
+                  "id": "P1.M1.T1.S3",
+                  "title": "Add integration test for structured file auto-merge",
+                  "status": "Planned",
+                  "story_points": 2,
+                  "dependencies": ["P1.M1.T1.S2"],
+                  "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: The bug report provides a reproduction case: Layer 2 (ModeBase) has {\"common\": {\"a\": 1}, \"mode\": true} and Layer 7 (ProjectBase) has {\"common\": {\"a\": 1, \"b\": 2}, \"project\": false}. These should deep merge to {\"common\": {\"a\": 1, \"b\": 2}, \"mode\": true, \"project\": false} with no conflict.\n2. INPUT: Use the TestFixture pattern from tests/common/fixtures.rs. Create a temp directory with jin init, create a mode, add JSON config.json to ModeBase layer, then add different JSON to ProjectBase layer.\n3. LOGIC: Write a new test function test_structured_file_auto_merge() in tests/conflict_workflow.rs or a new test file. The test should: 1) Create ModeBase layer with JSON, 2) Create ProjectBase layer with different JSON, 3) Run jin apply, 4) Assert that no .jinmerge file was created, 5) Assert the merged JSON contains both layer's keys with ProjectBase taking precedence.\n4. OUTPUT: New integration test file or function that verifies structured files with different content merge automatically without creating conflict files. Test should fail before S1-S2 changes and pass after."
+                }
+              ]
+            },
+            {
+              "type": "Task",
+              "id": "P1.M1.T2",
+              "title": "Test Nested Object and Array Merging",
+              "status": "Planned",
+              "description": "Add test coverage for complex structured merge scenarios including nested objects and array key-based merging.",
+              "subtasks": [
+                {
+                  "type": "Subtask",
+                  "id": "P1.M1.T2.S1",
+                  "title": "Add test for nested object deep merge",
+                  "status": "Planned",
+                  "story_points": 1,
+                  "dependencies": ["P1.M1.T1.S3"],
+                  "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: From plan/001_8630d8d70301/bugfix/001_d2716c9eb3cf/architecture/merge_engine_analysis.md, deep_merge() recursively merges nested objects. The match arm (MergeValue::Object(base_obj), MergeValue::Object(overlay_obj)) handles this.\n2. INPUT: After S1-S3 are complete, the merge engine should handle nested JSON. Use TestFixture to create layers with nested JSON structures.\n3. LOGIC: Write a test nested_deep_merge() that creates: Layer 2 with {\"config\": {\"database\": {\"host\": \"localhost\", \"port\": 5432}}, \"app\": \"base\"} and Layer 7 with {\"config\": {\"database\": {\"port\": 5433, \"ssl\": true}}, \"app\": \"override\"}. Expected result: {\"config\": {\"database\": {\"host\": \"localhost\", \"port\": 5433, \"ssl\": true}}, \"app\": \"override\"}. Port and ssl should override, host should merge.\n4. OUTPUT: Integration test verifying nested objects merge correctly. Test should confirm the deep merge recursively handles all nesting levels."
+                },
+                {
+                  "type": "Subtask",
+                  "id": "P1.M1.T2.S2",
+                  "title": "Add test for array key-based merging",
+                  "status": "Planned",
+                  "story_points": 1,
+                  "dependencies": ["P1.M1.T2.S1"],
+                  "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: The deep_merge() function supports array merging by key fields (default: [\"id\", \"name\"]). From merge_engine_analysis.md, arrays with matching keys are merged, non-matching items are appended.\n2. INPUT: Create test case with arrays containing objects with 'id' or 'name' fields.\n3. LOGIC: Write test array_key_merge() that creates: Layer 2 with [{\"id\": 1, \"name\": \"task1\", \"status\": \"pending\"}] and Layer 7 with [{\"id\": 1, \"priority\": \"high\"}, {\"id\": 2, \"name\": \"task2\"}]. Expected result: [{\"id\": 1, \"name\": \"task1\", \"status\": \"pending\", \"priority\": \"high\"}, {\"id\": 2, \"name\": \"task2\"}]. Items with same id should merge, item with id=2 should be appended.\n4. OUTPUT: Integration test verifying arrays merge by key correctly. This ensures the deep merge implementation handles complex array scenarios."
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "Milestone",
+          "id": "P1.M2",
+          "title": "Fix jin Log Command",
+          "status": "Planned",
+          "description": "Fix the jin log command to display commits from all layers by dynamically discovering refs instead of using a hardcoded list with canonical path patterns.",
+          "tasks": [
+            {
+              "type": "Task",
+              "id": "P1.M2.T1",
+              "title": "Implement Dynamic Ref Discovery in jin log",
+              "status": "Planned",
+              "description": "Replace the hardcoded layer iteration in src/commands/log.rs with dynamic ref discovery using repo.list_refs() to find all layer commits.",
+              "subtasks": [
+                {
+                  "type": "Subtask",
+                  "id": "P1.M2.T1.S1",
+                  "title": "Add parse_layer_from_ref_path() helper function",
+                  "status": "Planned",
+                  "story_points": 2,
+                  "dependencies": [],
+                  "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: From plan/001_8630d8d70301/bugfix/001_d2716c9eb3cf/architecture/log_command_analysis.md, the log command currently uses Layer::all_in_precedence_order() and layer.ref_path() which only checks canonical paths. It misses refs like refs/jin/layers/mode/<mode>/scope/<scope>/_.\n2. INPUT: No dependencies - this is a new function. Reference src/core/layer.rs for Layer enum variants and their ref path patterns.\n3. LOGIC: Create a new function parse_layer_from_ref_path(ref_path: &str) -> Option<Layer> in src/commands/log.rs. Parse the ref path string by splitting on '/'. Match patterns like: refs/jin/layers/global => Layer::Global, refs/jin/layers/mode/<name>/_ => Layer::ModeBase, refs/jin/layers/mode/<name>/scope/<scope>/_ => Layer::ModeScope, refs/jin/layers/scope/<name> => Layer::ScopeBase, etc. Handle the /_ suffix correctly.\n4. OUTPUT: New helper function that returns Some(Layer) when the ref path matches a known layer pattern, or None otherwise. Function should handle all 9 layer types correctly."
+                },
+                {
+                  "type": "Subtask",
+                  "id": "P1.M2.T1.S2",
+                  "title": "Replace hardcoded iteration with dynamic ref listing",
+                  "status": "Planned",
+                  "story_points": 2,
+                  "dependencies": ["P1.M2.T1.S1"],
+                  "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: The current implementation in src/commands/log.rs iterates through Layer::all_in_precedence_order() and calls layer.ref_path() to generate canonical paths. This misses non-canonical refs.\n2. INPUT: After S1 completes, parse_layer_from_ref_path() is available. Also need repo.list_refs() from src/git/refs.rs which already exists and supports glob patterns.\n3. LOGIC: Modify the run() function in src/commands/log.rs. Replace the for layer in all_layers loop with: 1) Call repo.list_refs(\"refs/jin/layers/**\") to get all layer refs, 2) For each ref, call parse_layer_from_ref_path() to determine layer type, 3) Group refs by Layer type in a HashMap, 4) Iterate through Layer::all_in_precedence_order() and for each layer, show history for all its refs. Preserve the existing show_layer_history() function call.\n4. OUTPUT: Updated run() function that discovers all layer refs dynamically and displays commits for all of them, not just canonical paths."
+                },
+                {
+                  "type": "Subtask",
+                  "id": "P1.M2.T1.S3",
+                  "title": "Add integration test for log command with all layers",
+                  "status": "Planned",
+                  "story_points": 2,
+                  "dependencies": ["P1.M2.T1.S2"],
+                  "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: The bug report provides a reproduction case showing that commits to ModeScope layer are not displayed by jin log. The test creates a mode, creates a scope, commits to ModeBase and ModeScope, then runs jin log.\n2. INPUT: After S1-S2 complete, the log command should discover all refs. Use TestFixture from tests/common/fixtures.rs to set up isolated test environment.\n3. LOGIC: Write a new test test_log_shows_all_layer_commits() in a new or existing test file (e.g., tests/log_tests.rs if it exists, or add to tests/core_workflow.rs). The test should: 1) Create a mode, 2) Create a scope, 3) Commit a file to ModeBase layer, 4) Commit a file to ModeScope layer, 5) Run jin log, 6) Capture output, 7) Assert both commit messages appear in the output. Use the exact reproduction case from the bug report.\n4. OUTPUT: Integration test that verifies jin log displays commits from all layers including ModeScope, ModeProject, and ModeScopeProject layers. Test should fail before S1-S2 and pass after."
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "Milestone",
+          "id": "P1.M3",
+          "title": "Fix Test Suite Ref Paths",
+          "status": "Planned",
+          "description": "Update incorrect ref path assertions in tests to include the required /_ suffix for layer refs that can have child refs.",
+          "tasks": [
+            {
+              "type": "Task",
+              "id": "P1.M3.T1",
+              "title": "Update ref path assertions in mode_scope_workflow.rs",
+              "status": "Planned",
+              "description": "Fix the 4 incorrect ref path assertions in tests/mode_scope_workflow.rs by adding the missing /_ suffix.",
+              "subtasks": [
+                {
+                  "type": "Subtask",
+                  "id": "P1.M3.T1.S1",
+                  "title": "Fix test_layer_routing_mode_base ref path",
+                  "status": "Planned",
+                  "story_points": 1,
+                  "dependencies": [],
+                  "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: From plan/001_8630d8d70301/bugfix/001_d2716c9eb3cf/architecture/test_infrastructure_analysis.md, test_layer_routing_mode_base at line 68 uses refs/jin/layers/mode/{mode} but should use refs/jin/layers/mode/{mode}/_ because ModeBase can have child refs (ModeScope, ModeProject).\n2. INPUT: Access to tests/mode_scope_workflow.rs line 68. Find the assert_layer_ref_exists() call.\n3. LOGIC: Update the assertion string format from format!(\"refs/jin/layers/mode/{}\", mode_name) to format!(\"refs/jin/layers/mode/{}/_\", mode_name). The /_ suffix is required for layers that have child layers to avoid Git ref naming conflicts.\n4. OUTPUT: Updated assertion at line 68 that checks for the correct ref path with /_ suffix. Run the test to verify it now passes."
+                },
+                {
+                  "type": "Subtask",
+                  "id": "P1.M3.T1.S2",
+                  "title": "Fix test_layer_routing_mode_scope ref path",
+                  "status": "Planned",
+                  "story_points": 1,
+                  "dependencies": [],
+                  "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: From plan/001_8630d8d70301/bugfix/001_d2716c9eb3cf/architecture/test_infrastructure_analysis.md, test_layer_routing_mode_scope at line 187 uses refs/jin/layers/mode/{mode}/scope/{scope} but should use refs/jin/layers/mode/{mode}/scope/{scope}/_ because ModeScope can have ModeScopeProject children.\n2. INPUT: Access to tests/mode_scope_workflow.rs line 187. Find the assert_layer_ref_exists() call.\n3. LOGIC: Update the assertion string format from format!(\"refs/jin/layers/mode/{}/scope/{}\", mode_name, scope_name) to format!(\"refs/jin/layers/mode/{}/scope/{}/_\", mode_name, scope_name). Add the /_ suffix.\n4. OUTPUT: Updated assertion at line 187 with correct ref path. Run the test to verify it passes."
+                },
+                {
+                  "type": "Subtask",
+                  "id": "P1.M3.T1.S3",
+                  "title": "Fix test_multiple_modes_isolated ref paths",
+                  "status": "Planned",
+                  "story_points": 1,
+                  "dependencies": [],
+                  "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: From plan/001_8630d8d70301/bugfix/001_d2716c9eb3cf/architecture/test_infrastructure_analysis.md, test_multiple_modes_isolated at lines 634-635 has two incorrect assertions for mode_a and mode_b, both missing the /_ suffix.\n2. INPUT: Access to tests/mode_scope_workflow.rs lines 634-635. Find the two assert_layer_ref_exists() calls.\n3. LOGIC: Update both assertions from format!(\"refs/jin/layers/mode/{}\", mode_a) and format!(\"refs/jin/layers/mode/{}\", mode_b) to format!(\"refs/jin/layers/mode/{}/_\", mode_a) and format!(\"refs/jin/layers/mode/{}/_\", mode_b) respectively.\n4. OUTPUT: Updated assertions at lines 634-635 with correct ref paths. Run the test to verify it passes."
+                },
+                {
+                  "type": "Subtask",
+                  "id": "P1.M3.T1.S4",
+                  "title": "Run full test suite to verify all ref path fixes",
+                  "status": "Planned",
+                  "story_points": 1,
+                  "dependencies": ["P1.M3.T1.S1", "P1.M3.T1.S2", "P1.M3.T1.S3"],
+                  "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: After S1-S3, all 4 incorrect ref path assertions should be fixed. The bug report mentions ~8-12 failing tests, but research showed only 4 tests in mode_scope_workflow.rs have incorrect ref paths.\n2. INPUT: After S1-S3 complete, all ref path assertions in mode_scope_workflow.rs are corrected.\n3. LOGIC: Run cargo test --test mode_scope_workflow to verify all tests in that file pass. Then run cargo test to execute the full test suite. Verify that the previously failing tests now pass. Check if any other tests in the suite have ref path issues that weren't documented.\n4. OUTPUT: Test suite execution results showing all tests passing. Document any additional test failures found that may need separate investigation."
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "Milestone",
+          "id": "P1.M4",
+          "title": "Fix Flaky Test Isolation",
+          "status": "Planned",
+          "description": "Fix the test_create_mode_bound_scope test that fails when run with other tests by replacing the manual setup with proper test isolation utilities.",
+          "tasks": [
+            {
+              "type": "Task",
+              "id": "P1.M4.T1",
+              "title": "Refactor test to use UnitTestContext",
+              "status": "Planned",
+              "description": "Replace the manual setup_test_env() function in the scope test with the established setup_unit_test() pattern from src/test_utils.rs.",
+              "subtasks": [
+                {
+                  "type": "Subtask",
+                  "id": "P1.M4.T1.S1",
+                  "title": "Create test mode creation helper function",
+                  "status": "Planned",
+                  "story_points": 1,
+                  "dependencies": [],
+                  "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: From plan/001_8630d8d70301/bugfix/001_d2716c9eb3cf/architecture/test_infrastructure_analysis.md, the test manually creates mode refs using Git commands. A helper function create_test_mode_in_context() should be created for consistency.\n2. INPUT: Access to JinRepo from src/git/repo.rs for creating refs. Access to UnitTestContext from src/test_utils.rs.\n3. LOGIC: Create a new helper function create_test_mode_in_context(name: &str, ctx: &UnitTestContext) in the test module (src/commands/scope.rs tests section). The function should: 1) Open JinRepo, 2) Create an empty Git tree, 3) Create a commit, 4) Set the ref at refs/jin/modes/{name}/_mode. This matches the pattern used by the actual mode creation code.\n4. OUTPUT: New helper function that creates a test mode ref in the isolated test context. Function should use absolute paths from ctx.jin_dir instead of environment variables."
+                },
+                {
+                  "type": "Subtask",
+                  "id": "P1.M4.T1.S2",
+                  "title": "Create test mode cleanup helper function",
+                  "status": "Planned",
+                  "story_points": 1,
+                  "dependencies": ["P1.M4.T1.S1"],
+                  "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: From plan/001_8630d8d70301/bugfix/001_d2716c9eb3cf/architecture/test_infrastructure_analysis.md, tests should clean up their artifacts (Git refs) to avoid interfering with subsequent tests.\n2. INPUT: After S1, JinRepo is available. The test mode ref path is refs/jin/modes/{name}/_mode and scope refs follow refs/jin/modes/{name}/scopes/*.\n3. LOGIC: Create cleanup_test_mode(name: &str, ctx: &UnitTestContext) function that: 1) Opens JinRepo, 2) Deletes the mode ref if it exists, 3) Lists and deletes all scope refs for that mode. Use repo.delete_ref() and repo.list_refs(). Call this at the start of the test to ensure clean state.\n4. OUTPUT: Cleanup helper function that removes all refs associated with a test mode. Function should handle cases where refs don't exist (no errors)."
+                },
+                {
+                  "type": "Subtask",
+                  "id": "P1.M4.T1.S3",
+                  "title": "Refactor test_create_mode_bound_scope to use isolation helpers",
+                  "status": "Planned",
+                  "story_points": 2,
+                  "dependencies": ["P1.M4.T1.S2"],
+                  "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: From plan/001_8630d8d70301/bugfix/001_d2716c9eb3cf/architecture/test_infrastructure_analysis.md, the current test uses setup_test_env() which sets environment variables and changes current directory, causing isolation issues. The established pattern uses UnitTestContext.\n2. INPUT: After S1-S2, helper functions are available. Access setup_unit_test() from src/test_utils.rs.\n3. LOGIC: Rewrite test_create_mode_bound_scope to: 1) Call setup_unit_test() to get isolated context, 2) Call cleanup_test_mode(\"testmode\", &ctx) to ensure clean state, 3) Call create_test_mode_in_context(\"testmode\", &ctx), 4) Run create(\"testscope\", Some(\"testmode\")), 5) Verify the ref exists using repo.ref_exists(). Remove the #[serial] attribute if present. Use absolute paths from ctx instead of relying on JIN_DIR environment variable.\n4. OUTPUT: Refactored test that uses proper isolation. Test should pass when run alone and when run with other tests. Remove #[serial] attribute once confirmed working."
+                },
+                {
+                  "type": "Subtask",
+                  "id": "P1.M4.T1.S4",
+                  "title": "Run test in parallel with other tests to verify isolation",
+                  "status": "Planned",
+                  "story_points": 1,
+                  "dependencies": ["P1.M4.T1.S3"],
+                  "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: The bug report indicates the test fails when run with other tests but passes individually. After S3, the test should use proper isolation.\n2. INPUT: After S3, the test is refactored with proper isolation.\n3. LOGIC: Run cargo test --test-threads=2 commands::scope::tests::test_create_mode_bound_scope to run the test with parallel tests. Alternatively, run the full test suite with cargo test and verify this specific test passes. Run the test multiple times to ensure it's not flaky.\n4. OUTPUT: Verification that the test passes consistently in all scenarios. If it still fails, investigate for remaining shared state issues (e.g., static variables, global singletons)."
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "Milestone",
+          "id": "P1.M5",
+          "title": "Verification and Documentation",
+          "status": "Planned",
+          "description": "Run comprehensive verification to ensure all bugs are fixed and document the changes made.",
+          "tasks": [
+            {
+              "type": "Task",
+              "id": "P1.M5.T1",
+              "title": "Run Full Test Suite and Verify All Fixes",
+              "status": "Planned",
+              "description": "Execute the complete test suite and verify all previously failing tests now pass, including new tests added for the bug fixes.",
+              "subtasks": [
+                {
+                  "type": "Subtask",
+                  "id": "P1.M5.T1.S1",
+                  "title": "Run full test suite and capture results",
+                  "status": "Planned",
+                  "story_points": 1,
+                  "dependencies": [],
+                  "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: All previous milestones should be complete. This is the final verification step. The bug report indicated ~650 total tests with ~8-12 failing before fixes.\n2. INPUT: Complete codebase with all bug fixes from P1.M1 through P1.M4.\n3. LOGIC: Run cargo test --all to execute the full test suite (unit + integration). Capture the output showing test counts (passed, failed, ignored). Compare against the pre-fix baseline from the bug report. Run cargo test --all --no-fail-fast to ensure all tests run even if some fail.\n4. OUTPUT: Test execution summary showing all tests passing. If any tests still fail, analyze whether they are pre-existing failures or new issues introduced by the fixes."
+                },
+                {
+                  "type": "Subtask",
+                  "id": "P1.M5.T1.S2",
+                  "title": "Run manual verification of bug fix scenarios",
+                  "status": "Planned",
+                  "story_points": 2,
+                  "dependencies": ["P1.M5.T1.S1"],
+                  "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: The bug report provided manual reproduction cases for both Major bugs. These should be verified to work correctly.\n2. INPUT: After all fixes are complete, jin CLI should be functional.\n3. LOGIC: Manually test the two Major bug scenarios: 1) Structured merge - create two layers with different JSON, run jin apply, verify no .jinmerge file is created and the output JSON is the deep merge of both layers. 2) jin log - create mode and scope, commit to both layers, run jin log, verify both commits appear. Use fresh temp directories for each test (cd /tmp/test && rm -rf . && jin init).\n4. OUTPUT: Manual test results confirming both bugs are fixed. Document the exact commands run and their output for the release notes."
+                },
+                {
+                  "type": "Subtask",
+                  "id": "P1.M5.T1.S3",
+                  "title": "Document bug fixes and verify PRD compliance",
+                  "status": "Planned",
+                  "story_points": 1,
+                  "dependencies": ["P1.M5.T1.S2"],
+                  "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: The bug report referenced specific PRD sections: §11.1 'Structured Merge Rules', §11.2 'Merge Priority', and §18.6 'jin log [layer]'.\n2. INPUT: After S1-S2, all bugs are verified fixed.\n3. LOGIC: Create a brief bug fix summary document in plan/001_8630d8d70301/bugfix/001_d2716c9eb3cf/BUGFIX_SUMMARY.md. For each bug (structured merge, jin log, test paths, flaky test), document: 1) Issue description, 2) PRD reference, 3) Root cause, 4) Fix applied, 5) Verification. Confirm the implementation now fully complies with the referenced PRD sections.\n4. OUTPUT: Bug fix summary document that can be used for release notes and future reference. Document should state that the implementation is now fully PRD-compliant."
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

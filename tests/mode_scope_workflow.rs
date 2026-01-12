@@ -65,7 +65,7 @@ fn test_layer_routing_mode_base() -> Result<(), Box<dyn std::error::Error>> {
         .success();
 
     // Verify ref created for mode base layer
-    let ref_path = format!("refs/jin/layers/mode/{}", mode_name);
+    let ref_path = format!("refs/jin/layers/mode/{}/_", mode_name);
     assert_layer_ref_exists(&ref_path, Some(jin_dir));
 
     Ok(())

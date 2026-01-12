@@ -154,7 +154,7 @@
                   "type": "Subtask",
                   "id": "P1.M3.T1.S1",
                   "title": "Fix test_layer_routing_mode_base ref path",
-                  "status": "Planned",
+                  "status": "Complete",
                   "story_points": 1,
                   "dependencies": [],
                   "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: From plan/001_8630d8d70301/bugfix/001_d2716c9eb3cf/architecture/test_infrastructure_analysis.md, test_layer_routing_mode_base at line 68 uses refs/jin/layers/mode/{mode} but should use refs/jin/layers/mode/{mode}/_ because ModeBase can have child refs (ModeScope, ModeProject).\n2. INPUT: Access to tests/mode_scope_workflow.rs line 68. Find the assert_layer_ref_exists() call.\n3. LOGIC: Update the assertion string format from format!(\"refs/jin/layers/mode/{}\", mode_name) to format!(\"refs/jin/layers/mode/{}/_\", mode_name). The /_ suffix is required for layers that have child layers to avoid Git ref naming conflicts.\n4. OUTPUT: Updated assertion at line 68 that checks for the correct ref path with /_ suffix. Run the test to verify it now passes."

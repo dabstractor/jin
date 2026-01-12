@@ -154,8 +154,16 @@ fn test_mv_with_layer_flags() {
         ));
 
     // Verify staging was updated
-    assert_staging_not_contains(fixture.path(), "mode-config.json", fixture.jin_dir.as_deref());
-    assert_staging_contains(fixture.path(), "mode-config-renamed.json", fixture.jin_dir.as_deref());
+    assert_staging_not_contains(
+        fixture.path(),
+        "mode-config.json",
+        fixture.jin_dir.as_deref(),
+    );
+    assert_staging_contains(
+        fixture.path(),
+        "mode-config-renamed.json",
+        fixture.jin_dir.as_deref(),
+    );
 }
 
 /// Test error: source file not in staging
@@ -298,9 +306,9 @@ fn test_mv_to_subdirectory() {
 
     // Verify staging was updated
     // Check for exact JSON path (with quotes to avoid substring matches)
-    let staging_content = std::fs::read_to_string(
-        fixture.jin_dir.as_ref().unwrap().join("staging/index.json")
-    ).unwrap();
+    let staging_content =
+        std::fs::read_to_string(fixture.jin_dir.as_ref().unwrap().join("staging/index.json"))
+            .unwrap();
     assert!(!staging_content.contains("\"config.json\""));
     assert!(staging_content.contains("\"settings/config.json\""));
 
@@ -444,9 +452,9 @@ fn test_mv_partial_success() {
         .stderr(predicates::str::contains("Error:"));
 
     // Verify the staged file was moved (use exact JSON path matching)
-    let staging_content = std::fs::read_to_string(
-        fixture.jin_dir.as_ref().unwrap().join("staging/index.json")
-    ).unwrap();
+    let staging_content =
+        std::fs::read_to_string(fixture.jin_dir.as_ref().unwrap().join("staging/index.json"))
+            .unwrap();
     assert!(!staging_content.contains("\"staged.txt\""));
     assert!(staging_content.contains("\"renamed-staged.txt\""));
 

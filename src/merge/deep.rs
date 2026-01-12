@@ -114,6 +114,10 @@ pub fn deep_merge_with_config(
         // Different types or scalars: overlay wins
         (_, overlay) => Ok(overlay),
     }
+    // VERIFIED: Layer precedence is correctly implemented via the accumulative merge pattern
+    // in merge_file_across_layers() (src/merge/layer.rs:369-376) combined with this catch-all
+    // match arm. Layers are passed in lowest-to-highest precedence order, and the overlay
+    // value (higher layer) wins when types differ or for scalar conflicts, per RFC 7396.
 }
 
 /// Merge two arrays with configuration.

@@ -142,7 +142,10 @@ pub fn merge_layers(config: &LayerMergeConfig, repo: &JinRepo) -> Result<LayerMe
             if format == FileFormat::Text {
                 let has_conflict =
                     has_different_text_content(path, &layers_with_file, config, repo)?;
-                eprintln!("[DEBUG] merge_layers: Text file has conflict: {}", has_conflict);
+                eprintln!(
+                    "[DEBUG] merge_layers: Text file has conflict: {}",
+                    has_conflict
+                );
 
                 if has_conflict {
                     // Different text content detected - add to conflicts and skip merge
@@ -2362,7 +2365,10 @@ mod tests {
         assert_eq!(result.merged_files.len(), 1);
 
         // Verify merged content: mode layer (9090) overrides global (8080)
-        let merged = result.merged_files.get(&PathBuf::from("config.json")).unwrap();
+        let merged = result
+            .merged_files
+            .get(&PathBuf::from("config.json"))
+            .unwrap();
         let obj = merged.content.as_object().unwrap();
         assert_eq!(obj.get("port").unwrap().as_i64(), Some(9090)); // From mode layer
         assert_eq!(obj.get("debug").unwrap().as_bool(), Some(false)); // From global layer
@@ -2480,7 +2486,10 @@ mod tests {
         assert!(result.merged_files.contains_key(Path::new("config.json")));
 
         // Verify merged content: mode layer overrides global
-        let merged = result.merged_files.get(&PathBuf::from("config.json")).unwrap();
+        let merged = result
+            .merged_files
+            .get(&PathBuf::from("config.json"))
+            .unwrap();
         let obj = merged.content.as_object().unwrap();
         assert_eq!(obj.get("key").unwrap().as_str(), Some("value2")); // From mode layer
     }

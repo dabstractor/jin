@@ -18,7 +18,7 @@
               "type": "Task",
               "id": "P1.M1.T1",
               "title": "Update Merge Logic to Use Deep Merge First",
-              "status": "Planned",
+              "status": "Complete",
               "description": "Modify the merge_layers() function in src/merge/layer.rs to attempt deep merge for structured files before checking for conflicts, rather than pre-checking for content differences.",
               "subtasks": [
                 {
@@ -45,7 +45,7 @@
                   "type": "Subtask",
                   "id": "P1.M1.T1.S3",
                   "title": "Add integration test for structured file auto-merge",
-                  "status": "Planned",
+                  "status": "Complete",
                   "story_points": 2,
                   "dependencies": [
                     "P1.M1.T1.S2"

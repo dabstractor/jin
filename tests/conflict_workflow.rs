@@ -898,3 +898,137 @@ fn test_apply_force_with_conflicts_applies_non_conflicting() {
     let jinmerge_path = fixture.path().join("conflict.json.jinmerge");
     assert!(jinmerge_path.exists());
 }
+
+// ========== Structured File Auto-Merge Tests ==========
+
+/// Test that structured files (JSON) automatically deep merge across layers
+/// without creating .jinmerge conflict files.
+///
+/// This test uses ModeBase (Layer 2) and ModeProject (Layer 5) layers to verify
+/// that structured files deep merge using RFC 7396 semantics instead of creating
+/// conflict files.
+///
+/// This is a regression test for the bug where structured files were incorrectly
+/// creating .jinmerge files even when content could be deep merged. After the fix
+/// in S1-S2, structured files should always merge using RFC 7396 semantics.
+#[test]
+fn test_structured_file_auto_merge() -> Result<(), Box<dyn std::error::Error>> {
+    let fixture = setup_test_repo().unwrap();
+    let jin_dir = fixture.jin_dir.clone().unwrap();
+
+    // Create and activate a mode
+    let mode_name = format!("test_mode_{}", unique_test_id());
+    jin_cmd()
+        .args(["mode", "create", &mode_name])
+        .env("JIN_DIR", &jin_dir)
+        .assert()
+        .success();
+
+    jin_cmd()
+        .args(["mode", "use", &mode_name])
+        .current_dir(fixture.path())
+        .env("JIN_DIR", &jin_dir)
+        .assert()
+        .success();
+
+    // Add config.json to ModeBase layer (Layer 2)
+    let config_path = fixture.path().join("config.json");
+    fs::write(&config_path, r#"{"common": {"a": 1}, "mode": true}"#)?;
+
+    jin_cmd()
+        .args(["add", "config.json", "--mode"])
+        .current_dir(fixture.path())
+        .env("JIN_DIR", &jin_dir)
+        .assert()
+        .success();
+
+    jin_cmd()
+        .args(["commit", "-m", "Add to mode"])
+        .current_dir(fixture.path())
+        .env("JIN_DIR", &jin_dir)
+        .assert()
+        .success();
+
+    // Modify config.json and add to ModeProject layer (Layer 5)
+    // Note: Use --mode --project to add to mode-project layer
+    fs::write(
+        &config_path,
+        r#"{"common": {"a": 1, "b": 2}, "project": false}"#,
+    )?;
+
+    jin_cmd()
+        .args(["add", "config.json", "--mode", "--project"])
+        .current_dir(fixture.path())
+        .env("JIN_DIR", &jin_dir)
+        .assert()
+        .success();
+
+    jin_cmd()
+        .args(["commit", "-m", "Add to project"])
+        .current_dir(fixture.path())
+        .env("JIN_DIR", &jin_dir)
+        .assert()
+        .success();
+
+    // Remove from workspace to test apply behavior
+    fs::remove_file(&config_path)?;
+
+    // Run apply - should NOT create .jinmerge (structured files auto-merge)
+    jin_cmd()
+        .arg("apply")
+        .current_dir(fixture.path())
+        .env("JIN_DIR", &jin_dir)
+        .assert()
+        .success();
+
+    // Verify no .jinmerge file was created
+    let jinmerge_path = fixture.path().join("config.json.jinmerge");
+    assert!(
+        !jinmerge_path.exists(),
+        "No .jinmerge should exist for structured files that can deep merge. \
+        This indicates structured files are incorrectly being treated as conflicts."
+    );
+
+    // Verify merged file exists
+    assert!(config_path.exists(), "Merged config.json should exist");
+
+    // Verify merged content contains both layers' keys with correct precedence
+    let content = fs::read_to_string(&config_path)?;
+
+    // Common key should exist
+    assert!(
+        content.contains(r#""common":"#),
+        "Merged content should contain 'common' key. Content: {}",
+        content
+    );
+
+    // common.a should be 1 (same value in both layers)
+    assert!(
+        content.contains(r#""a": 1"#),
+        "Merged content should contain 'a: 1' from both layers. Content: {}",
+        content
+    );
+
+    // common.b should be 2 (from ProjectBase only)
+    assert!(
+        content.contains(r#""b": 2"#),
+        "Merged content should contain 'b: 2' from ProjectBase layer. Content: {}",
+        content
+    );
+
+    // mode should be true (from ModeBase only)
+    assert!(
+        content.contains(r#""mode": true"#),
+        "Merged content should contain 'mode: true' from ModeBase layer. Content: {}",
+        content
+    );
+
+    // project should be false (from ProjectBase only)
+    assert!(
+        content.contains(r#""project": false"#),
+        "Merged content should contain 'project: false' from ProjectBase layer. Content: {}",
+        content
+    );
+
+    Ok(())
+}

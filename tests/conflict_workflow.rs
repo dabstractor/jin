@@ -1032,3 +1032,120 @@ fn test_structured_file_auto_merge() -> Result<(), Box<dyn std::error::Error>> {
 
     Ok(())
 }
+
+/// Test nested object deep merge across layers
+///
+/// Scenario:
+/// - Layer 2 (ModeBase): {"config": {"database": {"host": "localhost", "port": 5432}}, "app": "base"}
+/// - Layer 7 (ProjectBase): {"config": {"database": {"port": 5433, "ssl": true}}, "app": "override"}
+///
+/// Expected result after deep merge:
+/// - config.database.host: "localhost" (preserved from ModeBase)
+/// - config.database.port: 5433 (overridden by ProjectBase)
+/// - config.database.ssl: true (added from ProjectBase)
+/// - app: "override" (overridden by ProjectBase)
+///
+/// This test verifies that the deep merge engine correctly handles nested JSON
+/// structures with 3-level nesting and follows RFC 7396 JSON Merge Patch semantics
+/// with Jin's layer precedence (higher layer wins).
+#[test]
+fn test_nested_object_deep_merge() -> Result<(), Box<dyn std::error::Error>> {
+    let fixture = setup_test_repo().unwrap();
+    let jin_dir = fixture.jin_dir.clone().unwrap();
+
+    // Create and activate a mode
+    let mode_name = format!("test_mode_{}", unique_test_id());
+    jin_cmd()
+        .args(["mode", "create", &mode_name])
+        .env("JIN_DIR", &jin_dir)
+        .assert()
+        .success();
+
+    jin_cmd()
+        .args(["mode", "use", &mode_name])
+        .current_dir(fixture.path())
+        .env("JIN_DIR", &jin_dir)
+        .assert()
+        .success();
+
+    // Add config.json to ModeBase layer (Layer 2) with 3-level nested structure
+    let config_path = fixture.path().join("config.json");
+    fs::write(
+        &config_path,
+        r#"{"config": {"database": {"host": "localhost", "port": 5432}}, "app": "base"}"#,
+    )?;
+
+    jin_cmd()
+        .args(["add", "config.json", "--mode"])
+        .current_dir(fixture.path())
+        .env("JIN_DIR", &jin_dir)
+        .assert()
+        .success();
+
+    jin_cmd()
+        .args(["commit", "-m", "Add base config"])
+        .current_dir(fixture.path())
+        .env("JIN_DIR", &jin_dir)
+        .assert()
+        .success();
+
+    // Overwrite config.json and add to ProjectBase layer (Layer 7)
+    // Note: No flags needed for ProjectBase (it's the default layer)
+    fs::write(
+        &config_path,
+        r#"{"config": {"database": {"port": 5433, "ssl": true}}, "app": "override"}"#,
+    )?;
+
+    jin_cmd()
+        .args(["add", "config.json"])
+        .current_dir(fixture.path())
+        .env("JIN_DIR", &jin_dir)
+        .assert()
+        .success();
+
+    jin_cmd()
+        .args(["commit", "-m", "Add override config"])
+        .current_dir(fixture.path())
+        .env("JIN_DIR", &jin_dir)
+        .assert()
+        .success();
+
+    // Verify no conflict file created (clean merge expected)
+    let merge_conflict_path = config_path.with_extension(".jinmerge");
+    assert!(
+        !merge_conflict_path.exists(),
+        "No conflict file should be created for mergeable nested objects"
+    );
+
+    // Apply merge to workspace
+    jin_cmd()
+        .arg("apply")
+        .current_dir(fixture.path())
+        .env("JIN_DIR", &jin_dir)
+        .assert()
+        .success();
+
+    // Verify merged result matches expected output
+    let merged_content = fs::read_to_string(&config_path)?;
+    let merged: serde_json::Value = serde_json::from_str(&merged_content)?;
+
+    // Verify nested merge behavior
+    assert_eq!(
+        merged["config"]["database"]["host"], "localhost",
+        "host should be preserved from ModeBase"
+    );
+    assert_eq!(
+        merged["config"]["database"]["port"], 5433,
+        "port should be overridden by ProjectBase"
+    );
+    assert_eq!(
+        merged["config"]["database"]["ssl"], true,
+        "ssl should be added from ProjectBase"
+    );
+    assert_eq!(
+        merged["app"], "override",
+        "app should be overridden by ProjectBase"
+    );
+
+    Ok(())
+}

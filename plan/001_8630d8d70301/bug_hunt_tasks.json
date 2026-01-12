@@ -91,14 +91,14 @@
           "type": "Milestone",
           "id": "P1.M2",
           "title": "Fix jin Log Command",
-          "status": "Planned",
+          "status": "Complete",
           "description": "Fix the jin log command to display commits from all layers by dynamically discovering refs instead of using a hardcoded list with canonical path patterns.",
           "tasks": [
             {
               "type": "Task",
               "id": "P1.M2.T1",
               "title": "Implement Dynamic Ref Discovery in jin log",
-              "status": "Planned",
+              "status": "Complete",
               "description": "Replace the hardcoded layer iteration in src/commands/log.rs with dynamic ref discovery using repo.list_refs() to find all layer commits.",
               "subtasks": [
                 {
@@ -125,7 +125,7 @@
                   "type": "Subtask",
                   "id": "P1.M2.T1.S3",
                   "title": "Add integration test for log command with all layers",
-                  "status": "Planned",
+                  "status": "Complete",
                   "story_points": 2,
                   "dependencies": [
                     "P1.M2.T1.S2"

@@ -281,7 +281,7 @@
                   "type": "Subtask",
                   "id": "P1.M5.T1.S2",
                   "title": "Run manual verification of bug fix scenarios",
-                  "status": "Planned",
+                  "status": "Complete",
                   "story_points": 2,
                   "dependencies": [
                     "P1.M5.T1.S1"

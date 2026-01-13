@@ -198,14 +198,14 @@
           "type": "Milestone",
           "id": "P1.M4",
           "title": "Fix Flaky Test Isolation",
-          "status": "Planned",
+          "status": "Complete",
           "description": "Fix the test_create_mode_bound_scope test that fails when run with other tests by replacing the manual setup with proper test isolation utilities.",
           "tasks": [
             {
               "type": "Task",
               "id": "P1.M4.T1",
               "title": "Refactor test to use UnitTestContext",
-              "status": "Planned",
+              "status": "Complete",
               "description": "Replace the manual setup_test_env() function in the scope test with the established setup_unit_test() pattern from src/test_utils.rs.",
               "subtasks": [
                 {
@@ -243,7 +243,7 @@
                   "type": "Subtask",
                   "id": "P1.M4.T1.S4",
                   "title": "Run test in parallel with other tests to verify isolation",
-                  "status": "Planned",
+                  "status": "Complete",
                   "story_points": 1,
                   "dependencies": [
                     "P1.M4.T1.S3"

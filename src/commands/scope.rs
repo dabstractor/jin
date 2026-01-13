@@ -634,15 +634,33 @@ mod tests {
     #[test]
     #[serial]
     fn test_create_mode_bound_scope() {
-        let _temp = setup_test_env();
-        create_test_mode("testmode");
+        // PATTERN: Use setup_unit_test() to get isolated context
+        let ctx = setup_unit_test();
 
+        // PATTERN: Optional cleanup at start ensures clean state
+        // (Not strictly necessary with TempDir, but good defensive programming)
+        cleanup_test_mode("testmode", &ctx);
+
+        // PATTERN: Create mode in isolated context with explicit path
+        create_test_mode_in_context("testmode", &ctx);
+
+        // CRITICAL: Set JIN_DIR before calling create() because it uses JinRepo::open_or_create()
+        // which relies on JIN_DIR environment variable. In parallel test execution, other tests
+        // may have modified JIN_DIR, so we need to ensure it points to our isolated context.
+        std::env::set_var("JIN_DIR", &ctx.jin_dir);
+
+        // EXECUTE: The function under test
         let result = create("testscope", Some("testmode"));
         assert!(result.is_ok());
 
-        // Verify ref was created
-        let repo = JinRepo::open_or_create().unwrap();
+        // VERIFY: Use explicit path for repository access
+        let repo = JinRepo::open_or_create_at(&ctx.jin_dir).unwrap();
         assert!(repo.ref_exists("refs/jin/modes/testmode/scopes/testscope"));
+
+        // CLEANUP: Automatic via Drop when ctx goes out of scope
+        // - Temporary directory deleted
+        // - Original directory restored
+        // - Original JIN_DIR environment variable restored
     }
 
     #[test]

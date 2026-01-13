@@ -4,7 +4,7 @@
       "type": "Phase",
       "id": "P1",
       "title": "Bug Fix Phase - Jin CLI Implementation",
-      "status": "Planned",
+      "status": "Complete",
       "description": "Fix 2 Major bugs and test suite issues identified during comprehensive end-to-end testing of the Jin CLI implementation. This phase addresses incorrect conflict detection for structured files, missing commits in jin log output, and test suite reliability issues.",
       "milestones": [
         {
@@ -258,14 +258,14 @@
           "type": "Milestone",
           "id": "P1.M5",
           "title": "Verification and Documentation",
-          "status": "Planned",
+          "status": "Complete",
           "description": "Run comprehensive verification to ensure all bugs are fixed and document the changes made.",
           "tasks": [
             {
               "type": "Task",
               "id": "P1.M5.T1",
               "title": "Run Full Test Suite and Verify All Fixes",
-              "status": "Planned",
+              "status": "Complete",
               "description": "Execute the complete test suite and verify all previously failing tests now pass, including new tests added for the bug fixes.",
               "subtasks": [
                 {
@@ -292,7 +292,7 @@
                   "type": "Subtask",
                   "id": "P1.M5.T1.S3",
                   "title": "Document bug fixes and verify PRD compliance",
-                  "status": "Planned",
+                  "status": "Complete",
                   "story_points": 1,
                   "dependencies": [
                     "P1.M5.T1.S2"

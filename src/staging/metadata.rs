@@ -181,6 +181,8 @@ mod tests {
     #[test]
     #[serial]
     fn test_workspace_metadata_load_not_found() {
+        // Clear JIN_DIR to avoid interference from other tests
+        std::env::remove_var("JIN_DIR");
         let temp = TempDir::new().unwrap();
         std::env::set_current_dir(temp.path()).unwrap();
 

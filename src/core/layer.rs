@@ -286,9 +286,10 @@ mod tests {
             "refs/jin/layers/mode/claude/_"
         );
         // ModeScope uses /_ suffix to avoid conflict with ModeScopeProject refs
+        // Note: colons in scope names are sanitized to slashes for Git ref compatibility
         assert_eq!(
             Layer::ModeScope.ref_path(Some("claude"), Some("language:javascript"), None),
-            "refs/jin/layers/mode/claude/scope/language:javascript/_"
+            "refs/jin/layers/mode/claude/scope/language/javascript/_"
         );
         assert_eq!(
             Layer::ProjectBase.ref_path(None, None, Some("ui-dashboard")),

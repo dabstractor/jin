@@ -510,6 +510,88 @@ mod tests {
         .unwrap();
     }
 
+    /// Cleanup all refs associated with a test mode.
+    ///
+    /// This ensures test isolation by removing artifacts from previous runs.
+    /// Handles missing refs gracefully (no errors if refs don't exist).
+    ///
+    /// # Arguments
+    ///
+    /// * `name` - The mode name to clean up
+    /// * `ctx` - The test context providing isolated jin_dir path
+    ///
+    /// # Behavior
+    ///
+    /// - Opens JinRepo at ctx.jin_dir for isolation
+    /// - Deletes mode ref: `refs/jin/modes/{name}/_mode`
+    /// - Deletes all scope refs: `refs/jin/modes/{name}/scopes/*`
+    /// - Ignores errors for non-existent refs
+    fn cleanup_test_mode(name: &str, ctx: &UnitTestContext) {
+        // Open repo at isolated path (same as create_test_mode_in_context)
+        let repo = JinRepo::open_or_create_at(&ctx.jin_dir).unwrap();
+
+        // Delete mode ref (safe deletion, ignore errors if ref doesn't exist)
+        let mode_ref = format!("refs/jin/modes/{}/_mode", name);
+        let _ = repo.delete_ref(&mode_ref);
+
+        // List and delete all scope refs matching the pattern
+        let scope_ref_pattern = format!("refs/jin/modes/{}/scopes/*", name);
+        if let Ok(refs) = repo.list_refs(&scope_ref_pattern) {
+            for ref_path in refs {
+                let _ = repo.delete_ref(&ref_path);
+            }
+        }
+    }
+
+    #[test]
+    fn test_cleanup_removes_all_refs() {
+        let ctx = setup_unit_test();
+
+        // Create a mode
+        create_test_mode_in_context("cleanup_test", &ctx);
+
+        // Verify refs exist
+        let repo = JinRepo::open_or_create_at(&ctx.jin_dir).unwrap();
+        assert!(repo.ref_exists("refs/jin/modes/cleanup_test/_mode"));
+
+        // Run cleanup
+        cleanup_test_mode("cleanup_test", &ctx);
+
+        // Verify refs are gone
+        assert!(!repo.ref_exists("refs/jin/modes/cleanup_test/_mode"));
+
+        // Running cleanup again should not error
+        cleanup_test_mode("cleanup_test", &ctx);
+    }
+
+    #[test]
+    fn test_cleanup_with_scopes() {
+        let ctx = setup_unit_test();
+
+        // Create mode and add a scope ref manually
+        create_test_mode_in_context("cleanup_with_scope", &ctx);
+        let repo = JinRepo::open_or_create_at(&ctx.jin_dir).unwrap();
+        let empty_tree = repo.create_tree(&[]).unwrap();
+        let commit = repo.create_commit(None, "test", empty_tree, &[]).unwrap();
+        repo.set_ref(
+            "refs/jin/modes/cleanup_with_scope/scopes/testscope",
+            commit,
+            "test",
+        )
+        .unwrap();
+
+        // Verify both refs exist
+        assert!(repo.ref_exists("refs/jin/modes/cleanup_with_scope/_mode"));
+        assert!(repo.ref_exists("refs/jin/modes/cleanup_with_scope/scopes/testscope"));
+
+        // Cleanup
+        cleanup_test_mode("cleanup_with_scope", &ctx);
+
+        // Verify both are gone
+        assert!(!repo.ref_exists("refs/jin/modes/cleanup_with_scope/_mode"));
+        assert!(!repo.ref_exists("refs/jin/modes/cleanup_with_scope/scopes/testscope"));
+    }
+
     #[test]
     fn test_validate_scope_name_valid() {
         assert!(validate_scope_name("testing").is_ok());

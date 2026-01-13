@@ -1,0 +1,2375 @@
+warning: function `create_test_jinmap` is never used
+   --> src/core/jinmap.rs:243:8
+    |
+243 |     fn create_test_jinmap() -> (TempDir, JinMap) {
+    |        ^^^^^^^^^^^^^^^^^^
+    |
+    = note: `#[warn(dead_code)]` (part of `#[warn(unused)]`) on by default
+
+warning: `jin` (lib test) generated 1 warning
+warning: unused import: `fixtures::jin`
+  --> tests/common/mod.rs:10:9
+   |
+10 | pub use fixtures::jin;
+   |         ^^^^^^^^^^^^^
+   |
+   = note: `#[warn(unused_imports)]` (part of `#[warn(unused)]`) on by default
+
+warning: function `assert_workspace_file` is never used
+  --> tests/common/assertions.rs:18:8
+   |
+18 | pub fn assert_workspace_file(project_path: &Path, file: &str, expected_content: &str) {
+   |        ^^^^^^^^^^^^^^^^^^^^^
+   |
+   = note: `#[warn(dead_code)]` (part of `#[warn(unused)]`) on by default
+
+warning: function `assert_workspace_file_not_exists` is never used
+  --> tests/common/assertions.rs:63:8
+   |
+63 | pub fn assert_workspace_file_not_exists(project_path: &Path, file: &str) {
+   |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: function `assert_staging_contains` is never used
+  --> tests/common/assertions.rs:82:8
+   |
+82 | pub fn assert_staging_contains(project_path: &Path, file: &str, jin_dir: Option<&Path>) {
+   |        ^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: function `assert_staging_not_contains` is never used
+   --> tests/common/assertions.rs:114:8
+    |
+114 | pub fn assert_staging_not_contains(project_path: &Path, file: &str, jin_dir: Option<&Path>) {
+    |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: function `assert_layer_ref_exists` is never used
+   --> tests/common/assertions.rs:148:8
+    |
+148 | pub fn assert_layer_ref_exists(ref_path: &str, jin_repo_path: Option<&std::path::Path>) {
+    |        ^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: function `assert_context_mode` is never used
+   --> tests/common/assertions.rs:189:8
+    |
+189 | pub fn assert_context_mode(project_path: &Path, expected_mode: &str) {
+    |        ^^^^^^^^^^^^^^^^^^^
+
+warning: function `assert_jin_initialized` is never used
+   --> tests/common/assertions.rs:218:8
+    |
+218 | pub fn assert_jin_initialized(project_path: &Path) {
+    |        ^^^^^^^^^^^^^^^^^^^^^^
+
+warning: method `set_jin_dir` is never used
+  --> tests/common/fixtures.rs:46:12
+   |
+25 | impl TestFixture {
+   | ---------------- method in this implementation
+...
+46 |     pub fn set_jin_dir(&self) {
+   |            ^^^^^^^^^^^
+
+warning: function `setup_jin_with_remote` is never used
+   --> tests/common/fixtures.rs:154:8
+    |
+154 | pub fn setup_jin_with_remote() -> Result<RemoteFixture, Box<dyn std::error::Error>> {
+    |        ^^^^^^^^^^^^^^^^^^^^^
+
+warning: function `create_mode` is never used
+   --> tests/common/fixtures.rs:183:8
+    |
+183 | pub fn create_mode(
+    |        ^^^^^^^^^^^
+
+warning: function `create_scope` is never used
+   --> tests/common/fixtures.rs:224:8
+    |
+224 | pub fn create_scope(
+    |        ^^^^^^^^^^^^
+
+warning: field `temp_dir` is never read
+   --> tests/common/git_helpers.rs:115:5
+    |
+114 | pub struct GitTestEnv {
+    |            ---------- field in this struct
+115 |     temp_dir: tempfile::TempDir,
+    |     ^^^^^^^^
+
+warning: unused import: `common::assertions::*`
+  --> tests/cli_add_local.rs:10:5
+   |
+10 | use common::assertions::*;
+   |     ^^^^^^^^^^^^^^^^^^^^^
+
+warning: function `unique_test_id` is never used
+   --> tests/common/fixtures.rs:265:8
+    |
+265 | pub fn unique_test_id() -> String {
+    |        ^^^^^^^^^^^^^^
+
+warning: function `setup_test_repo` is never used
+   --> tests/common/fixtures.rs:137:8
+    |
+137 | pub fn setup_test_repo() -> Result<TestFixture, Box<dyn std::error::Error>> {
+    |        ^^^^^^^^^^^^^^^
+
+warning: function `assert_workspace_file_not_exists` is never used
+  --> tests/common/assertions.rs:63:8
+   |
+63 | pub fn assert_workspace_file_not_exists(project_path: &Path, file: &str) {
+   |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   |
+   = note: `#[warn(dead_code)]` (part of `#[warn(unused)]`) on by default
+
+warning: function `assert_layer_ref_exists` is never used
+   --> tests/common/assertions.rs:148:8
+    |
+148 | pub fn assert_layer_ref_exists(ref_path: &str, jin_repo_path: Option<&std::path::Path>) {
+    |        ^^^^^^^^^^^^^^^^^^^^^^^
+    |
+    = note: `#[warn(dead_code)]` (part of `#[warn(unused)]`) on by default
+
+warning: function `jin_init` is never used
+   --> tests/common/fixtures.rs:118:8
+    |
+118 | pub fn jin_init(path: &Path, jin_dir: Option<&PathBuf>) -> Result<(), Box<dyn std::error::Error>> {
+    |        ^^^^^^^^
+
+warning: function `jin` is never used
+   --> tests/common/fixtures.rs:167:8
+    |
+167 | pub fn jin() -> Command {
+    |        ^^^
+
+warning: unused variable: `jin_dir`
+   --> tests/pull_merge.rs:261:9
+    |
+261 |     let jin_dir = remote_fixture.jin_dir.as_ref().unwrap();
+    |         ^^^^^^^ help: if this is intentional, prefix it with an underscore: `_jin_dir`
+    |
+    = note: `#[warn(unused_variables)]` (part of `#[warn(unused)]`) on by default
+
+warning: unused variable: `jin_dir`
+   --> tests/pull_merge.rs:421:9
+    |
+421 |     let jin_dir = remote_fixture.jin_dir.as_ref().unwrap();
+    |         ^^^^^^^ help: if this is intentional, prefix it with an underscore: `_jin_dir`
+
+warning: unused variable: `resolved_val`
+   --> tests/resolve_workflow.rs:464:22
+    |
+464 |     for (name, _, _, resolved_val) in &test_files {
+    |                      ^^^^^^^^^^^^ help: if this is intentional, prefix it with an underscore: `_resolved_val`
+    |
+    = note: `#[warn(unused_variables)]` (part of `#[warn(unused)]`) on by default
+
+warning: `jin` (test "cli_resolve") generated 13 warnings (run `cargo fix --test "cli_resolve" -p jin` to apply 1 suggestion)
+warning: `jin` (test "cli_add_local") generated 14 warnings (12 duplicates) (run `cargo fix --test "cli_add_local" -p jin` to apply 1 suggestion)
+warning: `jin` (test "cli_list") generated 15 warnings (14 duplicates)
+warning: `jin` (test "error_scenarios") generated 12 warnings (12 duplicates)
+warning: `jin` (test "mode_scope_workflow") generated 9 warnings (8 duplicates)
+warning: `jin` (test "core_workflow") generated 6 warnings (6 duplicates)
+warning: `jin` (test "cli_mv") generated 8 warnings (7 duplicates)
+warning: `jin` (test "conflict_workflow") generated 13 warnings (13 duplicates)
+warning: `jin` (test "sync_workflow") generated 10 warnings (10 duplicates)
+warning: `jin` (test "export_committed") generated 16 warnings (14 duplicates)
+warning: `jin` (test "destructive_validation") generated 16 warnings (16 duplicates)
+warning: `jin` (test "atomic_operations") generated 10 warnings (10 duplicates)
+warning: `jin` (test "repair_check") generated 16 warnings (16 duplicates)
+warning: `jin` (test "pull_merge") generated 16 warnings (14 duplicates) (run `cargo fix --test "pull_merge" -p jin` to apply 2 suggestions)
+warning: `jin` (test "resolve_workflow") generated 14 warnings (13 duplicates) (run `cargo fix --test "resolve_workflow" -p jin` to apply 1 suggestion)
+warning: `jin` (test "cli_log") generated 14 warnings (14 duplicates)
+warning: `jin` (test "workspace_validation") generated 16 warnings (16 duplicates)
+warning: `jin` (test "cli_apply_conflict") generated 13 warnings (13 duplicates)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.11s
+     Running unittests src/lib.rs (target/debug/deps/jin-8f5c46eea4d762d5)
+
+running 621 tests
+test audit::entry::tests::test_audit_context_skips_none ... ok
+test audit::entry::tests::test_audit_context_serialization ... ok
+test audit::entry::tests::test_audit_entry_deserialization ... ok
+test audit::entry::tests::test_audit_entry_from_commit ... ok
+test audit::entry::tests::test_audit_entry_from_commit_no_context ... ok
+test audit::entry::tests::test_audit_entry_serialization_skips_none ... ok
+test audit::entry::tests::test_audit_entry_serialization ... ok
+test audit::logger::tests::test_audit_entry_from_commit_helper ... ok
+test audit::logger::tests::test_audit_logger_audit_dir_accessor ... ok
+test audit::logger::tests::test_audit_logger_from_project ... ok
+test audit::logger::tests::test_audit_logger_log_entry_creates_file ... ok
+test audit::logger::tests::test_audit_logger_new_creates_directory ... ok
+test commands::add::tests::test_execute_global_with_mode ... ok
+test commands::add::tests::test_execute_no_files ... ok
+test audit::logger::tests::test_audit_logger_today_path_format ... ok
+test audit::logger::tests::test_audit_logger_log_entry_json_format ... ok
+test audit::logger::tests::test_audit_logger_append_multiple_entries ... ok
+test commands::add::tests::test_execute_project_without_mode ... ok
+test commands::add::tests::test_format_layer_name_with_context ... ok
+test commands::add::tests::test_validate_file_is_directory ... ok
+test commands::add::tests::test_validate_file_not_found ... ok
+test commands::add::tests::test_validate_file_symlink ... ok
+test commands::apply::tests::test_check_workspace_dirty_no_metadata ... ok
+test commands::apply::tests::test_serialize_merged_content_text ... ok
+test commands::commit_cmd::tests::test_execute_no_message ... ok
+test commands::commit_cmd::tests::test_execute_with_dry_run ... ok
+test commands::apply::tests::test_execute_not_initialized ... ok
+test commands::apply::tests::test_serialize_merged_content_json ... ok
+test commands::add::tests::test_stage_file_creates_blob ... ok
+test commands::add::tests::test_validate_file_success ... ok
+test commands::diff::tests::test_execute_not_initialized ... ok
+test commands::config::tests::test_execute_get ... ok
+test commands::diff::tests::test_parse_layer_name ... ok
+test commands::config::tests::test_execute_list ... ok
+test commands::config::tests::test_execute_set ... ok
+test commands::config::tests::test_get_config_value_helper ... ok
+test commands::export::tests::test_execute_no_files ... ok
+test commands::config::tests::test_get_jin_dir ... ok
+test commands::config::tests::test_get_jin_dir_display_with_env_var ... ok
+test commands::export::tests::test_validate_jin_tracked_file_not_found ... ok
+test commands::export::tests::test_validate_jin_tracked_not_in_staging ... ok
+test commands::config::tests::test_get_remote_url ... ok
+test commands::fetch::tests::test_categorize_layer ... ok
+test commands::import_cmd::tests::test_execute_no_files ... ok
+test commands::import_cmd::tests::test_format_layer_name ... ok
+test commands::import_cmd::tests::test_validate_import_file_is_directory ... ok
+test commands::import_cmd::tests::test_validate_import_file_not_found ... ok
+test commands::import_cmd::tests::test_validate_import_file_symlink ... ok
+test commands::config::tests::test_get_remote_url_not_set ... ok
+test commands::export::tests::test_validate_jin_tracked_success ... ok
+test commands::config::tests::test_list_empty_config ... ok
+test commands::layers::tests::test_count_files_empty_layer ... ok
+test commands::config::tests::test_get_unknown_key ... ok
+test commands::config::tests::test_set_jin_dir_fails ... ok
+test commands::config::tests::test_list_with_values ... ok
+test commands::config::tests::test_set_overwrites_existing_value ... ok
+test commands::config::tests::test_set_remote_fetch_on_init_false ... ok
+test commands::config::tests::test_set_remote_fetch_on_init_invalid ... ok
+test commands::config::tests::test_set_remote_fetch_on_init_true ... ok
+test commands::list::tests::test_execute_not_initialized ... ok
+test commands::list::tests::test_parse_mode_ref ... ok
+test commands::list::tests::test_parse_mode_ref_ignores_non_matching_patterns ... ok
+test commands::list::tests::test_parse_mode_ref_with_scope ... ok
+test commands::list::tests::test_parse_ref_path ... ok
+test commands::list::tests::test_parse_ref_path_ignore_global ... ok
+test commands::list::tests::test_parse_ref_path_standalone_project ... ok
+test commands::list::tests::test_parse_ref_path_with_project ... ok
+test commands::list::tests::test_parse_ref_path_with_scope ... ok
+test commands::list::tests::test_parse_scope_ref ... ok
+test commands::list::tests::test_parse_scope_ref_simple ... ok
+test commands::config::tests::test_set_remote_url ... ok
+test commands::log::tests::test_execute_not_initialized ... ok
+test commands::log::tests::test_parse_layer_name ... ok
+test commands::config::tests::test_set_unknown_key ... ok
+test commands::log::tests::test_count_files_empty_commit ... ok
+test commands::config::tests::test_set_user_email ... ok
+test commands::link::tests::test_validate_url_error_message ... ok
+test commands::link::tests::test_validate_file_url ... ok
+test commands::config::tests::test_set_user_name ... ok
+test commands::link::tests::test_validate_git_protocol_url ... ok
+test commands::context::tests::test_execute_default_context ... ok
+test commands::link::tests::test_validate_https_url ... ok
+test commands::context::tests::test_execute_not_initialized ... ok
+test commands::context::tests::test_execute_with_mode_and_scope ... ok
+test commands::diff::tests::test_execute_staged_empty ... ok
+test commands::export::tests::test_add_to_git_no_git_repo ... ok
+test commands::mode::tests::test_validate_mode_name_empty ... ok
+test commands::mode::tests::test_validate_mode_name_invalid_chars ... ok
+test commands::mode::tests::test_validate_mode_name_reserved ... ok
+test commands::mode::tests::test_validate_mode_name_valid ... ok
+test commands::link::tests::test_validate_ssh_scheme_url ... ok
+test commands::link::tests::test_validate_ssh_colon_url ... ok
+test commands::mv::tests::test_execute_no_files ... ok
+test commands::mv::tests::test_execute_not_initialized ... ok
+test commands::mv::tests::test_execute_odd_number_of_files ... ok
+test commands::link::tests::test_validate_invalid_url ... ok
+test commands::export::tests::test_add_to_git_success ... ok
+test commands::mv::tests::test_format_layer_name ... ok
+test commands::export::tests::test_execute_file_not_jin_tracked ... ok
+test commands::export::tests::test_validate_jin_tracked_committed_file ... ok
+test commands::pull::tests::test_format_ref_path ... ok
+test commands::pull::tests::test_parse_ref_path_global ... ok
+test commands::pull::tests::test_parse_ref_path_invalid ... ok
+test commands::pull::tests::test_parse_ref_path_mode ... ok
+test commands::pull::tests::test_parse_ref_path_mode_project ... ok
+test commands::pull::tests::test_parse_ref_path_mode_scope ... ok
+test commands::push::tests::test_push_args_force ... ok
+test commands::export::tests::test_validate_jin_tracked_not_in_jinmap ... ok
+test commands::layers::tests::test_execute_default_context ... ok
+test commands::layers::tests::test_execute_not_initialized ... ok
+test commands::layers::tests::test_execute_with_mode_and_scope ... ok
+test commands::mode::tests::test_create_mode ... ok
+test commands::mode::tests::test_create_mode_duplicate ... ok
+test commands::repair::tests::test_create_default_jinmap ... ok
+test commands::mode::tests::test_delete_active_mode ... ok
+test commands::mode::tests::test_delete_mode ... ok
+test commands::mode::tests::test_delete_nonexistent ... ok
+test commands::mode::tests::test_list_empty ... ok
+test commands::reset::tests::test_determine_target_layer_default ... ok
+test commands::reset::tests::test_determine_target_layer_global ... ok
+test commands::reset::tests::test_determine_target_layer_mode ... ok
+test commands::reset::tests::test_determine_target_layer_mode_project ... ok
+test commands::reset::tests::test_determine_target_layer_mode_scope ... ok
+test commands::reset::tests::test_determine_target_layer_project_without_mode ... ok
+test commands::reset::tests::test_execute_not_initialized ... ok
+test commands::reset::tests::test_layer_name ... ok
+test commands::mode::tests::test_list_with_modes ... ok
+test commands::reset::tests::test_reset_staging_empty ... ok
+test commands::resolve::tests::test_apply_resolved_file_creates_parent_dir ... ok
+test commands::resolve::tests::test_validate_no_conflict_markers_empty ... ok
+test commands::resolve::tests::test_validate_no_conflict_markers_resolved ... ok
+test commands::resolve::tests::test_validate_no_conflict_markers_with_markers ... ok
+test commands::mode::tests::test_show_no_mode ... ok
+test commands::mode::tests::test_show_with_mode ... ok
+test commands::rm::tests::test_execute_no_files ... ok
+test commands::rm::tests::test_execute_not_initialized ... ok
+test commands::mode::tests::test_unset ... ok
+test commands::rm::tests::test_format_layer_name ... ok
+test commands::mode::tests::test_unset_no_mode ... ok
+test commands::mode::tests::test_use_mode ... ok
+test commands::mode::tests::test_use_mode_nonexistent ... ok
+test commands::mv::tests::test_execute_dry_run ... ok
+test commands::scope::tests::test_cleanup_removes_all_refs ... ok
+test commands::mv::tests::test_execute_global_with_mode ... ok
+test commands::scope::tests::test_cleanup_with_scopes ... ok
+test commands::mv::tests::test_execute_project_without_mode ... ok
+test commands::mv::tests::test_move_file_destination_exists ... ok
+test commands::mv::tests::test_move_file_not_staged ... ok
+test commands::mv::tests::test_move_file_success ... ok
+test commands::repair::tests::test_check_jinmap_invalid_yaml ... ok
+test commands::repair::tests::test_check_jinmap_valid_yaml ... ok
+test commands::repair::tests::test_check_staging_index_corrupted ... ok
+test commands::repair::tests::test_check_staging_index_missing ... ok
+test commands::repair::tests::test_check_workspace_metadata_missing ... ok
+test commands::scope::tests::test_list_with_scopes ... ok
+test commands::repair::tests::test_execute_dry_run ... ok
+test commands::repair::tests::test_execute_no_issues ... ok
+test commands::repair::tests::test_rebuild_staging_index ... ok
+test commands::repair::tests::test_rebuild_workspace_metadata ... ok
+test commands::reset::tests::test_reset_hard_with_force ... ok
+test commands::scope::tests::test_validate_scope_name_empty ... ok
+test commands::scope::tests::test_validate_scope_name_invalid_chars ... ok
+test commands::scope::tests::test_validate_scope_name_reserved ... ok
+test commands::scope::tests::test_validate_scope_name_valid ... ok
+test commands::rm::tests::test_execute_dry_run ... ok
+test commands::rm::tests::test_execute_global_with_mode ... ok
+test commands::status::tests::test_check_workspace_state_clean_no_metadata ... ok
+test commands::status::tests::test_execute_not_initialized ... ok
+test commands::sync::tests::test_sync_execute_signature ... ok
+test commit::pipeline::tests::test_abort ... ok
+test commands::rm::tests::test_execute_project_without_mode ... ok
+test commit::pipeline::tests::test_build_layer_tree_all_deletions ... ok
+test commands::rm::tests::test_unstage_file_not_in_staging ... ok
+test commit::pipeline::tests::test_build_layer_tree_deletes_from_parent ... ok
+test commit::pipeline::tests::test_build_layer_tree_nested_paths ... ok
+test commit::pipeline::tests::test_build_layer_tree_merges_with_parent ... ok
+test commit::pipeline::tests::test_build_layer_tree_multiple_files ... ok
+test commands::rm::tests::test_unstage_file_success ... ok
+test commit::pipeline::tests::test_commit_config_dry_run ... ok
+test commit::pipeline::tests::test_commit_config_new ... ok
+test commit::pipeline::tests::test_commit_pipeline_empty ... ok
+test commit::pipeline::tests::test_commit_pipeline_with_entries_dry_run ... ok
+test commit::pipeline::tests::test_build_layer_tree_with_deletions ... ok
+test commands::rm::tests::test_unstage_file_with_force ... ok
+test commit::pipeline::tests::test_build_layer_tree_single_file ... ok
+test commit::pipeline::tests::test_dry_run_mode ... ok
+test commit::pipeline::tests::test_build_layer_tree_updates_parent_entry ... ok
+test commit::pipeline::tests::test_get_parent_commits_no_ref ... ok
+test core::config::tests::test_config_serialization ... ok
+test core::config::tests::test_context_serialization ... ok
+test commit::pipeline::tests::test_create_layer_commit_initial ... ok
+test core::config::tests::test_default_config ... ok
+test core::config::tests::test_default_context ... ok
+test core::config::tests::test_require_mode_error ... ok
+test commit::pipeline::tests::test_invalid_content_hash ... ok
+test core::config::tests::test_require_mode_success ... ok
+test core::error::tests::test_config_error ... ok
+test core::error::tests::test_detached_workspace_error ... ok
+test core::error::tests::test_detached_workspace_error_deleted_mode ... ok
+test core::error::tests::test_detached_workspace_error_no_commit ... ok
+test core::error::tests::test_error_display ... ok
+test core::error::tests::test_git_tracked_error ... ok
+test core::error::tests::test_merge_conflict_error ... ok
+test core::error::tests::test_parse_error ... ok
+test core::error::tests::test_no_active_context_error ... ok
+test core::error::tests::test_staging_failed_error ... ok
+test core::error::tests::test_symlink_error ... ok
+test core::jinmap::tests::test_jinmap_add_layer_mapping ... ok
+test core::jinmap::tests::test_jinmap_add_empty_mapping_removes_entry ... ok
+test core::jinmap::tests::test_jinmap_contains_file ... ok
+test core::jinmap::tests::test_jinmap_default ... ok
+test core::jinmap::tests::test_jinmap_layer_refs ... ok
+test core::jinmap::tests::test_jinmap_get_layer_files ... ok
+test core::jinmap::tests::test_jinmap_load_creates_default ... ok
+test core::jinmap::tests::test_jinmap_meta_timestamp_updated ... ok
+test core::jinmap::tests::test_jinmap_total_file_count ... ok
+test core::jinmap::tests::test_jinmap_serialize_deserialize ... ok
+test core::jinmap::tests::test_jinmap_yaml_format ... ok
+test core::layer::tests::test_all_layers_count ... ok
+test core::layer::tests::test_display ... ok
+test core::jinmap::tests::test_jinmap_save_load_roundtrip ... ok
+test core::layer::tests::test_parse_layer_from_ref_path_empty_string ... ok
+test core::layer::tests::test_parse_layer_from_ref_path_extra_slashes ... ok
+test core::layer::tests::test_parse_layer_from_ref_path_global_base ... ok
+test core::layer::tests::test_parse_layer_from_ref_path_invalid_suffix ... ok
+test core::layer::tests::test_parse_layer_from_ref_path_mode_base ... ok
+test core::layer::tests::test_parse_layer_from_ref_path_mode_project ... ok
+test core::layer::tests::test_parse_layer_from_ref_path_mode_scope ... ok
+test core::layer::tests::test_parse_layer_from_ref_path_mode_scope_project ... ok
+test core::layer::tests::test_parse_layer_from_ref_path_partial_match ... ok
+test core::layer::tests::test_parse_layer_from_ref_path_pattern_order ... ok
+test core::layer::tests::test_parse_layer_from_ref_path_project_base ... ok
+test core::layer::tests::test_parse_layer_from_ref_path_scope_base ... ok
+test core::layer::tests::test_parse_layer_from_ref_path_trailing_slash ... ok
+test core::layer::tests::test_parse_layer_from_ref_path_unknown_layer ... ok
+test commit::pipeline::tests::test_get_parent_commits_with_existing_ref ... ok
+test core::layer::tests::test_parse_layer_from_ref_path_user_local ... ok
+test core::layer::tests::test_parse_layer_from_ref_path_with_underscore_in_name ... ok
+test core::layer::tests::test_parse_layer_from_ref_path_workspace_active ... ok
+test core::layer::tests::test_parse_layer_from_ref_path_wrong_prefix ... ok
+test core::layer::tests::test_precedence_ordering ... ok
+test core::layer::tests::test_precedence_values ... ok
+test core::layer::tests::test_requires_mode ... ok
+test core::layer::tests::test_requires_scope ... ok
+test core::layer::tests::test_storage_paths ... ok
+test core::layer::tests::test_ref_paths ... FAILED
+test commit::pipeline::tests::test_create_layer_commit_with_parent ... ok
+test core::jinmap::tests::test_jinmap_update_from_commits ... ok
+test commands::scope::tests::test_create_mode_bound_scope ... ok
+test git::merge::tests::test_detect_merge_type_equal ... ok
+test git::merge::tests::test_detect_merge_type_divergent ... ok
+test git::merge::tests::test_detect_merge_type_fast_forward ... ok
+test git::merge::tests::test_merge_type_derive_traits ... ok
+test git::merge::tests::test_detect_merge_type_with_base_divergent ... ok
+test git::merge::tests::test_detect_merge_type_with_base_equal ... ok
+test git::merge::tests::test_detect_merge_type_local_ahead ... ok
+test git::merge::tests::test_detect_merge_type_with_base_fast_forward ... ok
+test git::objects::tests::test_create_blob ... ok
+test git::merge::tests::test_detect_merge_type_with_base_local_ahead ... ok
+test git::objects::tests::test_entry_mode ... ok
+test commands::scope::tests::test_create_scope_duplicate ... ok
+test git::objects::tests::test_create_commit_initial ... ok
+test git::objects::tests::test_tree_entry_constructors ... ok
+test git::objects::tests::test_create_tree_nested ... ok
+test git::objects::tests::test_create_commit_with_parent ... ok
+test git::objects::tests::test_create_tree_simple ... ok
+test git::objects::tests::test_find_objects ... ok
+test git::refs::tests::test_compare_refs_equal ... ok
+test git::refs::tests::test_compare_refs_diverged ... ok
+test git::refs::tests::test_ref_ops_trait_exists ... ok
+test commands::scope::tests::test_create_scope_nonexistent_mode ... ok
+test git::objects::tests::test_deeply_nested_paths ... ok
+test git::refs::tests::test_invalid_ref_name ... ok
+test git::remote::tests::test_auth_counter ... ok
+test git::remote::tests::test_build_fetch_options ... ok
+test git::remote::tests::test_build_push_options ... ok
+test git::remote::tests::test_setup_callbacks ... ok
+test git::refs::tests::test_delete_ref ... ok
+test git::refs::tests::test_compare_refs_ahead ... ok
+test git::refs::tests::test_ref_exists ... ok
+test git::repo::tests::test_open_nonexistent_fails ... ok
+test git::repo::tests::test_debug_impl ... ok
+test git::repo::tests::test_has_jin_refs_empty ... ok
+test git::refs::tests::test_resolve_ref ... ok
+test git::refs::tests::test_set_and_find_ref ... ok
+test git::refs::tests::test_list_refs_glob ... ok
+test git::repo::tests::test_create_jin_repo ... ok
+test commands::scope::tests::test_create_scope_with_colon ... ok
+test git::repo::tests::test_open_existing_repo ... ok
+test git::repo::tests::test_open_or_create_existing ... ok
+test git::transaction::tests::test_concurrent_transaction_blocked ... ok
+test git::transaction::tests::test_auto_recover ... ok
+test git::transaction::tests::test_incomplete_transaction_inspection ... ok
+test git::transaction::tests::test_layer_update_creation ... ok
+test git::repo::tests::test_open_or_create_new ... ok
+test git::transaction::tests::test_layer_transaction_empty ... ok
+test git::repo::tests::test_repo_is_bare ... ok
+test git::transaction::tests::test_recovery_detect_incomplete ... ok
+test commands::scope::tests::test_create_untethered_scope ... ok
+test git::transaction::tests::test_recovery_resume_requires_prepared_state ... ok
+test git::transaction::tests::test_layer_transaction_multi_layer ... ok
+test git::transaction::tests::test_layer_transaction_abort ... ok
+test git::transaction::tests::test_layer_transaction_single_layer ... ok
+test git::transaction::tests::test_recovery_resume ... ok
+test git::transaction::tests::test_transaction_state_serialization ... ok
+test git::transaction::tests::test_transaction_empty_commit ... ok
+test git::transaction::tests::test_layer_transaction_records_old_oid ... ok
+test git::transaction::tests::test_recovery_rollback ... ok
+test git::transaction::tests::test_transaction_lock_and_set ... ok
+test git::transaction::tests::test_transaction_log_atomic_write ... ok
+test git::transaction::tests::test_transaction_log_save_load ... ok
+test git::transaction::tests::test_transaction_multiple_refs ... ok
+test git::transaction::tests::test_transaction_without_lock_fails ... ok
+test git::transaction::tests::test_transaction_new ... ok
+test git::transaction::tests::test_transaction_remove_ref ... ok
+test git::tree::tests::test_deeply_nested_tree ... ok
+test git::tree::tests::test_empty_tree ... ok
+test merge::deep::tests::test_complex_nested_merge ... ok
+test commands::scope::tests::test_delete_active_scope ... ok
+test merge::deep::tests::test_empty_base_array_takes_overlay ... ok
+test merge::deep::tests::test_deep_merge_backward_compatible ... ok
+test merge::deep::tests::test_empty_overlay_array_replaces ... ok
+test merge::deep::tests::test_empty_base_object_takes_overlay ... ok
+test merge::deep::tests::test_empty_overlay_object_merges ... ok
+test merge::deep::tests::test_keyed_array_appends_new_items ... ok
+test merge::deep::tests::test_keyed_array_deep_merge_items ... ok
+test git::tree::tests::test_read_blob_content ... ok
+test merge::deep::tests::test_keyed_array_merge_by_id ... ok
+test git::tree::tests::test_get_tree_entry_not_found ... ok
+test git::tree::tests::test_list_tree_files_excludes_directories ... ok
+test merge::deep::tests::test_keyed_array_with_custom_key_fields ... ok
+test git::tree::tests::test_list_tree_files ... ok
+test merge::deep::tests::test_merge_config_custom_keys ... ok
+test merge::deep::tests::test_keyed_array_merge_by_name ... ok
+test git::tree::tests::test_get_tree_entry ... ok
+test merge::deep::tests::test_merge_config_default_trait ... ok
+test merge::deep::tests::test_mixed_array_replacement ... ok
+test merge::deep::tests::test_mixed_types_in_array_replacement ... ok
+test git::tree::tests::test_read_file_from_tree ... ok
+test merge::deep::tests::test_multiple_null_deletions ... ok
+test merge::deep::tests::test_null_deletes_deeply_nested_key ... ok
+test merge::deep::tests::test_null_deletes_entire_nested_object ... ok
+test merge::deep::tests::test_null_deletes_top_level_key ... ok
+test merge::deep::tests::test_merge_config_default ... ok
+test git::tree::tests::test_walk_tree_pre_order ... ok
+test merge::deep::tests::test_keyed_array_preserves_order ... ok
+test merge::deep::tests::test_null_deletes_nested_key ... ok
+test merge::deep::tests::test_object_merge_adds_new_keys ... ok
+test merge::deep::tests::test_object_merge_recursive ... ok
+test merge::deep::tests::test_object_merge_overlay_wins_on_conflict ... ok
+test merge::deep::tests::test_scalar_bool_override ... ok
+test merge::deep::tests::test_overlay_null_at_root_returns_null ... ok
+test merge::deep::tests::test_scalar_integer_override ... ok
+test git::tree::tests::test_walk_tree_abort ... ok
+test merge::deep::tests::test_scalar_string_override ... ok
+test git::tree::tests::test_walk_tree_post_order ... ok
+test merge::deep::tests::test_type_conflict_array_to_scalar ... ok
+test merge::deep::tests::test_type_conflict_object_to_scalar ... ok
+test merge::deep::tests::test_unkeyed_array_replacement_primitives ... ok
+test merge::deep::tests::test_type_conflict_scalar_to_object ... ok
+test merge::jinmerge::tests::test_conflict_count ... ok
+test merge::jinmerge::tests::test_conflict_count_empty ... ok
+test merge::deep::tests::test_unkeyed_array_replacement_strings ... ok
+test merge::jinmerge::tests::test_from_text_merge_basic ... ok
+test merge::jinmerge::tests::test_from_text_merge_multiline ... ok
+test merge::jinmerge::tests::test_empty_layer_content ... ok
+test merge::jinmerge::tests::test_is_jinmerge_file_nonexistent ... ok
+test merge::jinmerge::tests::test_is_jinmerge_file_by_header ... ok
+test merge::jinmerge::tests::test_is_jinmerge_file_by_extension ... ok
+test merge::jinmerge::tests::test_line_numbers_are_1_indexed ... ok
+test merge::jinmerge::tests::test_full_workflow ... ok
+test merge::jinmerge::tests::test_marker_lengths ... ok
+test merge::jinmerge::tests::test_marker_format_matches_git ... ok
+test merge::jinmerge::tests::test_merge_path_for_file_basic ... ok
+test merge::jinmerge::tests::test_merge_path_for_file_replaces_existing_extension ... ok
+test merge::jinmerge::tests::test_merge_path_for_file_with_path ... ok
+test merge::jinmerge::tests::test_parse_empty_layer_content ... ok
+test merge::jinmerge::tests::test_parse_from_file_missing_end_marker ... ok
+test merge::jinmerge::tests::test_parse_from_file_multiline_content ... ok
+test merge::jinmerge::tests::test_parse_from_file_basic ... ok
+test merge::jinmerge::tests::test_parse_from_file_missing_separator ... ok
+test merge::jinmerge::tests::test_parse_from_file_multiple_conflicts ... ok
+test merge::jinmerge::tests::test_parse_preserves_line_numbers ... ok
+test merge::jinmerge::tests::test_to_jinmerge_format_adds_newline_if_missing ... ok
+test merge::jinmerge::tests::test_to_jinmerge_format_preserves_trailing_newline ... ok
+test merge::jinmerge::tests::test_to_jinmerge_format_single_conflict ... ok
+test merge::jinmerge::tests::test_roundtrip_write_then_parse ... ok
+test merge::jinmerge::tests::test_write_to_file_atomic ... ok
+test merge::layer::tests::test_applicable_layers_no_context ... ok
+test merge::layer::tests::test_applicable_layers_scope_without_mode ... ok
+test merge::jinmerge::tests::test_write_to_file_creates_parent_dir ... ok
+test merge::layer::tests::test_applicable_layers_with_mode ... ok
+test merge::layer::tests::test_applicable_layers_with_mode_and_scope ... ok
+test merge::jinmerge::tests::test_write_to_file_creates_valid_jinmerge ... ok
+test merge::layer::tests::test_detect_format_ini ... ok
+test merge::layer::tests::test_detect_format_json ... ok
+test merge::layer::tests::test_detect_format_text ... ok
+test merge::layer::tests::test_detect_format_toml ... ok
+test merge::layer::tests::test_detect_format_yaml ... ok
+test merge::layer::tests::test_file_format_clone ... ok
+test merge::layer::tests::test_file_format_equality ... ok
+test commands::scope::tests::test_delete_mode_bound_scope ... ok
+test merge::layer::tests::test_find_layers_nonexistent_file_path ... ok
+test merge::layer::tests::test_find_layers_empty_layer_list ... ok
+test merge::layer::tests::test_find_layers_mode_scope_with_context ... ok
+test merge::layer::tests::test_find_layers_nonexistent_layer_refs_skipped ... ok
+test merge::layer::tests::test_find_layers_nested_directory_files ... ok
+test commands::scope::tests::test_delete_nonexistent ... ok
+test merge::layer::tests::test_find_layers_precedence_order_maintained ... ok
+test merge::layer::tests::test_has_different_content_empty_layer_list ... ok
+test merge::layer::tests::test_find_layers_file_not_in_any_layer ... ok
+test merge::layer::tests::test_has_different_content_different_text ... ok
+test merge::layer::tests::test_find_layers_multiple_layers_containing_file ... ok
+test merge::layer::tests::test_find_layers_single_layer_containing_file ... ok
+test merge::layer::tests::test_has_different_content_different_structured ... ok
+test merge::layer::tests::test_has_different_content_ini_format ... ok
+test merge::layer::tests::test_has_different_content_four_layers_one_different ... ok
+test commands::scope::tests::test_delete_untethered_scope ... ok
+test merge::layer::tests::test_has_different_content_same_structured ... ok
+test merge::layer::tests::test_has_different_content_semantic_json_whitespace ... ok
+test merge::layer::tests::test_has_different_content_five_layers_text_file ... ok
+test merge::layer::tests::test_layer_precedence_order ... ok
+test merge::layer::tests::test_layer_precedence_values ... ok
+test merge::layer::tests::test_has_different_content_eight_layers_all_different ... ok
+test merge::layer::tests::test_has_different_content_single_layer ... ok
+test merge::layer::tests::test_has_different_content_four_layers_all_same ... ok
+test merge::layer::tests::test_has_different_content_nine_layers_complex_pattern ... ok
+test merge::layer::tests::test_has_different_content_seven_layers_last_differs ... ok
+test merge::layer::tests::test_has_different_content_same_text ... ok
+test merge::layer::tests::test_has_different_content_five_layers_middle_differs ... ok
+test merge::layer::tests::test_merge_result_default ... ok
+test merge::layer::tests::test_merge_result_is_clean_with_conflicts ... ok
+test merge::layer::tests::test_merge_result_new ... ok
+test merge::layer::tests::test_has_different_content_text_exact_match_required ... ok
+test merge::layer::tests::test_parse_content_json ... ok
+test merge::layer::tests::test_parse_content_ini ... ok
+test merge::layer::tests::test_parse_content_json_invalid ... ok
+test merge::layer::tests::test_parse_content_text ... ok
+test merge::layer::tests::test_has_different_content_three_layers_all_same ... ok
+test merge::layer::tests::test_has_different_content_three_layers_one_different ... ok
+test merge::layer::tests::test_merge_layers_single_layer_no_conflict ... ok
+test merge::layer::tests::test_has_different_content_yaml_format ... ok
+test merge::text::tests::test_config_default ... ok
+test merge::layer::tests::test_parse_content_yaml ... ok
+test commands::scope::tests::test_list_empty ... ok
+test merge::layer::tests::test_parse_content_yaml_with_null ... ok
+test merge::text::tests::test_config_new ... ok
+test merge::text::tests::test_config_with_diff3 ... ok
+test merge::text::tests::test_config_with_labels ... ok
+test merge::text::tests::test_conflict_region_equality ... ok
+test merge::text::tests::test_count_conflict_regions ... ok
+test merge::text::tests::test_has_conflict_markers_false_for_normal_content ... ok
+test merge::layer::tests::test_parse_content_toml ... ok
+test merge::text::tests::test_has_conflict_markers_false_for_partial_markers ... ok
+test merge::text::tests::test_has_conflict_markers_true_for_conflicts ... ok
+test merge::text::tests::test_needs_label_rewrite ... ok
+test merge::layer::tests::test_merge_layers_same_content_text_file_optimized ... ok
+test merge::text::tests::test_merge_result_clean_has_no_conflicts ... ok
+test merge::text::tests::test_merge_and_parse_roundtrip ... ok
+test commands::repair::tests::test_create_default_context ... ok
+test merge::text::tests::test_parse_conflicts_empty_theirs ... ok
+test merge::text::tests::test_parse_conflicts_empty_for_no_conflicts ... ok
+test merge::text::tests::test_parse_conflicts_incomplete_markers_no_end ... ok
+test merge::text::tests::test_parse_conflicts_empty_ours ... ok
+test merge::text::tests::test_parse_conflicts_incomplete_markers_no_separator ... ok
+test merge::text::tests::test_parse_conflicts_line_numbers ... ok
+test merge::text::tests::test_parse_conflicts_malformed_markers_wrong_order ... ok
+test merge::text::tests::test_parse_conflicts_multiline_content ... ok
+test merge::text::tests::test_parse_conflicts_multiple_regions ... ok
+test merge::text::tests::test_parse_conflicts_single_region ... ok
+test merge::text::tests::test_rewrite_conflict_labels ... ok
+test merge::text::tests::test_text_merge_additions_at_different_locations ... ok
+test merge::text::tests::test_text_merge_all_empty ... ok
+test merge::text::tests::test_text_merge_conflict ... ok
+test merge::text::tests::test_text_merge_both_add_same_end ... ok
+test merge::text::tests::test_text_merge_empty_base_both_add_different ... ok
+test merge::text::tests::test_text_merge_conflict_same_line_different_changes ... ok
+test merge::text::tests::test_text_merge_empty_base_theirs_adds ... ok
+test merge::text::tests::test_text_merge_empty_base_both_add_identical ... ok
+test merge::text::tests::test_text_merge_empty_base_ours_adds ... ok
+test merge::text::tests::test_text_merge_identical ... ok
+test merge::layer::tests::test_has_different_content_toml_format ... ok
+test merge::layer::tests::test_merge_layers_same_content_optimized ... ok
+test merge::text::tests::test_text_merge_no_trailing_newline ... ok
+test merge::text::tests::test_text_merge_result_equality ... ok
+test merge::text::tests::test_text_merge_ours_only ... ok
+test merge::text::tests::test_text_merge_multiple_conflicts ... ok
+test merge::text::tests::test_text_merge_non_overlapping_changes ... ok
+test merge::text::tests::test_text_merge_preserves_trailing_newline ... ok
+test merge::text::tests::test_text_merge_theirs_only ... ok
+test merge::text::tests::test_text_merge_unicode_content ... ok
+test merge::value::tests::test_as_bool ... ok
+test merge::value::tests::test_as_numeric ... ok
+test merge::text::tests::test_text_merge_with_tabs_and_spaces ... ok
+test merge::text::tests::test_text_merge_large_file_with_changes ... ok
+test merge::value::tests::test_contains_null ... ok
+test merge::value::tests::test_contains_null_in_array ... ok
+test merge::text::tests::test_text_merge_with_custom_labels ... ok
+test merge::layer::tests::test_merge_layers_structured_files_auto_merge_no_conflict ... ok
+test merge::value::tests::test_empty_array ... ok
+test merge::value::tests::test_from_json_helper ... ok
+test merge::value::tests::test_from_json_invalid ... ok
+test merge::value::tests::test_from_ini_helper ... ok
+test merge::value::tests::test_empty_object ... ok
+test merge::value::tests::test_ini_deep_nesting_error ... ok
+test merge::value::tests::test_from_toml_invalid ... ok
+test merge::value::tests::test_ini_array_error ... ok
+test merge::value::tests::test_from_toml_helper ... ok
+test merge::value::tests::test_from_yaml_helper ... ok
+test merge::value::tests::test_ini_general_section ... ok
+test merge::value::tests::test_from_yaml_invalid ... ok
+test merge::value::tests::test_ini_root_level_scalars ... ok
+test merge::layer::tests::test_merge_layers_text_file_conflict_still_detected ... ok
+test merge::value::tests::test_ini_number_conversion ... ok
+test merge::layer::tests::test_merge_layers_two_layers_different_structured_content_auto_merge ... ok
+test merge::value::tests::test_ini_roundtrip_basic ... ok
+test merge::value::tests::test_cross_format_data_preservation ... ok
+test merge::value::tests::test_json_to_ini_simple ... ok
+test merge::value::tests::test_ini_null_error ... ok
+test merge::value::tests::test_ini_section_to_nested_object ... ok
+test merge::layer::tests::test_has_different_content_six_layers_alternating ... ok
+test merge::value::tests::test_integer_vs_float_preservation ... ok
+test merge::value::tests::test_is_scalar ... ok
+test merge::value::tests::test_file_extension_detection ... ok
+test merge::value::tests::test_merge_value_null ... ok
+test merge::value::tests::test_json_roundtrip ... ok
+test merge::value::tests::test_merge_value_object ... ok
+test merge::value::tests::test_special_characters_in_strings ... ok
+test merge::value::tests::test_to_ini_string ... ok
+test merge::value::tests::test_json_to_yaml ... ok
+test merge::value::tests::test_to_json_string_compact ... ok
+test merge::value::tests::test_to_json_string ... ok
+test merge::value::tests::test_toml_conversion_tryfrom ... ok
+test merge::value::tests::test_toml_nested_null_error ... ok
+test merge::value::tests::test_toml_null_error ... ok
+test merge::value::tests::test_yaml_conversion_from_value ... ok
+test merge::value::tests::test_to_toml_string ... ok
+test merge::value::tests::test_to_yaml_string ... ok
+test merge::value::tests::test_unsupported_extension ... ok
+test merge::value::tests::test_toml_datetime_to_string ... ok
+test merge::value::tests::test_toml_nested_tables ... ok
+test merge::value::tests::test_yaml_nested_objects ... ok
+test merge::value::tests::test_yaml_null_handling ... ok
+test merge::layer::tests::test_merge_layers_two_layers_same_content_no_conflict ... ok
+test staging::entry::tests::test_staged_entry_new ... ok
+test staging::gitignore::tests::test_build_gitignore_empty_managed ... ok
+test staging::gitignore::tests::test_build_gitignore_with_all_parts ... ok
+test staging::entry::tests::test_staged_entry_delete ... ok
+test merge::value::tests::test_yml_extension ... ok
+test staging::gitignore::tests::test_parse_managed_block_empty ... ok
+test merge::value::tests::test_yaml_to_toml_no_null ... ok
+test staging::gitignore::tests::test_parse_managed_block_with_content ... ok
+test staging::gitignore::tests::test_ensure_in_managed_block_creates_gitignore ... ok
+test staging::gitignore::tests::test_ensure_in_managed_block_preserves_existing ... ok
+test staging::gitignore::tests::test_ensure_in_managed_block_sorts_entries ... ok
+test staging::gitignore::tests::test_ensure_in_managed_block_deduplicates ... ok
+test merge::value::tests::test_toml_roundtrip_basic ... ok
+test commands::scope::tests::test_show_no_scope ... ok
+test staging::gitignore::tests::test_remove_from_managed_block ... ok
+test staging::gitignore::tests::test_normalize_path ... ok
+test staging::index::tests::test_staging_index_add_remove ... ok
+test staging::metadata::tests::test_workspace_metadata_add_remove_file ... ok
+test staging::metadata::tests::test_workspace_metadata_default ... ok
+test staging::metadata::tests::test_workspace_metadata_new ... ok
+test staging::index::tests::test_affected_layers ... ok
+test merge::value::tests::test_yaml_roundtrip_basic ... ok
+test staging::router::tests::test_route_global ... ok
+test staging::metadata::tests::test_workspace_metadata_serialization ... ok
+test staging::index::tests::test_staging_index_entries_for_layer ... ok
+test staging::index::tests::test_staging_index_new ... ok
+test staging::router::tests::test_route_local ... ok
+test staging::router::tests::test_route_mode ... ok
+test staging::router::tests::test_route_mode_project ... ok
+test staging::router::tests::test_route_mode_scope_project ... ok
+test staging::router::tests::test_route_default ... ok
+test staging::router::tests::test_route_mode_without_active_mode_fails ... ok
+test staging::router::tests::test_route_scope_untethered ... ok
+test staging::router::tests::test_validate_global_conflict ... ok
+test staging::router::tests::test_validate_local_alone_passes ... ok
+test staging::router::tests::test_validate_local_conflict_with_global ... ok
+test staging::router::tests::test_validate_local_conflict_with_scope ... ok
+test staging::router::tests::test_validate_local_conflict_with_mode ... ok
+test staging::router::tests::test_validate_project_without_mode ... ok
+test staging::workspace::tests::test_describe_context_empty ... ok
+test staging::router::tests::test_validate_local_conflict_with_project ... ok
+test staging::workspace::tests::test_describe_context_mode_and_scope ... ok
+test staging::workspace::tests::test_describe_context_full ... ok
+test staging::router::tests::test_route_mode_scope ... ok
+test staging::workspace::tests::test_describe_context_mode_only ... ok
+test staging::workspace::tests::test_get_file_mode_executable ... ok
+test staging::workspace::tests::test_get_file_mode_regular ... ok
+test staging::workspace::tests::test_is_git_tracked_no_repo ... ok
+test staging::workspace::tests::test_is_symlink_false_for_regular_file ... ok
+test staging::workspace::tests::test_is_symlink_true_for_symlink ... ok
+test staging::workspace::tests::test_read_file_not_found ... ok
+test staging::workspace::tests::test_read_file_success ... ok
+test staging::workspace::tests::test_walk_directory ... ok
+test staging::workspace::tests::test_walk_empty_directory ... ok
+test staging::workspace::tests::test_detect_invalid_context_mode_missing ... ok
+test staging::workspace::tests::test_detect_missing_commits_no_layers ... ok
+test staging::workspace::tests::test_detect_missing_commits_layer_missing ... ok
+test staging::workspace::tests::test_detect_invalid_context_mode_exists ... ok
+test staging::workspace::tests::test_detect_invalid_context_scope_missing ... ok
+test commands::scope::tests::test_show_with_scope ... ok
+test staging::workspace::tests::test_detect_file_mismatch_no_files ... ok
+test staging::workspace::tests::test_detect_invalid_context_no_mode_or_scope ... ok
+test staging::workspace::tests::test_detect_missing_commits_all_exist ... ok
+test merge::text::tests::test_text_merge_large_file ... ok
+test commands::scope::tests::test_unset ... ok
+test commands::scope::tests::test_unset_no_scope ... ok
+test commands::scope::tests::test_use_scope ... ok
+test commands::scope::tests::test_use_scope_nonexistent ... ok
+test commands::status::tests::test_check_for_conflicts_no_state ... ok
+test commands::status::tests::test_check_for_conflicts_with_state ... ok
+test staging::metadata::tests::test_workspace_metadata_load_not_found ... ok
+test staging::metadata::tests::test_workspace_metadata_save_load ... ok
+test staging::workspace::tests::test_detect_file_mismatch_modified_file ... ok
+test staging::metadata::tests::test_workspace_metadata_update_timestamp ... ok
+test staging::workspace::tests::test_detect_file_mismatch_no_mismatch ... ok
+test staging::workspace::tests::test_detect_file_mismatch_missing_file ... ok
+test staging::workspace::tests::test_validate_workspace_attached_fresh_workspace ... ok
+
+failures:
+
+---- core::layer::tests::test_ref_paths stdout ----
+
+thread 'core::layer::tests::test_ref_paths' (3457636) panicked at src/core/layer.rs:289:9:
+assertion `left == right` failed
+  left: "refs/jin/layers/mode/claude/scope/language/javascript/_"
+ right: "refs/jin/layers/mode/claude/scope/language:javascript/_"
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    core::layer::tests::test_ref_paths
+
+test result: FAILED. 620 passed; 1 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.27s
+
+error: test failed, to rerun pass `--lib`
+     Running unittests src/main.rs (target/debug/deps/jin-d66be9b6e1e0636e)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/atomic_operations.rs (target/debug/deps/atomic_operations-721d2af339086961)
+
+running 18 tests
+test common::assertions::tests::test_assert_workspace_file_exists ... ok
+test common::fixtures::tests::test_fixture_creates_directory ... ok
+test common::assertions::tests::test_assert_workspace_file_exists_fails - should panic ... ok
+test common::fixtures::tests::test_remote_fixture_creates_directories ... ok
+test common::git_helpers::tests::test_cleanup_git_locks_nonexistent_repo ... ok
+test common::git_helpers::tests::test_git_test_env_cleanup_on_drop ... ok
+test common::git_helpers::tests::test_git_test_env_creates_directory ... ok
+test common::git_helpers::tests::test_cleanup_git_locks_no_locks ... ok
+test test_failed_commit_rolls_back ... ok
+test test_add_idempotent ... ok
+test test_commit_doesnt_modify_workspace ... ok
+test test_jin_directory_integrity ... ok
+test test_reset_atomic ... ok
+test test_operations_isolated ... ok
+test test_state_consistent_after_failure ... ok
+test test_commit_is_atomic ... ok
+test test_multi_layer_commit_atomic ... ok
+test test_apply_atomic_workspace_update ... ok
+
+test result: ok. 18 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.06s
+
+     Running tests/cli_add_local.rs (target/debug/deps/cli_add_local-f1074c214c1f87dd)
+
+running 12 tests
+test common::fixtures::tests::test_fixture_creates_directory ... ok
+test common::assertions::tests::test_assert_workspace_file_exists ... ok
+test common::assertions::tests::test_assert_workspace_file_exists_fails - should panic ... ok
+test common::fixtures::tests::test_remote_fixture_creates_directories ... ok
+test common::git_helpers::tests::test_cleanup_git_locks_nonexistent_repo ... ok
+test common::git_helpers::tests::test_git_test_env_creates_directory ... ok
+test common::git_helpers::tests::test_git_test_env_cleanup_on_drop ... ok
+test common::git_helpers::tests::test_cleanup_git_locks_no_locks ... ok
+test test_add_local_rejects_global_flag ... ok
+test test_add_local_routes_to_layer_8 ... ok
+test test_add_local_rejects_mode_flag ... ok
+test test_add_local_commit_apply_workflow ... ok
+
+test result: ok. 12 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.03s
+
+     Running tests/cli_apply_conflict.rs (target/debug/deps/cli_apply_conflict-67861b46a95cee10)
+
+running 17 tests
+test common::fixtures::tests::test_fixture_creates_directory ... ok
+test common::assertions::tests::test_assert_workspace_file_exists ... ok
+test common::fixtures::tests::test_remote_fixture_creates_directories ... ok
+test common::assertions::tests::test_assert_workspace_file_exists_fails - should panic ... ok
+test common::git_helpers::tests::test_cleanup_git_locks_nonexistent_repo ... ok
+test common::git_helpers::tests::test_git_test_env_cleanup_on_drop ... ok
+test common::git_helpers::tests::test_git_test_env_creates_directory ... ok
+test common::git_helpers::tests::test_cleanup_git_locks_no_locks ... ok
+test test_apply_no_conflicts_works_normally ... ok
+test test_apply_with_identical_content_no_conflict ... ok
+test test_apply_with_conflicts_creates_jinmerge_files ... FAILED
+test test_apply_dry_run_with_conflicts_shows_preview ... FAILED
+test test_apply_with_conflicts_creates_paused_state ... FAILED
+test test_text_file_conflicts_create_jinmerge ... ok
+test test_apply_with_identical_content_different_formatting ... ok
+test test_apply_with_conflicts_applies_non_conflicting_files ... FAILED
+test test_apply_with_multiple_conflicts ... FAILED
+
+failures:
+
+---- test_apply_with_conflicts_creates_jinmerge_files stdout ----
+
+thread 'test_apply_with_conflicts_creates_jinmerge_files' (3458214) panicked at /home/dustin/.rustup/toolchains/stable-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/ops/function.rs:250:5:
+Unexpected stdout, failed var.contains(Operation paused)
+├── var: Applied 1 files to workspace
+└── var as str: Applied 1 files to workspace
+
+command=`cd "/tmp/.tmpdt8Yg3" && JIN_DIR="/tmp/.tmpdt8Yg3/.jin_global" "/home/dustin/projects/jin/target/debug/jin" "apply"`
+code=0
+stdout="Applied 1 files to workspace\n"
+stderr=```
+[DEBUG] merge_layers: Starting with 6 layers
+[DEBUG] collect_all_file_paths: Checking 6 layers
+[DEBUG] collect_all_file_paths: Layer GlobalBase, ref_path: refs/jin/layers/global
+[DEBUG] collect_all_file_paths: ref_exists: true
+[DEBUG] collect_all_file_paths: Resolved commit_oid: a0b46f5aeca548703a957369c5c0204e3d6f02e2
+[DEBUG] collect_all_file_paths: Tree file: \"config.json\"
+[DEBUG] collect_all_file_paths: Layer ModeBase, ref_path: refs/jin/layers/mode/test_mode_3458202_1/_
+[DEBUG] collect_all_file_paths: ref_exists: true
+[DEBUG] collect_all_file_paths: Resolved commit_oid: 57a8696b683029c9e659ba335ecbe976f4a5d1f8
+[DEBUG] collect_all_file_paths: Tree file: \"config.json\"
+[DEBUG] collect_all_file_paths: Layer ModeProject, ref_path: refs/jin/layers/mode/test_mode_3458202_1/project/default
+[DEBUG] collect_all_file_paths: ref_exists: false
+[DEBUG] collect_all_file_paths: Layer ProjectBase, ref_path: refs/jin/layers/project/default
+[DEBUG] collect_all_file_paths: ref_exists: false
+[DEBUG] collect_all_file_paths: Layer UserLocal, ref_path: refs/jin/layers/local
+[DEBUG] collect_all_file_paths: ref_exists: false
+[DEBUG] collect_all_file_paths: Layer WorkspaceActive, ref_path: refs/jin/layers/workspace
+[DEBUG] collect_all_file_paths: ref_exists: false
+[DEBUG] collect_all_file_paths: Total paths collected: 1
+[DEBUG] merge_layers: Collected 1 unique file paths
+[DEBUG] merge_layers: File paths: {\"config.json\"}
+[DEBUG] merge_layers: Processing path: config.json
+[DEBUG] merge_layers: Layers with file: [GlobalBase, ModeBase]
+[DEBUG] merge_layers: File format: Json
+[DEBUG] merge_layers: Merged result (merge_file_across_layers): Ok
+[DEBUG] merge_layers: Returning with 1 merged files, 0 conflicts
+```
+
+
+
+---- test_apply_dry_run_with_conflicts_shows_preview stdout ----
+
+thread 'test_apply_dry_run_with_conflicts_shows_preview' (3458211) panicked at /home/dustin/.rustup/toolchains/stable-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/ops/function.rs:250:5:
+Unexpected stdout, failed var.contains(Merge conflicts detected)
+├── var: Would apply 1 files:
+└── var as str: Would apply 1 files:
+
+command=`cd "/tmp/.tmpVBjJjC" && JIN_DIR="/tmp/.tmpVBjJjC/.jin_global" "/home/dustin/projects/jin/target/debug/jin" "apply" "--dry-run"`
+code=0
+stdout="Would apply 1 files:\n"
+stderr=```
+[DEBUG] merge_layers: Starting with 6 layers
+[DEBUG] collect_all_file_paths: Checking 6 layers
+[DEBUG] collect_all_file_paths: Layer GlobalBase, ref_path: refs/jin/layers/global
+[DEBUG] collect_all_file_paths: ref_exists: true
+[DEBUG] collect_all_file_paths: Resolved commit_oid: 6b98fd91d1a48e17357f00054b0b0050b116bb91
+[DEBUG] collect_all_file_paths: Tree file: \"config.toml\"
+[DEBUG] collect_all_file_paths: Layer ModeBase, ref_path: refs/jin/layers/mode/test_mode_3458202_5/_
+[DEBUG] collect_all_file_paths: ref_exists: true
+[DEBUG] collect_all_file_paths: Resolved commit_oid: 871d93d04ead8399a170daa6d1761b6391251843
+[DEBUG] collect_all_file_paths: Tree file: \"config.toml\"
+[DEBUG] collect_all_file_paths: Layer ModeProject, ref_path: refs/jin/layers/mode/test_mode_3458202_5/project/default
+[DEBUG] collect_all_file_paths: ref_exists: false
+[DEBUG] collect_all_file_paths: Layer ProjectBase, ref_path: refs/jin/layers/project/default
+[DEBUG] collect_all_file_paths: ref_exists: false
+[DEBUG] collect_all_file_paths: Layer UserLocal, ref_path: refs/jin/layers/local
+[DEBUG] collect_all_file_paths: ref_exists: false
+[DEBUG] collect_all_file_paths: Layer WorkspaceActive, ref_path: refs/jin/layers/workspace
+[DEBUG] collect_all_file_paths: ref_exists: false
+[DEBUG] collect_all_file_paths: Total paths collected: 1
+[DEBUG] merge_layers: Collected 1 unique file paths
+[DEBUG] merge_layers: File paths: {\"config.toml\"}
+[DEBUG] merge_layers: Processing path: config.toml
+[DEBUG] merge_layers: Layers with file: [GlobalBase, ModeBase]
+[DEBUG] merge_layers: File format: Toml
+[DEBUG] merge_layers: Merged result (merge_file_across_layers): Ok
+[DEBUG] merge_layers: Returning with 1 merged files, 0 conflicts
+[DEBUG] preview_changes: merged_files.len() = 1
+[DEBUG] preview_changes: Checking path: config.toml
+[DEBUG] preview_changes: path.exists() = true
+[DEBUG] preview_changes: File content differs: false
+[DEBUG] preview_changes: Added: 0, Modified: 0
+```
+
+
+
+---- test_apply_with_conflicts_creates_paused_state stdout ----
+
+thread 'test_apply_with_conflicts_creates_paused_state' (3458215) panicked at tests/cli_apply_conflict.rs:178:5:
+Paused state file should be created
+
+---- test_apply_with_conflicts_applies_non_conflicting_files stdout ----
+
+thread 'test_apply_with_conflicts_applies_non_conflicting_files' (3458213) panicked at tests/cli_apply_conflict.rs:280:5:
+Conflicting file should NOT be applied
+
+---- test_apply_with_multiple_conflicts stdout ----
+
+thread 'test_apply_with_multiple_conflicts' (3458218) panicked at tests/cli_apply_conflict.rs:449:9:
+a.json .jinmerge should exist
+
+
+failures:
+    test_apply_dry_run_with_conflicts_shows_preview
+    test_apply_with_conflicts_applies_non_conflicting_files
+    test_apply_with_conflicts_creates_jinmerge_files
+    test_apply_with_conflicts_creates_paused_state
+    test_apply_with_multiple_conflicts
+
+test result: FAILED. 12 passed; 5 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.11s
+
+error: test failed, to rerun pass `--test cli_apply_conflict`
+     Running tests/cli_basic.rs (target/debug/deps/cli_basic-8cd210250c2491e7)
+
+running 56 tests
+test test_add_with_mode_flag ... ok
+test test_apply_dry_run ... ok
+test test_apply_subcommand ... ok
+test test_add_help ... ok
+test test_add_subcommand ... ok
+test test_add_with_scope_flag ... ok
+test test_help ... ok
+test test_layers_subcommand ... ok
+test test_init_subcommand ... ok
+test test_completion_bash ... ok
+test test_list_subcommand ... ok
+test test_completion_help ... ok
+test test_log_subcommand ... ok
+test test_commit_subcommand ... ok
+test test_completion_fish ... ok
+test test_completion_invalid_shell ... ok
+test test_completion_no_shell ... ok
+test test_context_subcommand_success ... ok
+test test_completion_powershell ... ok
+test test_completion_zsh ... ok
+test test_context_subcommand ... ok
+test test_diff_subcommand ... ok
+test test_export_subcommand ... ok
+test test_fetch_subcommand ... ok
+test test_scope_list_subcommand ... ok
+test test_import_subcommand ... ok
+test test_invalid_subcommand ... ok
+test test_link_force_flag ... ok
+test test_status_subcommand ... ok
+test test_link_help ... ok
+test test_status_no_conflicts_normal_display ... ok
+test test_link_invalid_url_empty ... ok
+test test_version ... ok
+test test_link_invalid_url_format ... ok
+test test_status_dirty_workspace ... ok
+test test_status_with_active_mode ... ok
+test test_status_with_staged_files ... ok
+test test_link_invalid_url_relative_path ... ok
+test test_status_shows_conflict_state ... ok
+test test_link_invalid_url_unsupported_protocol ... ok
+test test_link_subcommand ... ok
+test test_link_valid_https_url ... ok
+test test_link_valid_ssh_url ... ok
+test test_mode_create_subcommand ... ok
+test test_mode_list_subcommand ... ok
+test test_mode_show_subcommand ... ok
+test test_mode_unset_subcommand ... ok
+test test_mode_use_subcommand ... ok
+test test_pull_subcommand ... ok
+test test_push_subcommand ... ok
+test test_repair_subcommand ... ok
+test test_reset_subcommand ... ok
+test test_scope_create_subcommand ... ok
+test test_scope_create_with_mode ... ok
+test test_scope_use_subcommand ... ok
+test test_sync_subcommand ... ok
+
+test result: ok. 56 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.31s
+
+     Running tests/cli_diff.rs (target/debug/deps/cli_diff-2330b3decda749c5)
+
+running 9 tests
+test test_diff_not_initialized ... ok
+test test_diff_staged_empty ... ok
+test test_diff_invalid_layer ... ok
+test test_diff_staged_modified ... ok
+test test_diff_staged_with_files ... ok
+test test_diff_layers ... ok
+test test_diff_workspace_vs_layer ... ok
+test test_diff_default ... ok
+test test_diff_all_layer_names ... ok
+
+test result: ok. 9 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.05s
+
+     Running tests/cli_import.rs (target/debug/deps/cli_import-f4b9ae9500c81b35)
+
+running 20 tests
+test test_import_no_files ... ok
+test test_import_file_not_found ... ok
+test test_import_not_tracked ... ok
+test test_import_not_initialized ... ok
+test test_import_symlink ... ok
+test test_import_modified_file ... ok
+test test_import_rollback ... ok
+test test_import_with_invalid_routing_combination ... ok
+test test_import_modified_with_force ... ok
+test test_import_with_local_flag ... ok
+test test_import_gitignore_update ... ok
+test test_import_with_scope_flag ... ok
+test test_import_with_global_flag ... ok
+test test_import_with_mode_flag ... ok
+test test_import_single_file ... ok
+test test_import_directory ... ok
+test test_import_with_mode_scope_and_project_flags ... ok
+test test_import_with_mode_and_scope_flags ... ok
+test test_import_multiple_files ... ok
+test test_import_with_mode_and_project_flags ... ok
+
+test result: ok. 20 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.07s
+
+     Running tests/cli_list.rs (target/debug/deps/cli_list-7068ac4b9294bb03)
+
+running 15 tests
+test common::fixtures::tests::test_fixture_creates_directory ... ok
+test common::assertions::tests::test_assert_workspace_file_exists ... ok
+test common::assertions::tests::test_assert_workspace_file_exists_fails - should panic ... ok
+test common::fixtures::tests::test_remote_fixture_creates_directories ... ok
+test common::git_helpers::tests::test_cleanup_git_locks_nonexistent_repo ... ok
+test common::git_helpers::tests::test_git_test_env_cleanup_on_drop ... ok
+test common::git_helpers::tests::test_git_test_env_creates_directory ... ok
+test common::git_helpers::tests::test_cleanup_git_locks_no_locks ... ok
+test test_list_not_initialized ... ok
+test test_list_empty_repository ... ok
+test test_list_with_modes ... ok
+test test_list_shows_usage_hints ... ok
+test test_list_empty_categories_hidden ... ok
+test test_list_with_mode_bound_scopes ... ok
+test test_list_with_all_categories ... ok
+
+test result: ok. 15 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.04s
+
+     Running tests/cli_log.rs (target/debug/deps/cli_log-6aab9bc5ff00c85d)
+
+running 9 tests
+test common::assertions::tests::test_assert_workspace_file_exists ... ok
+test common::fixtures::tests::test_fixture_creates_directory ... ok
+test common::git_helpers::tests::test_cleanup_git_locks_nonexistent_repo ... ok
+test common::git_helpers::tests::test_git_test_env_cleanup_on_drop ... ok
+test common::fixtures::tests::test_remote_fixture_creates_directories ... ok
+test common::assertions::tests::test_assert_workspace_file_exists_fails - should panic ... ok
+test common::git_helpers::tests::test_git_test_env_creates_directory ... ok
+test common::git_helpers::tests::test_cleanup_git_locks_no_locks ... ok
+test test_log_shows_all_layer_commits ... ok
+
+test result: ok. 9 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.04s
+
+     Running tests/cli_mv.rs (target/debug/deps/cli_mv-09dfadd8e5adc767)
+
+running 22 tests
+test common::fixtures::tests::test_fixture_creates_directory ... ok
+test common::assertions::tests::test_assert_workspace_file_exists ... ok
+test common::assertions::tests::test_assert_workspace_file_exists_fails - should panic ... ok
+test common::git_helpers::tests::test_cleanup_git_locks_nonexistent_repo ... ok
+test common::fixtures::tests::test_remote_fixture_creates_directories ... ok
+test common::git_helpers::tests::test_git_test_env_cleanup_on_drop ... ok
+test common::git_helpers::tests::test_git_test_env_creates_directory ... ok
+test common::git_helpers::tests::test_cleanup_git_locks_no_locks ... ok
+test test_mv_odd_number_of_files ... ok
+test test_mv_project_without_mode ... ok
+test test_mv_global_with_mode ... ok
+test test_mv_source_not_staged ... ok
+test test_mv_single_file ... ok
+test test_mv_confirmation_prompt ... ok
+test test_mv_destination_exists ... ok
+test test_mv_gitignore_update ... ok
+test test_mv_partial_success ... ok
+test test_mv_force ... ok
+test test_mv_to_subdirectory ... ok
+test test_mv_dry_run ... ok
+test test_mv_batch ... ok
+test test_mv_with_layer_flags ... ok
+
+test result: ok. 22 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.05s
+
+     Running tests/cli_reset.rs (target/debug/deps/cli_reset-c43d6467e7fb90e1)
+
+running 11 tests
+test test_reset_help ... ok
+test test_reset_requires_initialization ... ok
+test test_reset_empty_staging ... ok
+test test_reset_invalid_layer_combination ... ok
+test test_reset_hard_mode_with_force ... ok
+test test_reset_hard_mode_with_confirmation ... ok
+test test_reset_soft_mode ... ok
+test test_reset_mixed_mode ... ok
+test test_reset_global_layer ... ok
+test test_reset_layer_targeting_mode ... ok
+test test_reset_hard_force_in_detached_state ... ok
+
+test result: ok. 11 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.05s
+
+     Running tests/cli_resolve.rs (target/debug/deps/cli_resolve-c507a122c8fcc474)
+
+running 15 tests
+test common::fixtures::tests::test_remote_fixture_creates_directories ... ok
+test common::assertions::tests::test_assert_workspace_file_exists ... ok
+test common::fixtures::tests::test_fixture_creates_directory ... ok
+test common::git_helpers::tests::test_cleanup_git_locks_nonexistent_repo ... ok
+test common::assertions::tests::test_assert_workspace_file_exists_fails - should panic ... ok
+test common::git_helpers::tests::test_git_test_env_cleanup_on_drop ... ok
+test common::git_helpers::tests::test_git_test_env_creates_directory ... ok
+test common::git_helpers::tests::test_cleanup_git_locks_no_locks ... ok
+test test_resolve_dry_run ... ok
+test test_resolve_no_paused_state ... ok
+test test_resolve_file_not_in_conflict ... ok
+test test_resolve_partial_conflicts ... ok
+test test_resolve_invalid_markers ... ok
+test test_resolve_all_conflicts ... ok
+test test_resolve_simple_conflict ... ok
+
+test result: ok. 15 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.06s
+
+     Running tests/conflict_workflow.rs (target/debug/deps/conflict_workflow-8dff710e31f18348)
+
+running 27 tests
+test common::fixtures::tests::test_fixture_creates_directory ... ok
+test common::assertions::tests::test_assert_workspace_file_exists ... ok
+test common::git_helpers::tests::test_cleanup_git_locks_nonexistent_repo ... ok
+test common::fixtures::tests::test_remote_fixture_creates_directories ... ok
+test common::assertions::tests::test_assert_workspace_file_exists_fails - should panic ... ok
+test common::git_helpers::tests::test_git_test_env_creates_directory ... ok
+test common::git_helpers::tests::test_git_test_env_cleanup_on_drop ... ok
+test common::git_helpers::tests::test_cleanup_git_locks_no_locks ... ok
+test test_resolve_no_paused_state ... ok
+test test_resolve_partial_updates_state ... ok
+test test_status_handles_corrupted_paused_state ... ok
+test test_resolve_missing_jinmerge_file ... ok
+test test_resolve_empty_jinmerge_fails ... ok
+test test_resolve_file_not_in_conflict ... ok
+test test_resolve_dry_run_shows_preview ... ok
+test test_resolve_with_multiple_conflict_markers_fails ... ok
+test test_resolve_validates_conflict_markers ... ok
+test test_resolve_all_completes_apply_operation ... ok
+test test_array_key_based_merge ... ok
+test test_apply_dry_run_with_conflicts_shows_preview ... FAILED
+test test_nested_object_deep_merge ... ok
+test test_full_workflow_conflict_to_resolution ... FAILED
+test test_structured_file_auto_merge ... ok
+test test_apply_force_with_conflicts_applies_non_conflicting ... FAILED
+test test_apply_non_conflicting_files_still_applied ... FAILED
+test test_status_shows_conflicts_during_pause ... FAILED
+test test_apply_creates_multiple_jinmerge_files ... FAILED
+
+failures:
+
+---- test_apply_dry_run_with_conflicts_shows_preview stdout ----
+
+thread 'test_apply_dry_run_with_conflicts_shows_preview' (3459955) panicked at /home/dustin/.rustup/toolchains/stable-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/ops/function.rs:250:5:
+Unexpected stdout, failed var.contains(Merge conflicts detected)
+├── var: Would apply 1 files:
+└── var as str: Would apply 1 files:
+
+command=`cd "/tmp/.tmpsNYI1w" && JIN_DIR="/tmp/.tmpsNYI1w/.jin_global" "/home/dustin/projects/jin/target/debug/jin" "apply" "--dry-run"`
+code=0
+stdout="Would apply 1 files:\n"
+stderr=```
+[DEBUG] merge_layers: Starting with 6 layers
+[DEBUG] collect_all_file_paths: Checking 6 layers
+[DEBUG] collect_all_file_paths: Layer GlobalBase, ref_path: refs/jin/layers/global
+[DEBUG] collect_all_file_paths: ref_exists: true
+[DEBUG] collect_all_file_paths: Resolved commit_oid: 449ba76ef445dd4b2c1d86aa52f74ffc7d0b4505
+[DEBUG] collect_all_file_paths: Tree file: \"config.toml\"
+[DEBUG] collect_all_file_paths: Layer ModeBase, ref_path: refs/jin/layers/mode/test_mode_3459945_3/_
+[DEBUG] collect_all_file_paths: ref_exists: true
+[DEBUG] collect_all_file_paths: Resolved commit_oid: 75b92c201118a2b40f997248d998c05e8a746530
+[DEBUG] collect_all_file_paths: Tree file: \"config.toml\"
+[DEBUG] collect_all_file_paths: Layer ModeProject, ref_path: refs/jin/layers/mode/test_mode_3459945_3/project/default
+[DEBUG] collect_all_file_paths: ref_exists: false
+[DEBUG] collect_all_file_paths: Layer ProjectBase, ref_path: refs/jin/layers/project/default
+[DEBUG] collect_all_file_paths: ref_exists: false
+[DEBUG] collect_all_file_paths: Layer UserLocal, ref_path: refs/jin/layers/local
+[DEBUG] collect_all_file_paths: ref_exists: false
+[DEBUG] collect_all_file_paths: Layer WorkspaceActive, ref_path: refs/jin/layers/workspace
+[DEBUG] collect_all_file_paths: ref_exists: false
+[DEBUG] collect_all_file_paths: Total paths collected: 1
+[DEBUG] merge_layers: Collected 1 unique file paths
+[DEBUG] merge_layers: File paths: {\"config.toml\"}
+[DEBUG] merge_layers: Processing path: config.toml
+[DEBUG] merge_layers: Layers with file: [GlobalBase, ModeBase]
+[DEBUG] merge_layers: File format: Toml
+[DEBUG] merge_layers: Merged result (merge_file_across_layers): Ok
+[DEBUG] merge_layers: Returning with 1 merged files, 0 conflicts
+[DEBUG] preview_changes: merged_files.len() = 1
+[DEBUG] preview_changes: Checking path: config.toml
+[DEBUG] preview_changes: path.exists() = true
+[DEBUG] preview_changes: File content differs: false
+[DEBUG] preview_changes: Added: 0, Modified: 0
+```
+
+
+
+---- test_full_workflow_conflict_to_resolution stdout ----
+
+thread 'test_full_workflow_conflict_to_resolution' (3459959) panicked at /home/dustin/.rustup/toolchains/stable-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/ops/function.rs:250:5:
+Unexpected stdout, failed var.contains(Operation paused)
+├── var: Applied 1 files to workspace
+└── var as str: Applied 1 files to workspace
+
+command=`cd "/tmp/.tmp8aK2Oo" && JIN_DIR="/tmp/.tmp8aK2Oo/.jin_global" "/home/dustin/projects/jin/target/debug/jin" "apply"`
+code=0
+stdout="Applied 1 files to workspace\n"
+stderr=```
+[DEBUG] merge_layers: Starting with 6 layers
+[DEBUG] collect_all_file_paths: Checking 6 layers
+[DEBUG] collect_all_file_paths: Layer GlobalBase, ref_path: refs/jin/layers/global
+[DEBUG] collect_all_file_paths: ref_exists: true
+[DEBUG] collect_all_file_paths: Resolved commit_oid: c21615ff39644b0bb6af9073374d88b5fbc68f53
+[DEBUG] collect_all_file_paths: Tree file: \"config.json\"
+[DEBUG] collect_all_file_paths: Layer ModeBase, ref_path: refs/jin/layers/mode/test_mode_3459945_5/_
+[DEBUG] collect_all_file_paths: ref_exists: true
+[DEBUG] collect_all_file_paths: Resolved commit_oid: 432c605c2561fb440e47a7db1cbed0d43c9dbc7d
+[DEBUG] collect_all_file_paths: Tree file: \"config.json\"
+[DEBUG] collect_all_file_paths: Layer ModeProject, ref_path: refs/jin/layers/mode/test_mode_3459945_5/project/default
+[DEBUG] collect_all_file_paths: ref_exists: false
+[DEBUG] collect_all_file_paths: Layer ProjectBase, ref_path: refs/jin/layers/project/default
+[DEBUG] collect_all_file_paths: ref_exists: false
+[DEBUG] collect_all_file_paths: Layer UserLocal, ref_path: refs/jin/layers/local
+[DEBUG] collect_all_file_paths: ref_exists: false
+[DEBUG] collect_all_file_paths: Layer WorkspaceActive, ref_path: refs/jin/layers/workspace
+[DEBUG] collect_all_file_paths: ref_exists: false
+[DEBUG] collect_all_file_paths: Total paths collected: 1
+[DEBUG] merge_layers: Collected 1 unique file paths
+[DEBUG] merge_layers: File paths: {\"config.json\"}
+[DEBUG] merge_layers: Processing path: config.json
+[DEBUG] merge_layers: Layers with file: [GlobalBase, ModeBase]
+[DEBUG] merge_layers: File format: Json
+[DEBUG] merge_layers: Merged result (merge_file_across_layers): Ok
+[DEBUG] merge_layers: Returning with 1 merged files, 0 conflicts
+```
+
+
+
+---- test_apply_force_with_conflicts_applies_non_conflicting stdout ----
+
+thread 'test_apply_force_with_conflicts_applies_non_conflicting' (3459956) panicked at tests/conflict_workflow.rs:899:5:
+assertion failed: jinmerge_path.exists()
+
+---- test_apply_non_conflicting_files_still_applied stdout ----
+
+thread 'test_apply_non_conflicting_files_still_applied' (3459957) panicked at tests/conflict_workflow.rs:650:5:
+assertion failed: !conflict_path.exists()
+
+---- test_status_shows_conflicts_during_pause stdout ----
+
+thread 'test_status_shows_conflicts_during_pause' (3459971) panicked at /home/dustin/.rustup/toolchains/stable-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/ops/function.rs:250:5:
+Unexpected stdout, failed var.contains(Merge conflicts)
+├── var: Jin status:
+│   
+│     Mode:  test_mode_3459945_7 (active)
+│     Scope: (none)
+│     Project: (none)
+│   
+│   Workspace state: Clean
+│   
+│   No staged changes.
+│   
+│   Use 'jin add <file>' to stage files for commit.
+│   
+│   Layer summary:
+│     jin/global/: 1 file
+│     jin/mode/test_mode_3459945_7/: 1 file
+└── var as str: Jin status:
+    
+      Mode:  test_mode_3459945_7 (active)
+      Scope: (none)
+      Project: (none)
+    
+    Workspace state: Clean
+    
+    No staged changes.
+    
+    Use 'jin add <file>' to stage files for commit.
+    
+    Layer summary:
+      jin/global/: 1 file
+      jin/mode/test_mode_3459945_7/: 1 file
+
+command=`cd "/tmp/.tmp54KbAG" && JIN_DIR="/tmp/.tmp54KbAG/.jin_global" "/home/dustin/projects/jin/target/debug/jin" "status"`
+code=0
+stdout=```
+Jin status:
+
+  Mode:  test_mode_3459945_7 (active)
+  Scope: (none)
+  Project: (none)
+
+Workspace state: Clean
+
+No staged changes.
+
+Use \'jin add <file>\' to stage files for commit.
+
+Layer summary:
+  jin/global/: 1 file
+  jin/mode/test_mode_3459945_7/: 1 file
+```
+
+stderr=""
+
+
+---- test_apply_creates_multiple_jinmerge_files stdout ----
+
+thread 'test_apply_creates_multiple_jinmerge_files' (3459954) panicked at tests/conflict_workflow.rs:375:9:
+assertion failed: jinmerge_path.exists()
+
+
+failures:
+    test_apply_creates_multiple_jinmerge_files
+    test_apply_dry_run_with_conflicts_shows_preview
+    test_apply_force_with_conflicts_applies_non_conflicting
+    test_apply_non_conflicting_files_still_applied
+    test_full_workflow_conflict_to_resolution
+    test_status_shows_conflicts_during_pause
+
+test result: FAILED. 21 passed; 6 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.08s
+
+error: test failed, to rerun pass `--test conflict_workflow`
+     Running tests/core_workflow.rs (target/debug/deps/core_workflow-4a604bdd259d7fea)
+
+running 19 tests
+test common::assertions::tests::test_assert_workspace_file_exists ... ok
+test common::git_helpers::tests::test_cleanup_git_locks_nonexistent_repo ... ok
+test common::fixtures::tests::test_remote_fixture_creates_directories ... ok
+test common::git_helpers::tests::test_git_test_env_creates_directory ... ok
+test common::git_helpers::tests::test_git_test_env_cleanup_on_drop ... ok
+test common::fixtures::tests::test_fixture_creates_directory ... ok
+test common::assertions::tests::test_assert_workspace_file_exists_fails - should panic ... ok
+test common::git_helpers::tests::test_cleanup_git_locks_no_locks ... ok
+test test_init_creates_context_and_repo ... ok
+test test_init_already_initialized ... ok
+test test_commit_no_staged_changes_error ... ok
+test test_mode_use_nonexistent_error ... ok
+test test_add_nonexistent_file_error ... ok
+test test_mode_create_and_use ... ok
+test test_add_to_project_base_layer ... ok
+test test_add_files_to_mode_layer ... ok
+test test_commit_creates_layer_commit ... ok
+test test_complete_workflow_init_to_apply ... ok
+test test_apply_merges_to_workspace ... ok
+
+test result: ok. 19 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.03s
+
+     Running tests/destructive_validation.rs (target/debug/deps/destructive_validation-dbc2350d76824d97)
+
+running 21 tests
+test common::git_helpers::tests::test_cleanup_git_locks_nonexistent_repo ... ok
+test common::assertions::tests::test_assert_workspace_file_exists_fails - should panic ... ok
+test common::git_helpers::tests::test_git_test_env_creates_directory ... ok
+test common::assertions::tests::test_assert_workspace_file_exists ... ok
+test common::git_helpers::tests::test_git_test_env_cleanup_on_drop ... ok
+test common::fixtures::tests::test_fixture_creates_directory ... ok
+test common::fixtures::tests::test_remote_fixture_creates_directories ... ok
+test common::git_helpers::tests::test_cleanup_git_locks_no_locks ... ok
+test test_apply_force_error_includes_recovery_hint ... ok
+test test_apply_force_allows_fresh_workspace ... ok
+test test_apply_force_rejected_when_context_invalid ... ok
+test test_apply_force_rejected_when_files_modified ... ok
+test test_apply_force_rejected_when_layer_refs_missing ... ok
+test test_apply_without_force_skips_validation ... ok
+test test_reset_hard_allows_fresh_workspace ... ok
+test test_reset_hard_error_includes_recovery_hint ... FAILED
+test test_reset_hard_rejected_when_context_invalid ... FAILED
+test test_reset_hard_rejected_when_files_modified ... FAILED
+test test_reset_hard_rejected_when_layer_refs_missing ... FAILED
+test test_reset_mixed_skips_validation ... ok
+test test_reset_soft_skips_validation ... ok
+
+failures:
+
+---- test_reset_hard_error_includes_recovery_hint stdout ----
+Nothing to reset for layer: project-base
+
+thread 'test_reset_hard_error_includes_recovery_hint' (3460455) panicked at tests/destructive_validation.rs:586:14:
+Expected DetachedWorkspace error with recovery hint
+
+---- test_reset_hard_rejected_when_context_invalid stdout ----
+Nothing to reset for layer: project-base
+
+thread 'test_reset_hard_rejected_when_context_invalid' (3460456) panicked at tests/destructive_validation.rs:239:5:
+reset --hard should fail when context is invalid
+
+---- test_reset_hard_rejected_when_files_modified stdout ----
+Nothing to reset for layer: project-base
+
+thread 'test_reset_hard_rejected_when_files_modified' (3460457) panicked at tests/destructive_validation.rs:112:5:
+reset --hard should fail when files are modified
+
+---- test_reset_hard_rejected_when_layer_refs_missing stdout ----
+Nothing to reset for layer: project-base
+
+thread 'test_reset_hard_rejected_when_layer_refs_missing' (3460458) panicked at tests/destructive_validation.rs:172:5:
+reset --hard should fail when layer refs are missing
+
+
+failures:
+    test_reset_hard_error_includes_recovery_hint
+    test_reset_hard_rejected_when_context_invalid
+    test_reset_hard_rejected_when_files_modified
+    test_reset_hard_rejected_when_layer_refs_missing
+
+test result: FAILED. 17 passed; 4 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.07s
+
+error: test failed, to rerun pass `--test destructive_validation`
+     Running tests/error_scenarios.rs (target/debug/deps/error_scenarios-d98445e1b659d233)
+
+running 26 tests
+test common::assertions::tests::test_assert_workspace_file_exists ... ok
+test common::fixtures::tests::test_fixture_creates_directory ... ok
+test common::assertions::tests::test_assert_workspace_file_exists_fails - should panic ... ok
+test common::fixtures::tests::test_remote_fixture_creates_directories ... ok
+test common::git_helpers::tests::test_git_test_env_creates_directory ... ok
+test common::git_helpers::tests::test_cleanup_git_locks_nonexistent_repo ... ok
+test common::git_helpers::tests::test_git_test_env_cleanup_on_drop ... ok
+test common::git_helpers::tests::test_cleanup_git_locks_no_locks ... ok
+test test_add_directory_error ... FAILED
+test test_commit_recovery_after_error ... FAILED
+test test_repair_dry_run ... FAILED
+test test_scope_invalid_format_error ... FAILED
+test test_mode_create_duplicate_error ... FAILED
+test test_reset_invalid_layer_error ... ok
+test test_operations_without_init_error ... ok
+test test_handles_permission_denied ... ok
+test test_handles_corrupted_staging_index ... FAILED
+test test_handles_missing_mode ... ok
+test test_add_symlink_error ... ok
+test test_add_git_tracked_file_error ... ok
+test test_scope_create_duplicate_error ... ok
+test test_repair_fixes_corrupted_index ... FAILED
+test test_import_non_git_tracked_error ... ok
+test test_export_non_jin_tracked_error ... ok
+test test_commit_empty_message_error ... FAILED
+test test_apply_dirty_workspace_error ... ok
+
+failures:
+
+---- test_add_directory_error stdout ----
+
+thread 'test_add_directory_error' (3460477) panicked at /home/dustin/.rustup/toolchains/stable-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/ops/function.rs:250:5:
+Unexpected failure.
+code=1
+stderr=```"Error: Git error: failed to lock file \'/tmp/.tmp3sLe0w/.jin_global/HEAD.lock\' for writing: ; class=Os (2); code=Locked (-14)\n"```
+command=`cd "/tmp/.tmpnjW7IC" && "/home/dustin/projects/jin/target/debug/jin" "init"`
+code=1
+stdout=""
+stderr="Error: Git error: failed to lock file \'/tmp/.tmp3sLe0w/.jin_global/HEAD.lock\' for writing: ; class=Os (2); code=Locked (-14)\n"
+
+
+---- test_commit_recovery_after_error stdout ----
+
+thread 'test_commit_recovery_after_error' (3460482) panicked at /home/dustin/.rustup/toolchains/stable-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/ops/function.rs:250:5:
+Unexpected failure.
+code=1
+stderr=```"Error: Git error: failed to lock file \'/tmp/.tmp3sLe0w/.jin_global/HEAD.lock\' for writing: ; class=Os (2); code=Locked (-14)\n"```
+command=`cd "/tmp/.tmpPAmXwN" && "/home/dustin/projects/jin/target/debug/jin" "init"`
+code=1
+stdout=""
+stderr="Error: Git error: failed to lock file \'/tmp/.tmp3sLe0w/.jin_global/HEAD.lock\' for writing: ; class=Os (2); code=Locked (-14)\n"
+
+
+---- test_repair_dry_run stdout ----
+Error: Os { code: 2, kind: NotFound, message: "No such file or directory" }
+
+---- test_scope_invalid_format_error stdout ----
+
+thread 'test_scope_invalid_format_error' (3460495) panicked at tests/error_scenarios.rs:530:5:
+Invalid scope format should fail or warn
+
+---- test_mode_create_duplicate_error stdout ----
+
+thread 'test_mode_create_duplicate_error' (3460488) panicked at /home/dustin/.rustup/toolchains/stable-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/ops/function.rs:250:5:
+Unexpected success
+command=`"/home/dustin/projects/jin/target/debug/jin" "mode" "create" "duplicate_3460468_0"`
+code=0
+stdout=```
+Created mode \'duplicate_3460468_0\'
+Activate with: jin mode use duplicate_3460468_0
+```
+
+stderr=""
+
+
+---- test_handles_corrupted_staging_index stdout ----
+Error: Os { code: 2, kind: NotFound, message: "No such file or directory" }
+
+---- test_repair_fixes_corrupted_index stdout ----
+Error: Os { code: 2, kind: NotFound, message: "No such file or directory" }
+
+---- test_commit_empty_message_error stdout ----
+
+thread 'test_commit_empty_message_error' (3460481) panicked at tests/error_scenarios.rs:626:5:
+Empty commit message should fail or warn
+
+
+failures:
+    test_add_directory_error
+    test_commit_empty_message_error
+    test_commit_recovery_after_error
+    test_handles_corrupted_staging_index
+    test_mode_create_duplicate_error
+    test_repair_dry_run
+    test_repair_fixes_corrupted_index
+    test_scope_invalid_format_error
+
+test result: FAILED. 18 passed; 8 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.05s
+
+error: test failed, to rerun pass `--test error_scenarios`
+     Running tests/export_committed.rs (target/debug/deps/export_committed-013a31b74323b375)
+
+running 18 tests
+test common::assertions::tests::test_assert_workspace_file_exists ... ok
+test common::fixtures::tests::test_fixture_creates_directory ... ok
+test common::git_helpers::tests::test_cleanup_git_locks_nonexistent_repo ... ok
+test common::assertions::tests::test_assert_workspace_file_exists_fails - should panic ... ok
+test common::fixtures::tests::test_remote_fixture_creates_directories ... ok
+test common::git_helpers::tests::test_git_test_env_cleanup_on_drop ... ok
+test common::git_helpers::tests::test_git_test_env_creates_directory ... ok
+test common::git_helpers::tests::test_cleanup_git_locks_no_locks ... ok
+test test_export_rejects_untracked_files ... ok
+test test_export_still_works_for_staged_files ... ok
+test test_export_uses_jinmap_lookup ... FAILED
+test test_export_committed_file_without_staging ... FAILED
+test test_export_with_missing_jinmap ... FAILED
+test test_export_with_missing_layer_ref ... ok
+test test_export_file_modified_locally ... ok
+test test_export_from_mode_project_layer ... ok
+test test_export_from_mode_layer ... ok
+test test_export_multiple_files_from_different_layers ... ok
+
+failures:
+
+---- test_export_uses_jinmap_lookup stdout ----
+
+thread 'test_export_uses_jinmap_lookup' (3460632) panicked at tests/export_committed.rs:627:5:
+JinMap should exist
+
+---- test_export_committed_file_without_staging stdout ----
+
+thread 'test_export_committed_file_without_staging' (3460625) panicked at tests/export_committed.rs:69:5:
+JinMap should exist after commit
+
+---- test_export_with_missing_jinmap stdout ----
+
+thread 'test_export_with_missing_jinmap' (3460633) panicked at tests/export_committed.rs:353:35:
+called `Result::unwrap()` on an `Err` value: Os { code: 2, kind: NotFound, message: "No such file or directory" }
+
+
+failures:
+    test_export_committed_file_without_staging
+    test_export_uses_jinmap_lookup
+    test_export_with_missing_jinmap
+
+test result: FAILED. 15 passed; 3 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.10s
+
+error: test failed, to rerun pass `--test export_committed`
+     Running tests/mode_scope_workflow.rs (target/debug/deps/mode_scope_workflow-ec8bb65bb5982f92)
+
+running 20 tests
+test common::assertions::tests::test_assert_workspace_file_exists ... ok
+test common::assertions::tests::test_assert_workspace_file_exists_fails - should panic ... ok
+test common::fixtures::tests::test_fixture_creates_directory ... ok
+test common::fixtures::tests::test_remote_fixture_creates_directories ... ok
+test common::git_helpers::tests::test_cleanup_git_locks_nonexistent_repo ... ok
+test common::git_helpers::tests::test_git_test_env_cleanup_on_drop ... ok
+test common::git_helpers::tests::test_git_test_env_creates_directory ... ok
+test common::git_helpers::tests::test_cleanup_git_locks_no_locks ... ok
+test test_layer_precedence_higher_wins ... ok
+test test_layer_routing_mode_base ... ok
+test test_layer_routing_mode_project ... FAILED
+test test_layer_routing_global_base ... ok
+test test_layer_routing_mode_scope ... ok
+test test_layer_routing_mode_scope_project ... FAILED
+test test_layer_routing_project_base ... FAILED
+test test_mode_scope_deep_merge ... ok
+test test_mode_switch_clears_metadata ... ok
+test test_multiple_modes_isolated ... ok
+test test_scope_requires_mode_error ... FAILED
+test test_scope_switch_clears_metadata ... ok
+
+failures:
+
+---- test_layer_routing_mode_project stdout ----
+
+thread 'test_layer_routing_mode_project' (3460802) panicked at tests/common/assertions.rs:174:19:
+Layer ref 'refs/jin/layers/mode/test_mode_3460790_2/project/.tmpdkPhGE' should exist in Jin repository at "/tmp/.tmpdkPhGE/.jin_global": the given reference name 'refs/jin/layers/mode/test_mode_3460790_2/project/.tmpdkPhGE' is not valid; class=Reference (4); code=InvalidSpec (-12)
+
+---- test_layer_routing_mode_scope_project stdout ----
+
+thread 'test_layer_routing_mode_scope_project' (3460804) panicked at tests/common/assertions.rs:174:19:
+Layer ref 'refs/jin/layers/mode/test_mode_3460790_5/scope/env/test_3460790_6/project/.tmpYu0A1T' should exist in Jin repository at "/tmp/.tmpYu0A1T/.jin_global": the given reference name 'refs/jin/layers/mode/test_mode_3460790_5/scope/env/test_3460790_6/project/.tmpYu0A1T' is not valid; class=Reference (4); code=InvalidSpec (-12)
+
+---- test_layer_routing_project_base stdout ----
+
+thread 'test_layer_routing_project_base' (3460805) panicked at tests/common/assertions.rs:174:19:
+Layer ref 'refs/jin/layers/project/.tmpoTKbEE' should exist in Jin repository at "/tmp/.tmpoTKbEE/.jin_global": the given reference name 'refs/jin/layers/project/.tmpoTKbEE' is not valid; class=Reference (4); code=InvalidSpec (-12)
+
+---- test_scope_requires_mode_error stdout ----
+
+thread 'test_scope_requires_mode_error' (3460809) panicked at tests/mode_scope_workflow.rs:568:5:
+Using mode-scoped scope without mode should fail or warn
+
+
+failures:
+    test_layer_routing_mode_project
+    test_layer_routing_mode_scope_project
+    test_layer_routing_project_base
+    test_scope_requires_mode_error
+
+test result: FAILED. 16 passed; 4 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.36s
+
+error: test failed, to rerun pass `--test mode_scope_workflow`
+     Running tests/pull_merge.rs (target/debug/deps/pull_merge-b141f12648f83d34)
+
+running 12 tests
+test common::fixtures::tests::test_fixture_creates_directory ... ok
+test common::assertions::tests::test_assert_workspace_file_exists ... ok
+test common::fixtures::tests::test_remote_fixture_creates_directories ... ok
+test common::assertions::tests::test_assert_workspace_file_exists_fails - should panic ... ok
+test common::git_helpers::tests::test_cleanup_git_locks_nonexistent_repo ... ok
+test common::git_helpers::tests::test_git_test_env_cleanup_on_drop ... ok
+test common::git_helpers::tests::test_git_test_env_creates_directory ... ok
+test common::git_helpers::tests::test_cleanup_git_locks_no_locks ... ok
+test test_pull_fast_forward_still_works ... FAILED
+test test_pull_divergent_with_conflicts ... FAILED
+test test_pull_divergent_clean_merge_different_files ... FAILED
+test test_pull_divergent_clean_merge ... FAILED
+
+failures:
+
+---- test_pull_fast_forward_still_works stdout ----
+
+thread 'test_pull_fast_forward_still_works' (3461169) panicked at /home/dustin/.rustup/toolchains/stable-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/ops/function.rs:250:5:
+Unexpected stdout, failed var.contains(✓ global: Updated (fast-forward))
+├── var: Fetching remote updates...
+│   Fetching from origin (/tmp/.tmpOwOBjU/remote)...
+│   
+│   Already up to date
+│   Already up to date
+└── var as str: Fetching remote updates...
+    Fetching from origin (/tmp/.tmpOwOBjU/remote)...
+    
+    Already up to date
+    Already up to date
+
+command=`cd "/tmp/.tmpOwOBjU/local" && JIN_DIR="/tmp/.tmpOwOBjU/.jin_global" "/home/dustin/projects/jin/target/debug/jin" "pull"`
+code=0
+stdout=```
+Fetching remote updates...
+Fetching from origin (/tmp/.tmpOwOBjU/remote)...
+
+Already up to date
+Already up to date
+```
+
+stderr=""
+
+
+---- test_pull_divergent_with_conflicts stdout ----
+
+thread 'test_pull_divergent_with_conflicts' (3461168) panicked at /home/dustin/.rustup/toolchains/stable-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/ops/function.rs:250:5:
+Unexpected stdout, failed var.contains(! global: Merged with 1 conflicts)
+├── var: Fetching remote updates...
+│   Fetching from origin (/tmp/.tmpoFLbdT/remote)...
+│   
+│   Already up to date
+│   Already up to date
+└── var as str: Fetching remote updates...
+    Fetching from origin (/tmp/.tmpoFLbdT/remote)...
+    
+    Already up to date
+    Already up to date
+
+command=`cd "/tmp/.tmpoFLbdT/local" && JIN_DIR="/tmp/.tmpIBpQLb/.jin_global" "/home/dustin/projects/jin/target/debug/jin" "pull"`
+code=0
+stdout=```
+Fetching remote updates...
+Fetching from origin (/tmp/.tmpoFLbdT/remote)...
+
+Already up to date
+Already up to date
+```
+
+stderr=""
+
+
+---- test_pull_divergent_clean_merge_different_files stdout ----
+
+thread 'test_pull_divergent_clean_merge_different_files' (3461167) panicked at /home/dustin/.rustup/toolchains/stable-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/ops/function.rs:250:5:
+Unexpected stdout, failed var.contains(✓ global: Merged (3-way))
+├── var: Fetching remote updates...
+│   Fetching from origin (/tmp/.tmpPd0Hu3/remote)...
+│   
+│   Already up to date
+│   Already up to date
+└── var as str: Fetching remote updates...
+    Fetching from origin (/tmp/.tmpPd0Hu3/remote)...
+    
+    Already up to date
+    Already up to date
+
+command=`cd "/tmp/.tmpPd0Hu3/local" && JIN_DIR="/tmp/.tmph3QesO/.jin_global" "/home/dustin/projects/jin/target/debug/jin" "pull"`
+code=0
+stdout=```
+Fetching remote updates...
+Fetching from origin (/tmp/.tmpPd0Hu3/remote)...
+
+Already up to date
+Already up to date
+```
+
+stderr=""
+
+
+---- test_pull_divergent_clean_merge stdout ----
+
+thread 'test_pull_divergent_clean_merge' (3461166) panicked at /home/dustin/.rustup/toolchains/stable-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/ops/function.rs:250:5:
+Unexpected stdout, failed var.contains(✓ global: Merged (3-way))
+├── var: Fetching remote updates...
+│   Fetching from origin (/tmp/.tmpll9ghw/remote)...
+│   
+│   Already up to date
+│   Already up to date
+└── var as str: Fetching remote updates...
+    Fetching from origin (/tmp/.tmpll9ghw/remote)...
+    
+    Already up to date
+    Already up to date
+
+command=`cd "/tmp/.tmpll9ghw/local" && JIN_DIR="/tmp/.tmpll9ghw/.jin_global" "/home/dustin/projects/jin/target/debug/jin" "pull"`
+code=0
+stdout=```
+Fetching remote updates...
+Fetching from origin (/tmp/.tmpll9ghw/remote)...
+
+Already up to date
+Already up to date
+```
+
+stderr=""
+
+
+
+failures:
+    test_pull_divergent_clean_merge
+    test_pull_divergent_clean_merge_different_files
+    test_pull_divergent_with_conflicts
+    test_pull_fast_forward_still_works
+
+test result: FAILED. 8 passed; 4 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.06s
+
+error: test failed, to rerun pass `--test pull_merge`
+     Running tests/repair_check.rs (target/debug/deps/repair_check-42de2cac686f8511)
+
+running 15 tests
+test common::assertions::tests::test_assert_workspace_file_exists ... ok
+test common::fixtures::tests::test_remote_fixture_creates_directories ... ok
+test common::fixtures::tests::test_fixture_creates_directory ... ok
+test common::git_helpers::tests::test_cleanup_git_locks_nonexistent_repo ... ok
+test common::assertions::tests::test_assert_workspace_file_exists_fails - should panic ... ok
+test common::git_helpers::tests::test_git_test_env_cleanup_on_drop ... ok
+test common::git_helpers::tests::test_git_test_env_creates_directory ... ok
+test common::git_helpers::tests::test_cleanup_git_locks_no_locks ... ok
+test test_repair_check_success_when_attached ... ok
+test test_repair_check_not_initialized ... ok
+test test_repair_check_exits_early ... ok
+test test_repair_without_check_runs_all_checks ... ok
+test test_repair_normal_mode_includes_workspace_check ... ok
+test test_repair_check_with_dry_run ... ok
+test test_repair_check_detached_file_mismatch ... ok
+
+test result: ok. 15 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.02s
+
+     Running tests/resolve_workflow.rs (target/debug/deps/resolve_workflow-afce95efbf2fdad7)
+
+running 13 tests
+test common::fixtures::tests::test_fixture_creates_directory ... ok
+test common::assertions::tests::test_assert_workspace_file_exists ... ok
+test common::assertions::tests::test_assert_workspace_file_exists_fails - should panic ... ok
+test common::git_helpers::tests::test_cleanup_git_locks_nonexistent_repo ... ok
+test common::fixtures::tests::test_remote_fixture_creates_directories ... ok
+test common::git_helpers::tests::test_git_test_env_creates_directory ... ok
+test common::git_helpers::tests::test_git_test_env_cleanup_on_drop ... ok
+test common::git_helpers::tests::test_cleanup_git_locks_no_locks ... ok
+test test_resolve_command_workflows ... FAILED
+test test_resolve_validates_conflict_markers_removed ... FAILED
+test test_resolve_preserves_resolved_content_formatting ... FAILED
+test test_resolve_multiple_conflicts_partial ... FAILED
+test test_resolve_multiple_conflicts_full ... FAILED
+
+failures:
+
+---- test_resolve_command_workflows stdout ----
+
+thread 'test_resolve_command_workflows' (3461426) panicked at /home/dustin/.rustup/toolchains/stable-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/ops/function.rs:250:5:
+Unexpected stdout, failed var.contains(Operation paused)
+├── var: Applied 1 files to workspace
+└── var as str: Applied 1 files to workspace
+
+command=`cd "/tmp/.tmpaDkXP7" && JIN_DIR="/tmp/.tmpaDkXP7/.jin_global" "/home/dustin/projects/jin/target/debug/jin" "apply"`
+code=0
+stdout="Applied 1 files to workspace\n"
+stderr=```
+[DEBUG] merge_layers: Starting with 6 layers
+[DEBUG] collect_all_file_paths: Checking 6 layers
+[DEBUG] collect_all_file_paths: Layer GlobalBase, ref_path: refs/jin/layers/global
+[DEBUG] collect_all_file_paths: ref_exists: true
+[DEBUG] collect_all_file_paths: Resolved commit_oid: 8fe3db97a9788c6d20864b5d78a774711d4df612
+[DEBUG] collect_all_file_paths: Tree file: \"config.json\"
+[DEBUG] collect_all_file_paths: Layer ModeBase, ref_path: refs/jin/layers/mode/test_mode_3461417_4/_
+[DEBUG] collect_all_file_paths: ref_exists: true
+[DEBUG] collect_all_file_paths: Resolved commit_oid: 9072625309550fc671884e7f43284b59883d5ba7
+[DEBUG] collect_all_file_paths: Tree file: \"config.json\"
+[DEBUG] collect_all_file_paths: Layer ModeProject, ref_path: refs/jin/layers/mode/test_mode_3461417_4/project/default
+[DEBUG] collect_all_file_paths: ref_exists: false
+[DEBUG] collect_all_file_paths: Layer ProjectBase, ref_path: refs/jin/layers/project/default
+[DEBUG] collect_all_file_paths: ref_exists: false
+[DEBUG] collect_all_file_paths: Layer UserLocal, ref_path: refs/jin/layers/local
+[DEBUG] collect_all_file_paths: ref_exists: false
+[DEBUG] collect_all_file_paths: Layer WorkspaceActive, ref_path: refs/jin/layers/workspace
+[DEBUG] collect_all_file_paths: ref_exists: false
+[DEBUG] collect_all_file_paths: Total paths collected: 1
+[DEBUG] merge_layers: Collected 1 unique file paths
+[DEBUG] merge_layers: File paths: {\"config.json\"}
+[DEBUG] merge_layers: Processing path: config.json
+[DEBUG] merge_layers: Layers with file: [GlobalBase, ModeBase]
+[DEBUG] merge_layers: File format: Json
+[DEBUG] merge_layers: Merged result (merge_file_across_layers): Ok
+[DEBUG] merge_layers: Returning with 1 merged files, 0 conflicts
+```
+
+
+
+---- test_resolve_validates_conflict_markers_removed stdout ----
+
+thread 'test_resolve_validates_conflict_markers_removed' (3461430) panicked at /home/dustin/.rustup/toolchains/stable-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/ops/function.rs:250:5:
+Unexpected stderr, failed var.contains(Conflict markers still present)
+├── var: Error: No paused apply operation found. Run 'jin apply' first.
+└── var as str: Error: No paused apply operation found. Run 'jin apply' first.
+
+command=`cd "/tmp/.tmpFu5p9U" && JIN_DIR="/tmp/.tmpFu5p9U/.jin_global" "/home/dustin/projects/jin/target/debug/jin" "resolve" "config.json"`
+code=1
+stdout=""
+stderr="Error: No paused apply operation found. Run \'jin apply\' first.\n"
+
+
+---- test_resolve_preserves_resolved_content_formatting stdout ----
+
+thread 'test_resolve_preserves_resolved_content_formatting' (3461429) panicked at /home/dustin/.rustup/toolchains/stable-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/ops/function.rs:250:5:
+Unexpected failure.
+code=1
+stderr=```"Error: No paused apply operation found. Run \'jin apply\' first.\n"```
+command=`cd "/tmp/.tmpwO9aYo" && JIN_DIR="/tmp/.tmpwO9aYo/.jin_global" "/home/dustin/projects/jin/target/debug/jin" "resolve" "config.json"`
+code=1
+stdout=""
+stderr="Error: No paused apply operation found. Run \'jin apply\' first.\n"
+
+
+---- test_resolve_multiple_conflicts_partial stdout ----
+
+thread 'test_resolve_multiple_conflicts_partial' (3461428) panicked at /home/dustin/.rustup/toolchains/stable-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/ops/function.rs:250:5:
+Unexpected stdout, failed var.contains(Operation paused)
+├── var: Applied 3 files to workspace
+└── var as str: Applied 3 files to workspace
+
+command=`cd "/tmp/.tmpSi2UpB" && JIN_DIR="/tmp/.tmpSi2UpB/.jin_global" "/home/dustin/projects/jin/target/debug/jin" "apply"`
+code=0
+stdout="Applied 3 files to workspace\n"
+stderr=```
+[DEBUG] merge_layers: Starting with 6 layers
+[DEBUG] collect_all_file_paths: Checking 6 layers
+[DEBUG] collect_all_file_paths: Layer GlobalBase, ref_path: refs/jin/layers/global
+[DEBUG] collect_all_file_paths: ref_exists: true
+[DEBUG] collect_all_file_paths: Resolved commit_oid: 856f35264a623cbd20b027dbb612a2e835c3ff7c
+[DEBUG] collect_all_file_paths: Tree file: \"config.json\"
+[DEBUG] collect_all_file_paths: Tree file: \"options.json\"
+[DEBUG] collect_all_file_paths: Tree file: \"settings.json\"
+[DEBUG] collect_all_file_paths: Layer ModeBase, ref_path: refs/jin/layers/mode/test_mode_3461417_0/_
+[DEBUG] collect_all_file_paths: ref_exists: true
+[DEBUG] collect_all_file_paths: Resolved commit_oid: 7aecc8cec37ba58ba3bf8a794dbc4cf42f9738cc
+[DEBUG] collect_all_file_paths: Tree file: \"config.json\"
+[DEBUG] collect_all_file_paths: Tree file: \"options.json\"
+[DEBUG] collect_all_file_paths: Tree file: \"settings.json\"
+[DEBUG] collect_all_file_paths: Layer ModeProject, ref_path: refs/jin/layers/mode/test_mode_3461417_0/project/default
+[DEBUG] collect_all_file_paths: ref_exists: false
+[DEBUG] collect_all_file_paths: Layer ProjectBase, ref_path: refs/jin/layers/project/default
+[DEBUG] collect_all_file_paths: ref_exists: false
+[DEBUG] collect_all_file_paths: Layer UserLocal, ref_path: refs/jin/layers/local
+[DEBUG] collect_all_file_paths: ref_exists: false
+[DEBUG] collect_all_file_paths: Layer WorkspaceActive, ref_path: refs/jin/layers/workspace
+[DEBUG] collect_all_file_paths: ref_exists: false
+[DEBUG] collect_all_file_paths: Total paths collected: 3
+[DEBUG] merge_layers: Collected 3 unique file paths
+[DEBUG] merge_layers: File paths: {\"config.json\", \"options.json\", \"settings.json\"}
+[DEBUG] merge_layers: Processing path: config.json
+[DEBUG] merge_layers: Layers with file: [GlobalBase, ModeBase]
+[DEBUG] merge_layers: File format: Json
+[DEBUG] merge_layers: Merged result (merge_file_across_layers): Ok
+[DEBUG] merge_layers: Processing path: options.json
+[DEBUG] merge_layers: Layers with file: [GlobalBase, ModeBase]
+[DEBUG] merge_layers: File format: Json
+[DEBUG] merge_layers: Merged result (merge_file_across_layers): Ok
+[DEBUG] merge_layers: Processing path: settings.json
+[DEBUG] merge_layers: Layers with file: [GlobalBase, ModeBase]
+[DEBUG] merge_layers: File format: Json
+[DEBUG] merge_layers: Merged result (merge_file_across_layers): Ok
+[DEBUG] merge_layers: Returning with 3 merged files, 0 conflicts
+```
+
+
+
+---- test_resolve_multiple_conflicts_full stdout ----
+
+thread 'test_resolve_multiple_conflicts_full' (3461427) panicked at /home/dustin/.rustup/toolchains/stable-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/ops/function.rs:250:5:
+Unexpected stdout, failed var.contains(Operation paused)
+├── var: Applied 3 files to workspace
+└── var as str: Applied 3 files to workspace
+
+command=`cd "/tmp/.tmpnYvkXP" && JIN_DIR="/tmp/.tmpnYvkXP/.jin_global" "/home/dustin/projects/jin/target/debug/jin" "apply"`
+code=0
+stdout="Applied 3 files to workspace\n"
+stderr=```
+[DEBUG] merge_layers: Starting with 6 layers
+[DEBUG] collect_all_file_paths: Checking 6 layers
+[DEBUG] collect_all_file_paths: Layer GlobalBase, ref_path: refs/jin/layers/global
+[DEBUG] collect_all_file_paths: ref_exists: true
+[DEBUG] collect_all_file_paths: Resolved commit_oid: 5b46d2ab4a362b987903beb230dae0bc2066084b
+[DEBUG] collect_all_file_paths: Tree file: \"a.json\"
+[DEBUG] collect_all_file_paths: Tree file: \"b.json\"
+[DEBUG] collect_all_file_paths: Tree file: \"c.json\"
+[DEBUG] collect_all_file_paths: Layer ModeBase, ref_path: refs/jin/layers/mode/test_mode_3461417_1/_
+[DEBUG] collect_all_file_paths: ref_exists: true
+[DEBUG] collect_all_file_paths: Resolved commit_oid: 1b5d7c834b684347cc052f75cf20ea88d09fa633
+[DEBUG] collect_all_file_paths: Tree file: \"a.json\"
+[DEBUG] collect_all_file_paths: Tree file: \"b.json\"
+[DEBUG] collect_all_file_paths: Tree file: \"c.json\"
+[DEBUG] collect_all_file_paths: Layer ModeProject, ref_path: refs/jin/layers/mode/test_mode_3461417_1/project/default
+[DEBUG] collect_all_file_paths: ref_exists: false
+[DEBUG] collect_all_file_paths: Layer ProjectBase, ref_path: refs/jin/layers/project/default
+[DEBUG] collect_all_file_paths: ref_exists: false
+[DEBUG] collect_all_file_paths: Layer UserLocal, ref_path: refs/jin/layers/local
+[DEBUG] collect_all_file_paths: ref_exists: false
+[DEBUG] collect_all_file_paths: Layer WorkspaceActive, ref_path: refs/jin/layers/workspace
+[DEBUG] collect_all_file_paths: ref_exists: false
+[DEBUG] collect_all_file_paths: Total paths collected: 3
+[DEBUG] merge_layers: Collected 3 unique file paths
+[DEBUG] merge_layers: File paths: {\"c.json\", \"b.json\", \"a.json\"}
+[DEBUG] merge_layers: Processing path: c.json
+[DEBUG] merge_layers: Layers with file: [GlobalBase, ModeBase]
+[DEBUG] merge_layers: File format: Json
+[DEBUG] merge_layers: Merged result (merge_file_across_layers): Ok
+[DEBUG] merge_layers: Processing path: b.json
+[DEBUG] merge_layers: Layers with file: [GlobalBase, ModeBase]
+[DEBUG] merge_layers: File format: Json
+[DEBUG] merge_layers: Merged result (merge_file_across_layers): Ok
+[DEBUG] merge_layers: Processing path: a.json
+[DEBUG] merge_layers: Layers with file: [GlobalBase, ModeBase]
+[DEBUG] merge_layers: File format: Json
+[DEBUG] merge_layers: Merged result (merge_file_across_layers): Ok
+[DEBUG] merge_layers: Returning with 3 merged files, 0 conflicts
+```
+
+
+
+
+failures:
+    test_resolve_command_workflows
+    test_resolve_multiple_conflicts_full
+    test_resolve_multiple_conflicts_partial
+    test_resolve_preserves_resolved_content_formatting
+    test_resolve_validates_conflict_markers_removed
+
+test result: FAILED. 8 passed; 5 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.03s
+
+error: test failed, to rerun pass `--test resolve_workflow`
+     Running tests/sync_workflow.rs (target/debug/deps/sync_workflow-fafbdee97bd97fa4)
+
+running 36 tests
+test common::fixtures::tests::test_fixture_creates_directory ... ok
+test common::git_helpers::tests::test_cleanup_git_locks_nonexistent_repo ... ok
+test common::assertions::tests::test_assert_workspace_file_exists ... ok
+test common::fixtures::tests::test_remote_fixture_creates_directories ... ok
+test common::assertions::tests::test_assert_workspace_file_exists_fails - should panic ... ok
+test common::git_helpers::tests::test_git_test_env_creates_directory ... ok
+test common::git_helpers::tests::test_git_test_env_cleanup_on_drop ... ok
+test test_pull_creates_jinmerge_for_conflicts ... ignored, Conflict detection (P1.M1) not fully implemented - testPull_divergent_with_conflicts also fails
+test test_pull_divergent_clean_merge ... ignored, 3-way merge (P1.M1) not fully implemented
+test test_pull_fast_forward_behaves_correctly ... ignored, Merge type detection (P1.M1) not fully implemented
+test test_pull_rebase_rebases_local_changes ... ignored, jin pull --rebase is not implemented yet
+test common::git_helpers::tests::test_cleanup_git_locks_no_locks ... ok
+test test_fetch_no_remote_error ... ok
+test test_push_no_remote_error ... ok
+test test_link_invalid_url_error ... ok
+test test_link_force_replaces_existing ... FAILED
+test test_pull_rejected_with_dirty_workspace ... ok
+test test_link_to_local_remote ... FAILED
+test test_link_with_filesystem_path ... FAILED
+test test_sync_empty_remote ... FAILED
+test test_push_uploads_commits ... ok
+test test_fetch_loads_context ... ok
+test test_push_succeeds_when_ahead ... ok
+test test_fetch_updates_refs ... FAILED
+test test_push_rejected_when_behind ... ok
+test test_fetch_with_default_context ... ok
+test test_pull_verifies_layer_state ... ok
+test test_push_succeeds_when_up_to_date ... ok
+test test_sync_complete_workflow ... FAILED
+test test_push_rejected_when_divergent ... ok
+test test_pull_merges_changes ... FAILED
+test test_pull_merges_remote_changes ... ok
+test test_fetch_updates_refs_without_merging ... ok
+test test_fetch_highlights_active_mode_updates ... ok
+test test_fetch_separates_active_and_other_updates ... ok
+test test_push_succeeds_with_force_when_behind ... ok
+
+failures:
+
+---- test_link_force_replaces_existing stdout ----
+
+thread 'test_link_force_replaces_existing' (3461608) panicked at /home/dustin/.rustup/toolchains/stable-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/ops/function.rs:250:5:
+Unexpected failure.
+code=1
+stderr=``````
+Error: Already exists: Remote \'origin\' already configured
+Current remote: file:///tmp/tmp.pjExa7nAqW/jin.git
+
+To change remote, use:
+  jin link /tmp/.tmpOR61Pt/remote --force
+```
+```
+command=`cd "/tmp/.tmpOR61Pt/local" && "/home/dustin/projects/jin/target/debug/jin" "link" "/tmp/.tmpOR61Pt/remote"`
+code=1
+stdout=""
+stderr=```
+Error: Already exists: Remote \'origin\' already configured
+Current remote: file:///tmp/tmp.pjExa7nAqW/jin.git
+
+To change remote, use:
+  jin link /tmp/.tmpOR61Pt/remote --force
+```
+
+
+
+---- test_link_to_local_remote stdout ----
+
+thread 'test_link_to_local_remote' (3461610) panicked at /home/dustin/.rustup/toolchains/stable-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/ops/function.rs:250:5:
+Unexpected failure.
+code=1
+stderr=``````
+Error: Already exists: Remote \'origin\' already configured
+Current remote: file:///tmp/tmp.pjExa7nAqW/jin.git
+
+To change remote, use:
+  jin link file:///tmp/.tmpfmxWfL/remote --force
+```
+```
+command=`cd "/tmp/.tmpfmxWfL/local" && "/home/dustin/projects/jin/target/debug/jin" "link" "file:///tmp/.tmpfmxWfL/remote"`
+code=1
+stdout=""
+stderr=```
+Error: Already exists: Remote \'origin\' already configured
+Current remote: file:///tmp/tmp.pjExa7nAqW/jin.git
+
+To change remote, use:
+  jin link file:///tmp/.tmpfmxWfL/remote --force
+```
+
+
+
+---- test_link_with_filesystem_path stdout ----
+
+thread 'test_link_with_filesystem_path' (3461611) panicked at /home/dustin/.rustup/toolchains/stable-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/ops/function.rs:250:5:
+Unexpected failure.
+code=1
+stderr=``````
+Error: Already exists: Remote \'origin\' already configured
+Current remote: file:///tmp/tmp.pjExa7nAqW/jin.git
+
+To change remote, use:
+  jin link /tmp/.tmpO652sU/remote --force
+```
+```
+command=`cd "/tmp/.tmpO652sU/local" && "/home/dustin/projects/jin/target/debug/jin" "link" "/tmp/.tmpO652sU/remote"`
+code=1
+stdout=""
+stderr=```
+Error: Already exists: Remote \'origin\' already configured
+Current remote: file:///tmp/tmp.pjExa7nAqW/jin.git
+
+To change remote, use:
+  jin link /tmp/.tmpO652sU/remote --force
+```
+
+
+
+---- test_sync_empty_remote stdout ----
+
+thread 'test_sync_empty_remote' (3461624) panicked at /home/dustin/.rustup/toolchains/stable-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/ops/function.rs:250:5:
+Unexpected failure.
+code=1
+stderr=``````
+Error: Already exists: Remote \'origin\' already configured
+Current remote: file:///tmp/tmp.pjExa7nAqW/jin.git
+
+To change remote, use:
+  jin link /tmp/.tmphQ4FWV/remote --force
+```
+```
+command=`cd "/tmp/.tmphQ4FWV/local" && "/home/dustin/projects/jin/target/debug/jin" "link" "/tmp/.tmphQ4FWV/remote"`
+code=1
+stdout=""
+stderr=```
+Error: Already exists: Remote \'origin\' already configured
+Current remote: file:///tmp/tmp.pjExa7nAqW/jin.git
+
+To change remote, use:
+  jin link /tmp/.tmphQ4FWV/remote --force
+```
+
+
+
+---- test_fetch_updates_refs stdout ----
+
+thread 'test_fetch_updates_refs' (3461605) panicked at /home/dustin/.rustup/toolchains/stable-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/ops/function.rs:250:5:
+Unexpected failure.
+code=1
+stderr=```"Error: Git error: failed to resolve path \'/tmp/tmp.pjExa7nAqW/jin.git\': No such file or directory; class=Os (2)\n"```
+command=`cd "/tmp/.tmpMHybrJ" && "/home/dustin/projects/jin/target/debug/jin" "push"`
+code=1
+stdout=```
+Fetching from origin (file:///tmp/tmp.pjExa7nAqW/jin.git)...
+
+```
+
+stderr="Error: Git error: failed to resolve path \'/tmp/tmp.pjExa7nAqW/jin.git\': No such file or directory; class=Os (2)\n"
+
+
+---- test_sync_complete_workflow stdout ----
+
+thread 'test_sync_complete_workflow' (3461623) panicked at /home/dustin/.rustup/toolchains/stable-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/ops/function.rs:250:5:
+Unexpected failure.
+code=1
+stderr=``````
+Error: Already exists: Remote \'origin\' already configured
+Current remote: file:///tmp/.tmpkl60wt/remote
+
+To change remote, use:
+  jin link /tmp/.tmpkl60wt/remote --force
+```
+```
+command=`cd "/tmp/.tmpkl60wt/local" && JIN_DIR="/tmp/.tmpY0wAcb/.jin_global" "/home/dustin/projects/jin/target/debug/jin" "link" "/tmp/.tmpkl60wt/remote"`
+code=1
+stdout=""
+stderr=```
+Error: Already exists: Remote \'origin\' already configured
+Current remote: file:///tmp/.tmpkl60wt/remote
+
+To change remote, use:
+  jin link /tmp/.tmpkl60wt/remote --force
+```
+
+
+
+---- test_pull_merges_changes stdout ----
+
+thread 'test_pull_merges_changes' (3461612) panicked at /home/dustin/.rustup/toolchains/stable-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/ops/function.rs:250:5:
+Unexpected failure.
+code=1
+stderr=``````
+Error: Already exists: Remote \'origin\' already configured
+Current remote: file:///tmp/.tmpoCQ37E/remote
+
+To change remote, use:
+  jin link /tmp/.tmpoCQ37E/remote --force
+```
+```
+command=`cd "/tmp/.tmpoCQ37E/local" && JIN_DIR="/tmp/.tmpXYs6R7/.jin_global" "/home/dustin/projects/jin/target/debug/jin" "link" "/tmp/.tmpoCQ37E/remote"`
+code=1
+stdout=""
+stderr=```
+Error: Already exists: Remote \'origin\' already configured
+Current remote: file:///tmp/.tmpoCQ37E/remote
+
+To change remote, use:
+  jin link /tmp/.tmpoCQ37E/remote --force
+```
+
+
+
+
+failures:
+    test_fetch_updates_refs
+    test_link_force_replaces_existing
+    test_link_to_local_remote
+    test_link_with_filesystem_path
+    test_pull_merges_changes
+    test_sync_complete_workflow
+    test_sync_empty_remote
+
+test result: FAILED. 25 passed; 7 failed; 4 ignored; 0 measured; 0 filtered out; finished in 0.06s
+
+error: test failed, to rerun pass `--test sync_workflow`
+     Running tests/workspace_validation.rs (target/debug/deps/workspace_validation-50bbc806bf76f215)
+
+running 19 tests
+test common::git_helpers::tests::test_cleanup_git_locks_nonexistent_repo ... ok
+test common::fixtures::tests::test_fixture_creates_directory ... ok
+test common::assertions::tests::test_assert_workspace_file_exists ... ok
+test common::assertions::tests::test_assert_workspace_file_exists_fails - should panic ... ok
+test common::git_helpers::tests::test_git_test_env_cleanup_on_drop ... ok
+test common::fixtures::tests::test_remote_fixture_creates_directories ... ok
+test common::git_helpers::tests::test_git_test_env_creates_directory ... ok
+test common::git_helpers::tests::test_cleanup_git_locks_no_locks ... ok
+test test_validation_allows_fresh_workspace ... ok
+test test_validation_detects_deleted_mode ... ok
+test test_validation_detects_deleted_files ... ok
+test test_validation_detects_deleted_scope ... ok
+test test_validation_detects_missing_layer_refs ... ok
+test test_validation_detects_modified_files ... ok
+test test_validation_error_messages_include_recovery_hints ... ok
+test test_validation_order_checks_file_mismatch_first ... ok
+test test_validation_with_multiple_layers_all_exist ... ok
+test test_validation_passes_for_clean_workspace ... ok
+test test_validation_with_some_layers_missing ... ok
+
+test result: ok. 19 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+   Doc-tests jin
+
+running 31 tests
+test src/core/layer.rs - core::layer::Layer::parse_layer_from_ref_path (line 182) ... ignored
+test src/git/merge.rs - git::merge::detect_merge_type (line 56) ... ignored
+test src/git/merge.rs - git::merge::find_merge_base (line 143) ... ignored
+test src/merge/jinmerge.rs - merge::jinmerge (line 18) ... ignored
+test src/merge/jinmerge.rs - merge::jinmerge::JinMergeConflict::is_jinmerge_file (line 238) ... ignored
+test src/merge/jinmerge.rs - merge::jinmerge::JinMergeConflict::parse_from_file (line 196) ... ignored
+test src/merge/jinmerge.rs - merge::jinmerge::JinMergeConflict::write_to_file (line 151) ... ignored
+test src/merge/layer.rs - merge::layer::find_layers_containing_file (line 529) ... ignored
+test src/merge/layer.rs - merge::layer::has_different_content_across_layers (line 604) ... ignored
+test src/merge/mod.rs - merge (line 15) ... ignored
+test src/git/remote.rs - git::remote::build_fetch_options (line 164) - compile ... ok
+test src/git/remote.rs - git::remote::build_push_options (line 188) - compile ... ok
+test src/git/remote.rs - git::remote::setup_callbacks (line 53) - compile ... ok
+test src/git/repo.rs - git::repo::JinRepo (line 19) - compile ... ok
+test src/git/repo.rs - git::repo::JinRepo::open (line 52) - compile ... ok
+test src/git/tree.rs - git::tree::TreeOps::read_blob_content (line 60) - compile ... ok
+test src/git/tree.rs - git::tree::TreeOps::list_tree_files (line 84) - compile ... ok
+test src/git/repo.rs - git::repo::JinRepo::create (line 84) - compile ... ok
+test src/git/transaction.rs - git::transaction::LayerTransaction (line 374) - compile ... ok
+test src/git/objects.rs - git::objects::ObjectOps::create_blob (line 95) - compile ... ok
+test src/git/tree.rs - git::tree::TreeOps::walk_tree_pre (line 25) - compile ... ok
+test src/git/objects.rs - git::objects::ObjectOps::create_tree_from_paths (line 127) - compile ... ok
+test src/git/transaction.rs - git::transaction::JinTransaction (line 46) - compile ... ok
+test src/git/repo.rs - git::repo::JinRepo::open_or_create (line 126) - compile ... ok
+test src/merge/text.rs - merge::text::has_conflict_markers (line 169) ... ok
+test src/merge/jinmerge.rs - merge::jinmerge::JinMergeConflict::from_text_merge (line 98) ... ok
+test src/merge/text.rs - merge::text::text_merge (line 103) ... ok
+test src/merge/text.rs - merge::text (line 8) ... ok
+test src/merge/jinmerge.rs - merge::jinmerge::JinMergeConflict::conflict_count (line 211) ... ok
+test src/merge/jinmerge.rs - merge::jinmerge::JinMergeConflict::merge_path_for_file (line 270) ... ok
+test src/merge/text.rs - merge::text::parse_conflicts (line 193) ... ok
+
+test result: ok. 21 passed; 0 failed; 10 ignored; 0 measured; 0 filtered out; finished in 0.29s
+
+error: 10 targets failed:
+    `--lib`
+    `--test cli_apply_conflict`
+    `--test conflict_workflow`
+    `--test destructive_validation`
+    `--test error_scenarios`
+    `--test export_committed`
+    `--test mode_scope_workflow`
+    `--test pull_merge`
+    `--test resolve_workflow`
+    `--test sync_workflow`

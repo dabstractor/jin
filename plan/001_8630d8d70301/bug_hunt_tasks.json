@@ -272,7 +272,7 @@
                   "type": "Subtask",
                   "id": "P1.M5.T1.S1",
                   "title": "Run full test suite and capture results",
-                  "status": "Planned",
+                  "status": "Complete",
                   "story_points": 1,
                   "dependencies": [],
                   "context_scope": "CONTRACT DEFINITION:\n1. RESEARCH NOTE: All previous milestones should be complete. This is the final verification step. The bug report indicated ~650 total tests with ~8-12 failing before fixes.\n2. INPUT: Complete codebase with all bug fixes from P1.M1 through P1.M4.\n3. LOGIC: Run cargo test --all to execute the full test suite (unit + integration). Capture the output showing test counts (passed, failed, ignored). Compare against the pre-fix baseline from the bug report. Run cargo test --all --no-fail-fast to ensure all tests run even if some fail.\n4. OUTPUT: Test execution summary showing all tests passing. If any tests still fail, analyze whether they are pre-existing failures or new issues introduced by the fixes."
